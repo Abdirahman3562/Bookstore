@@ -1,102 +1,122 @@
-[
-  {
-    "id": 1,
-    "title": "The Power of Mind",
-    "author": "John Doe",
-    "price": 9.99,
-    "cover": "/covers/book1.jpg",
-    "description": "A great motivational book.",
-    "publisher": "John Doe",
-    "publishedDate": "2025-11-22"
-  },
-  {
-    "id": 2,
-    "title": "Beyond the Horizon",
-    "author": "Emily Carter",
-    "price": 12.50,
-    "cover": "/covers/book2.jpg",
-    "description": "A thrilling journey across unknown lands.",
-    "publisher": "Carter House",
-    "publishedDate": "2024-08-10"
-  },
-  {
-    "id": 3,
-    "title": "Silent Echoes",
-    "author": "Michael Green",
-    "price": 14.99,
-    "cover": "/covers/book3.jpg",
-    "description": "A mystery novel full of unexpected twists.",
-    "publisher": "GreenLight Press",
-    "publishedDate": "2023-05-16"
-  },
-  {
-    "id": 4,
-    "title": "Rise of Legends",
-    "author": "Sophia White",
-    "price": 18.00,
-    "cover": "/covers/book4.jpg",
-    "description": "An epic fantasy about forgotten kingdoms.",
-    "publisher": "White Moon",
-    "publishedDate": "2022-11-01"
-  },
-  {
-    "id": 5,
-    "title": "Deep Ocean Secrets",
-    "author": "Liam Turner",
-    "price": 11.25,
-    "cover": "/covers/book5.jpg",
-    "description": "Exploring mysteries hidden underwater.",
-    "publisher": "BlueWave",
-    "publishedDate": "2024-02-20"
-  },
-  {
-    "id": 6,
-    "title": "Winds of Destiny",
-    "author": "Ava Brooks",
-    "price": 13.40,
-    "cover": "/covers/book6.jpg",
-    "description": "A romance novel set in ancient times.",
-    "publisher": "Brooks Publishing",
-    "publishedDate": "2023-01-30"
-  },
-  {
-    "id": 7,
-    "title": "The Last Frontier",
-    "author": "Noah Reed",
-    "price": 16.50,
-    "cover": "/covers/book7.jpg",
-    "description": "A sci-fi adventure to distant galaxies.",
-    "publisher": "ReedWorks",
-    "publishedDate": "2025-03-14"
-  },
-  {
-    "id": 8,
-    "title": "Gardens of Serenity",
-    "author": "Grace Harper",
-    "price": 8.99,
-    "cover": "/covers/book8.jpg",
-    "description": "A calming book about inner peace.",
-    "publisher": "HarperLeaf",
-    "publishedDate": "2021-07-11"
-  },
-  {
-    "id": 9,
-    "title": "The Time Weaver",
-    "author": "Elijah Stone",
-    "price": 17.99,
-    "cover": "/covers/book9.jpg",
-    "description": "A time travel novel with amazing depth.",
-    "publisher": "StoneBridge",
-    "publishedDate": "2024-12-02"
-  },
-  {
-    "id": 10,
-    "title": "Breaking Boundaries",
-    "author": "Mia Collins",
-    "price": 10.75,
-    "cover": "/covers/book10.jpg",
-    "description": "How to overcome limitations and thrive.",
-    "publisher": "Collins Media",
-    "publishedDate": "2023-09-25"
-  }
-]
+{
+  "books": [
+    {
+      "id": 1,
+      "title": "The Power of Mind",
+      "author": "John Doe",
+      "price": 0,
+      "pdfUrl": "/pdffiles/Fahamka Qiimaha-WPS Office(1).pdf",
+      "cover": "/covers/book1.jpg",
+      "description": "A great motivational book.",
+      "publisher": "John Doe",
+      "publishedDate": "2025-11-22"
+    },
+    {
+      "id": 2,
+      "title": "Beyond the Horizon",
+      "author": "Emily Carter",
+      "price": 12.5,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+      "cover": "/covers/book2.jpg",
+      "publisher": "Carter House",
+      "description": "Beyond the Horizon is a gripping tale of adventure and discovery. Join the protagonist on a thrilling journey across uncharted lands, where every step uncovers new mysteries and dangers. This novel invites readers into a world of vast, unexplored territories, filled with hidden secrets and unforeseen challenges. As the adventure unfolds, the characters face not only the harsh elements of nature but also personal growth and transformation. Will they overcome the obstacles in their path, or will the horizon remain out of reach?",
+      "publishedDate": "2024-08-10"
+    },
+    {
+      "id": 3,
+      "title": "Silent Echoes",
+      "author": "Michael Green",
+      "price": 14.99,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+
+      "cover": "/covers/book3.jpg",
+      "description": "A mystery novel full of unexpected twists.",
+      "publisher": "GreenLight Press",
+      "publishedDate": "2023-05-16"
+    },
+    {
+      "id": 4,
+      "title": "Rise of Legends",
+      "author": "Sophia White",
+      "price": 18.0,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+
+      "cover": "/covers/book4.jpg",
+      "description": "An epic fantasy about forgotten kingdoms.",
+      "publisher": "White Moon",
+      "publishedDate": "2022-11-01"
+    },
+    {
+      "id": 5,
+      "title": "Deep Ocean Secrets",
+      "author": "Liam Turner",
+      "price": 11.25,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+
+      "cover": "/covers/book5.jpg",
+      "description": "Exploring mysteries hidden underwater.",
+      "publisher": "BlueWave",
+      "publishedDate": "2024-02-20"
+    },
+    {
+      "id": 6,
+      "title": "Winds of Destiny",
+      "author": "Ava Brooks",
+      "price": 13.4,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+
+      "cover": "/covers/book6.jpg",
+      "description": "A romance novel set in ancient times.",
+      "publisher": "Brooks Publishing",
+      "publishedDate": "2023-01-30"
+    },
+    {
+      "id": 7,
+      "title": "The Last Frontier",
+      "author": "Noah Reed",
+      "price": 16.5,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+
+      "cover": "/covers/book7.jpg",
+      "description": "A sci-fi adventure to distant galaxies.",
+      "publisher": "ReedWorks",
+      "publishedDate": "2025-03-14"
+    },
+    {
+      "id": 8,
+      "title": "Gardens of Serenity",
+      "author": "Grace Harper",
+      "price": 8.99,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+
+      "cover": "/covers/book8.jpg",
+      "description": "A calming book about inner peace.",
+      "publisher": "HarperLeaf",
+      "publishedDate": "2021-07-11"
+    },
+    {
+      "id": 9,
+      "title": "The Time Weaver",
+      "author": "Elijah Stone",
+      "price": 17.99,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+
+      "cover": "/covers/book9.jpg",
+      "description": "A time travel novel with amazing depth.",
+      "publisher": "StoneBridge",
+      "publishedDate": "2024-12-02"
+    },
+    {
+      "id": 10,
+      "title": "Breaking Boundaries",
+      "author": "Mia Collins",
+      "price": 10.75,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+
+      "cover": "/covers/book10.jpg",
+      "description": "How to overcome limitations and thrive.",
+      "publisher": "Collins Media",
+      "publishedDate": "2023-09-25"
+    }
+  ]
+}

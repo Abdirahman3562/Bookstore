@@ -1,7 +1,22 @@
-[
-  {
+{
+
+  "purchased": [
+    {
     "id": 1,
     "title": "The Power of Mind",
     "cover": "/covers/book1.jpg"
+  },
+  {
+    "id": 2,
+    "title": "Beyond the Horizon",
+    "cover": "/covers/book2.jpg"
+  },
+  {
+    "id": 3,
+    "title": "Silent Echoes",
+    "cover": "/covers/book3.jpg"
   }
-]
+  ]
+}
+  
+

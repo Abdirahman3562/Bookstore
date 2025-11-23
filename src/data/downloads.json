@@ -1,0 +1,18 @@
+{
+  "downloads": [
+    {
+      "id": "fb4b",
+      "userId": "2ca5",
+      "userName": "Abdirahmaan Mohamed",
+      "email": "maan@gmail.com",
+      "bookId": "1",
+      "title": "The Power of Mind",
+      "author": "John Doe",
+      "cover": "/covers/book1.jpg",
+      "price": 0,
+      "isFree": true,
+      "pdfUrl": "/pdffiles/Fahamka Qiimaha-WPS Office(1).pdf",
+      "timestamp": "2025-11-23T18:43:53.986Z"
+    }
+  ]
+}

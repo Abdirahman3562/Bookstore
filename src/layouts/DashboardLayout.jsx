@@ -1,4 +1,3 @@
-// DashboardLayout.jsx
 import { useState } from "react";
 import {
   FiHome,
@@ -7,14 +6,41 @@ import {
   FiMapPin,
   FiUser,
   FiLogOut,
+  FiX,
+  FiMenu,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
-
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import DownloadsTab from "../components/Dashboard/DownloadsTab"; // Ensure DownloadsTab is imported properly
 
 export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
- const navigate = useNavigate(); 
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  const navigate = useNavigate();
+
+  const isMobile = window.innerWidth < 768; // MD breakpoint
+
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+
+    // Close sidebar when on mobile
+    if (isMobile) {
+      setIsMobileSidebarOpen(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    toast.success("Logged out!");
+    navigate("/auth");
+  };
+
+  const getButtonClass = (tabKey) =>
+    `flex items-center gap-2 p-2 border-b border-gray-300 rounded hover:bg-gray-100 ${
+      activeTab === tabKey ? "bg-blue-100 font-bold" : ""
+    }`;
+
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -22,7 +48,7 @@ export default function DashboardLayout() {
       case "orders":
         return <OrdersTab />;
       case "downloads":
-        return <DownloadsTab />;
+        return <DownloadsTab />; // Correctly rendering the DownloadsTab component
       case "addresses":
         return <AddressesTab />;
       case "account":
@@ -32,81 +58,58 @@ export default function DashboardLayout() {
     }
   };
 
-   const handleLogout = () => {
-    // Remove user session
-    localStorage.removeItem("user");
-        toast.success("Logged out!");
-
-    // Redirect to auth page
-    navigate("/auth");
-  };
-
-  const getButtonClass = (tabKey) =>
-    `flex items-center gap-2 p-2 border-b border-gray-300 rounded hover:bg-gray-100 ${
-      activeTab === tabKey ? "bg-blue-100 font-bold" : ""
-    }`;
-
   return (
     <div className="flex min-h-screen bg-white pt-10">
+      {/* MOBILE TOGGLE BUTTON */}
+      <button
+        className="md:hidden p-3 text-xl absolute right-2 top-20 bg-gray-200 rounded"
+        onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+      >
+        {isMobileSidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+      </button>
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border border-gray-100 shadow-md text-[#2563eb] p-4 flex flex-col gap-2 rounded">
-        <button
-          onClick={() => setActiveTab("dashboard")}
-          className={getButtonClass("dashboard")}
-        >
+      <aside
+        className={`bg-white border shadow-md text-[#2563eb] p-4 flex flex-col gap-2 rounded w-64 md:flex ${isMobileSidebarOpen ? "block" : "hidden"}`}
+      >
+        <button onClick={() => handleTabClick("dashboard")} className={getButtonClass("dashboard")}>
           <FiHome /> Dashboard
         </button>
-        <button
-          onClick={() => setActiveTab("orders")}
-          className={getButtonClass("orders")}
-        >
+        <button onClick={() => handleTabClick("orders")} className={getButtonClass("orders")}>
           <FiShoppingCart /> Orders
         </button>
-        <button
-          onClick={() => setActiveTab("downloads")}
-          className={getButtonClass("downloads")}
-        >
+        <button onClick={() => handleTabClick("downloads")} className={getButtonClass("downloads")}>
           <FiDownload /> Downloads
         </button>
-        <button
-          onClick={() => setActiveTab("addresses")}
-          className={getButtonClass("addresses")}
-        >
+        <button onClick={() => handleTabClick("addresses")} className={getButtonClass("addresses")}>
           <FiMapPin /> Addresses
         </button>
-        <button
-          onClick={() => setActiveTab("account")}
-          className={getButtonClass("account")}
-        >
+        <button onClick={() => handleTabClick("account")} className={getButtonClass("account")}>
           <FiUser /> Account Details
         </button>
-        <button
-        onClick={handleLogout} 
-          className={getButtonClass("logout")}
-        >
+        <button onClick={handleLogout} className={getButtonClass("logout")}>
           <FiLogOut /> Log Out
         </button>
       </aside>
 
-      {/* Main Content */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 p-8">{renderContent()}</main>
     </div>
   );
 }
 
-// Example tab component
 function DashboardTab() {
   return <div>Welcome to your dashboard</div>;
 }
+
 function OrdersTab() {
   return <div>Your orders will appear here</div>;
 }
-function DownloadsTab() {
-  return <div>Your downloads will appear here</div>;
-}
+
 function AddressesTab() {
   return <div>Your saved addresses will appear here</div>;
 }
+
 function AccountTab() {
   return <div>Your account details go here</div>;
 }

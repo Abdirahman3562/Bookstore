@@ -1,8 +1,18 @@
+import AppDownloadBanner from "../components/Home/AppDownloadBanner";
+import BookCarousel from "../components/Home/BookCarousel";
+import EbookAd from "../components/Home/EbookAd";
+import HerroSlider from "../components/Home/HerroSlider";
+import NewReleases from "../components/Home/NewReleases";
+
 export default function Home() {
   return (
-    <div className="p-10 text-center">
-      <h1 className="text-4xl font-bold">Welcome to My Bookstore</h1>
-      <p className="mt-4 text-gray-600">Buy & read your favorite books online</p>
+    <div className="pt-2">
+    <HerroSlider />
+    <EbookAd /> 
+    <BookCarousel />
+        <NewReleases />
+        <AppDownloadBanner />
+
     </div>
   );
 }
