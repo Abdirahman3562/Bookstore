@@ -1,22 +1,20 @@
 {
-
   "purchased": [
     {
-    "id": 1,
-    "title": "The Power of Mind",
-    "cover": "/covers/book1.jpg"
-  },
-  {
-    "id": 2,
-    "title": "Beyond the Horizon",
-    "cover": "/covers/book2.jpg"
-  },
-  {
-    "id": 3,
-    "title": "Silent Echoes",
-    "cover": "/covers/book3.jpg"
-  }
+      "id": "1763926469532",
+      "userId": "2ca5",
+      "userName": "Abdirahmaan Mohamed",
+      "email": "maan@gmail.com",
+      "bookId": "2",
+      "title": "Beyond the Horizon",
+      "author": "Emily Carter",
+      "cover": "/covers/book2.jpg",
+      "price": 12.5,
+      "paymentmethod": "Sahal",
+      "isFree": false,
+      "pdfUrl": "https://example.com/files/learning-react.pdf",
+      "status": "pending",
+      "timestamp": "2025-11-23T19:34:29.532Z"
+    }
   ]
 }
-  
-

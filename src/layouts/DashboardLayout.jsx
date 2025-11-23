@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom"; // useLocation added
+import toast from "react-hot-toast";
 import {
   FiHome,
   FiShoppingCart,
@@ -9,20 +11,27 @@ import {
   FiX,
   FiMenu,
 } from "react-icons/fi";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-import DownloadsTab from "../components/Dashboard/DownloadsTab"; // Ensure DownloadsTab is imported properly
+import DownloadsTab from "../components/Dashboard/DownloadsTab";
 
 export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
   const navigate = useNavigate();
+  const location = useLocation(); // useLocation hook to capture the URL path
 
   const isMobile = window.innerWidth < 768; // MD breakpoint
 
+  // Use effect hook to sync activeTab with URL path
+  useEffect(() => {
+    const path = location.pathname.split("/").pop(); // Get the last segment of the URL (e.g., 'orders')
+    setActiveTab(path); // Set the active tab based on the path
+  }, [location.pathname]); // Re-run when the pathname changes
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
+
+    // Update the URL path when a tab is clicked
+    navigate(`/dashboard/${tab}`);  // Correctly navigate to sub-routes
 
     // Close sidebar when on mobile
     if (isMobile) {
@@ -48,7 +57,7 @@ export default function DashboardLayout() {
       case "orders":
         return <OrdersTab />;
       case "downloads":
-        return <DownloadsTab />; // Correctly rendering the DownloadsTab component
+        return <DownloadsTab />;
       case "addresses":
         return <AddressesTab />;
       case "account":
@@ -70,7 +79,9 @@ export default function DashboardLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border shadow-md text-[#2563eb] p-4 flex flex-col gap-2 rounded w-64 md:flex ${isMobileSidebarOpen ? "block" : "hidden"}`}
+        className={`bg-white border shadow-md text-[#2563eb] p-4 flex flex-col gap-2 rounded w-64 md:flex ${
+          isMobileSidebarOpen ? "block" : "hidden"
+        }`}
       >
         <button onClick={() => handleTabClick("dashboard")} className={getButtonClass("dashboard")}>
           <FiHome /> Dashboard
