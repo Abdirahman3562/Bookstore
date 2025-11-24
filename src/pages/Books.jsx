@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"; // For managing state and effects
+import { Link } from "react-router-dom";
 
 function slugify(text) {
   return text
@@ -17,23 +18,27 @@ export default function Books() {
   const [loading, setLoading] = useState(true); // Loading state
 
   // Fetching books data from API
-  useEffect(() => {
-    fetch("http://localhost:5000/books") // Adjust the API endpoint here if needed
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("API Response:", data); // Log the full response to check its structure
-        if (Array.isArray(data)) {
-          setBooks(data); // Set books data if it's an array
-        } else {
-          console.error("Books data is not in the expected format.");
-        }
-        setLoading(false); // Stop loading after the data is fetched
-      })
-      .catch((error) => {
-        console.error("Error fetching books:", error);
-        setLoading(false); // Stop loading even if there's an error
-      });
-  }, []); // Empty dependency array ensures this runs only once when the component mounts
+useEffect(() => {
+  fetch("http://localhost:5100/books")
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("API DATA:", data);
+
+      if (Array.isArray(data)) {
+        setBooks(data);
+      } else {
+        console.error("books.json structure is wrong!", data);
+      }
+
+      setLoading(false);
+    })
+    .catch((error) => {
+      console.error("Error fetching books:", error);
+      setLoading(false);
+    });
+}, []);
+
+
 
   if (loading) {
     return <div>Loading...</div>; // Show a loading indicator while data is being fetched
@@ -69,12 +74,12 @@ export default function Books() {
              {book.price === 0 ? "Free" : `Price: $${book.price}`}
           </p>
           {/* Convert title to URL format */}
-          <a
-            href={`/book/${slugify(book.title)}`}
+          <Link
+            to={`/book/${slugify(book.title)}`}
             className="mt-4 block bg-blue-600 text-white p-2 rounded text-center hover:bg-blue-700 transition"
           >
             View Details
-          </a>
+          </Link>
         </div>
       ))}
     </div>

@@ -1,122 +1,62 @@
 {
   "books": [
-    {
-      "id": 1,
-      "title": "The Power of Mind",
-      "author": "John Doe",
-      "price": 0,
-      "pdfUrl": "/pdffiles/Fahamka Qiimaha-WPS Office(1).pdf",
-      "cover": "/covers/book1.jpg",
-      "description": "A great motivational book.",
-      "publisher": "John Doe",
-      "publishedDate": "2025-11-22"
-    },
-    {
-      "id": 2,
-      "title": "Beyond the Horizon",
-      "author": "Emily Carter",
-      "price": 12.5,
-      "pdfUrl": "https://example.com/files/learning-react.pdf",
-      "cover": "/covers/book2.jpg",
-      "publisher": "Carter House",
-      "description": "Beyond the Horizon is a gripping tale of adventure and discovery. Join the protagonist on a thrilling journey across uncharted lands, where every step uncovers new mysteries and dangers. This novel invites readers into a world of vast, unexplored territories, filled with hidden secrets and unforeseen challenges. As the adventure unfolds, the characters face not only the harsh elements of nature but also personal growth and transformation. Will they overcome the obstacles in their path, or will the horizon remain out of reach?",
-      "publishedDate": "2024-08-10"
-    },
-    {
-      "id": 3,
-      "title": "Silent Echoes",
-      "author": "Michael Green",
-      "price": 14.99,
-      "pdfUrl": "https://example.com/files/learning-react.pdf",
+    { "id": 1, "title": "Echoes of Eternity", "author": "Liam Carter", "price": 14.99, "pdfUrl": "/pdffiles/book1.pdf", "cover": "/covers/book1.jpg", "description": "A thrilling journey through forgotten lands.", "publisher": "Carter House", "publishedDate": "2023-04-12" },
+    { "id": 2, "title": "Winds of Freedom", "author": "Ava Thompson", "price": 0, "pdfUrl": "/pdffiles/book2.pdf", "cover": "/covers/book2.jpg", "description": "A motivational guide to living freely.", "publisher": "Thompson Press", "publishedDate": "2024-07-19" },
+    { "id": 3, "title": "Forgotten Kingdom", "author": "Noah Parker", "price": 18.5, "pdfUrl": "/pdffiles/book3.pdf", "cover": "/covers/book3.jpg", "description": "An epic fantasy of lost worlds.", "publisher": "Sunrise Books", "publishedDate": "2022-01-30" },
+    { "id": 4, "title": "The Silent Path", "author": "Sophia Green", "price": 0, "pdfUrl": "/pdffiles/book4.pdf", "cover": "/covers/book4.jpg", "description": "A peaceful journey to inner balance.", "publisher": "GreenLeaf", "publishedDate": "2023-09-10" },
+    { "id": 5, "title": "Galaxy Travelers", "author": "Ethan Miles", "price": 21.0, "pdfUrl": "/pdffiles/book5.pdf", "cover": "/covers/book5.jpg", "description": "A sci-fi adventure through unknown galaxies.", "publisher": "Starline Publishing", "publishedDate": "2025-03-25" },
+    { "id": 6, "title": "Healing Waters", "author": "Olivia Hayes", "price": 0, "pdfUrl": "/pdffiles/book6.pdf", "cover": "/covers/book6.jpg", "description": "Discover the secrets of emotional healing.", "publisher": "Hayes Media", "publishedDate": "2024-05-20" },
+    { "id": 7, "title": "Rise of the Titans", "author": "Mason Cole", "price": 14.75, "pdfUrl": "/pdffiles/book7.pdf", "cover": "/covers/book7.jpg", "description": "A gripping mythical tale.", "publisher": "ColeWorks", "publishedDate": "2021-11-03" },
+    { "id": 8, "title": "Paths Unseen", "author": "Isabella Moore", "price": 0, "pdfUrl": "/pdffiles/book8.pdf", "cover": "/covers/book8.jpg", "description": "A poetic collection of hidden truths.", "publisher": "Moore House", "publishedDate": "2023-08-17" },
+    { "id": 9, "title": "Echoes in the Night", "author": "Lucas Reed", "price": 7.5, "pdfUrl": "/pdffiles/book9.pdf", "cover": "/covers/book9.jpg", "description": "A dark mystery filled with suspense.", "publisher": "ReedWorks", "publishedDate": "2024-02-28" },
+    { "id": 10, "title": "Gentle Breeze", "author": "Amelia Brooks", "price": 0, "pdfUrl": "/pdffiles/book10.pdf", "cover": "/covers/book10.jpg", "description": "A calming story full of hope.", "publisher": "Brooks Publishing", "publishedDate": "2022-12-05" },
 
-      "cover": "/covers/book3.jpg",
-      "description": "A mystery novel full of unexpected twists.",
-      "publisher": "GreenLight Press",
-      "publishedDate": "2023-05-16"
-    },
-    {
-      "id": 4,
-      "title": "Rise of Legends",
-      "author": "Sophia White",
-      "price": 18.0,
-      "pdfUrl": "https://example.com/files/learning-react.pdf",
+    { "id": 11, "title": "Shadowed Truth", "author": "Henry Dawson", "price": 16.2, "pdfUrl": "/pdffiles/book11.pdf", "cover": "/covers/book11.jpg", "description": "A detective uncovers a shocking truth.", "publisher": "Dawson Press", "publishedDate": "2024-04-11" },
+    { "id": 12, "title": "Garden of Peace", "author": "Lily Howard", "price": 0, "pdfUrl": "/pdffiles/book12.pdf", "cover": "/covers/book12.jpg", "description": "A journey to inner peace.", "publisher": "Howard Media", "publishedDate": "2023-03-21" },
+    { "id": 13, "title": "Crimson Horizon", "author": "Jack Morgan", "price": 11.99, "pdfUrl": "/pdffiles/book13.pdf", "cover": "/covers/book13.jpg", "description": "An ocean adventure with danger.", "publisher": "Oceanic Books", "publishedDate": "2022-06-14" },
+    { "id": 14, "title": "Invisible Threads", "author": "Emma Scott", "price": 0, "pdfUrl": "/pdffiles/book14.pdf", "cover": "/covers/book14.jpg", "description": "A story about unseen connections.", "publisher": "Scott House", "publishedDate": "2024-09-09" },
+    { "id": 15, "title": "Broken Stars", "author": "Daniel Gray", "price": 19.25, "pdfUrl": "/pdffiles/book15.pdf", "cover": "/covers/book15.jpg", "description": "A space adventure filled with emotion.", "publisher": "Gray Publishing", "publishedDate": "2025-02-11" },
 
-      "cover": "/covers/book4.jpg",
-      "description": "An epic fantasy about forgotten kingdoms.",
-      "publisher": "White Moon",
-      "publishedDate": "2022-11-01"
-    },
-    {
-      "id": 5,
-      "title": "Deep Ocean Secrets",
-      "author": "Liam Turner",
-      "price": 11.25,
-      "pdfUrl": "https://example.com/files/learning-react.pdf",
+    { "id": 16, "title": "Colors of Life", "author": "Aisha Adams", "price": 0, "pdfUrl": "/pdffiles/book16.pdf", "cover": "/covers/book16.jpg", "description": "A guide to emotional growth.", "publisher": "Adams House", "publishedDate": "2023-11-03" },
+    { "id": 17, "title": "Steel and Fire", "author": "Victor Hale", "price": 13.5, "pdfUrl": "/pdffiles/book17.pdf", "cover": "/covers/book17.jpg", "description": "A powerful medieval adventure.", "publisher": "Hale Media", "publishedDate": "2021-09-19" },
+    { "id": 18, "title": "River Whispers", "author": "Nora Bennett", "price": 0, "pdfUrl": "/pdffiles/book18.pdf", "cover": "/covers/book18.jpg", "description": "A gentle story of healing.", "publisher": "Bennett Books", "publishedDate": "2024-03-09" },
+    { "id": 19, "title": "Stormbreak", "author": "Elliot Cruz", "price": 23.0, "pdfUrl": "/pdffiles/book19.pdf", "cover": "/covers/book19.jpg", "description": "A hero rises against chaos.", "publisher": "Cruz Publishing", "publishedDate": "2025-06-14" },
+    { "id": 20, "title": "The Hidden Smile", "author": "Sarah Young", "price": 0, "pdfUrl": "/pdffiles/book20.pdf", "cover": "/covers/book20.jpg", "description": "A story of rediscovering happiness.", "publisher": "Young House", "publishedDate": "2023-07-12" },
 
-      "cover": "/covers/book5.jpg",
-      "description": "Exploring mysteries hidden underwater.",
-      "publisher": "BlueWave",
-      "publishedDate": "2024-02-20"
-    },
-    {
-      "id": 6,
-      "title": "Winds of Destiny",
-      "author": "Ava Brooks",
-      "price": 13.4,
-      "pdfUrl": "https://example.com/files/learning-react.pdf",
+    { "id": 21, "title": "Golden Winds", "author": "James Nolan", "price": 12.35, "pdfUrl": "/pdffiles/book21.pdf", "cover": "/covers/book21.jpg", "description": "A tale of ambition and courage.", "publisher": "Nolan Press", "publishedDate": "2024-01-08" },
+    { "id": 22, "title": "Silent Dreams", "author": "Mira Wilson", "price": 0, "pdfUrl": "/pdffiles/book22.pdf", "cover": "/covers/book22.jpg", "description": "Dreams that shape destinies.", "publisher": "Wilson Books", "publishedDate": "2022-05-17" },
+    { "id": 23, "title": "Iron Kingdom", "author": "Adam King", "price": 15.99, "pdfUrl": "/pdffiles/book23.pdf", "cover": "/covers/book23.jpg", "description": "The rise of an unstoppable empire.", "publisher": "KingHouse", "publishedDate": "2023-08-05" },
+    { "id": 24, "title": "Soft Petals", "author": "Eva Rose", "price": 0, "pdfUrl": "/pdffiles/book24.pdf", "cover": "/covers/book24.jpg", "description": "A floral journey of peace.", "publisher": "Rose Publishing", "publishedDate": "2022-02-20" },
+    { "id": 25, "title": "Light of Dawn", "author": "Owen Ford", "price": 9.5, "pdfUrl": "/pdffiles/book25.pdf", "cover": "/covers/book25.jpg", "description": "A warrior's journey to redemption.", "publisher": "Ford Media", "publishedDate": "2024-10-01" },
 
-      "cover": "/covers/book6.jpg",
-      "description": "A romance novel set in ancient times.",
-      "publisher": "Brooks Publishing",
-      "publishedDate": "2023-01-30"
-    },
-    {
-      "id": 7,
-      "title": "The Last Frontier",
-      "author": "Noah Reed",
-      "price": 16.5,
-      "pdfUrl": "https://example.com/files/learning-react.pdf",
+    { "id": 26, "title": "Mountain Echoes", "author": "Aria Bell", "price": 0, "pdfUrl": "/pdffiles/book26.pdf", "cover": "/covers/book26.jpg", "description": "Nature's call for reflection.", "publisher": "Bell Books", "publishedDate": "2021-04-12" },
+    { "id": 27, "title": "The Last Shore", "author": "Caleb Hunt", "price": 18.75, "pdfUrl": "/pdffiles/book27.pdf", "cover": "/covers/book27.jpg", "description": "A maritime journey of bravery.", "publisher": "HuntWorks", "publishedDate": "2025-07-19" },
+    { "id": 28, "title": "Winter's Kiss", "author": "Layla Hart", "price": 0, "pdfUrl": "/pdffiles/book28.pdf", "cover": "/covers/book28.jpg", "description": "A romantic tale in snowy lands.", "publisher": "Hart Media", "publishedDate": "2022-11-13" },
+    { "id": 29, "title": "Desert Storm", "author": "Miles Walker", "price": 22.0, "pdfUrl": "/pdffiles/book29.pdf", "cover": "/covers/book29.jpg", "description": "A fierce battle across dunes.", "publisher": "Walker House", "publishedDate": "2024-06-21" },
+    { "id": 30, "title": "The Quiet Lake", "author": "Hazel Grant", "price": 0, "pdfUrl": "/pdffiles/book30.pdf", "cover": "/covers/book30.jpg", "description": "A peaceful retreat in nature.", "publisher": "Grant Publishing", "publishedDate": "2023-09-02" },
 
-      "cover": "/covers/book7.jpg",
-      "description": "A sci-fi adventure to distant galaxies.",
-      "publisher": "ReedWorks",
-      "publishedDate": "2025-03-14"
-    },
-    {
-      "id": 8,
-      "title": "Gardens of Serenity",
-      "author": "Grace Harper",
-      "price": 8.99,
-      "pdfUrl": "https://example.com/files/learning-react.pdf",
+    { "id": 31, "title": "Phoenix Reborn", "author": "Eric Lane", "price": 10.25, "pdfUrl": "/pdffiles/book31.pdf", "cover": "/covers/book31.jpg", "description": "A hero rises from ashes.", "publisher": "LaneWorks", "publishedDate": "2021-12-23" },
+    { "id": 32, "title": "Quiet Steps", "author": "Maya Torres", "price": 0, "pdfUrl": "/pdffiles/book32.pdf", "cover": "/covers/book32.jpg", "description": "A gentle guide to mindfulness.", "publisher": "Torres Books", "publishedDate": "2024-03-11" },
+    { "id": 33, "title": "Red Snowfall", "author": "Peter Knox", "price": 17.45, "pdfUrl": "/pdffiles/book33.pdf", "cover": "/covers/book33.jpg", "description": "A chilling mystery unfolds.", "publisher": "Knox Publishing", "publishedDate": "2025-01-09" },
+    { "id": 34, "title": "Faded Letters", "author": "Zoey Hill", "price": 0, "pdfUrl": "/pdffiles/book34.pdf", "cover": "/covers/book34.jpg", "description": "Lost messages from the heart.", "publisher": "Hill Media", "publishedDate": "2022-07-30" },
+    { "id": 35, "title": "Fire Within", "author": "Blake Stone", "price": 19.0, "pdfUrl": "/pdffiles/book35.pdf", "cover": "/covers/book35.jpg", "description": "A tale of burning ambition.", "publisher": "Stone Publishing", "publishedDate": "2024-02-17" },
 
-      "cover": "/covers/book8.jpg",
-      "description": "A calming book about inner peace.",
-      "publisher": "HarperLeaf",
-      "publishedDate": "2021-07-11"
-    },
-    {
-      "id": 9,
-      "title": "The Time Weaver",
-      "author": "Elijah Stone",
-      "price": 17.99,
-      "pdfUrl": "https://example.com/files/learning-react.pdf",
+    { "id": 36, "title": "Sunset Trails", "author": "Nina Blair", "price": 0, "pdfUrl": "/pdffiles/book36.pdf", "cover": "/covers/book36.jpg", "description": "A journey during golden hours.", "publisher": "Blair Press", "publishedDate": "2023-01-14" },
+    { "id": 37, "title": "Cold Ember", "author": "Logan Pierce", "price": 8.75, "pdfUrl": "/pdffiles/book37.pdf", "cover": "/covers/book37.jpg", "description": "A tale of frozen destiny.", "publisher": "Pierce House", "publishedDate": "2022-05-09" },
+    { "id": 38, "title": "Harmony Fields", "author": "Ruby Dean", "price": 0, "pdfUrl": "/pdffiles/book38.pdf", "cover": "/covers/book38.jpg", "description": "Nature and peace intertwined.", "publisher": "DeanWorks", "publishedDate": "2024-08-27" },
+    { "id": 39, "title": "Twilight Blade", "author": "Sean Woods", "price": 13.35, "pdfUrl": "/pdffiles/book39.pdf", "cover": "/covers/book39.jpg", "description": "A warrior faces the unknown.", "publisher": "Woods Publishing", "publishedDate": "2023-10-30" },
+    { "id": 40, "title": "Hidden Forest", "author": "Ivy Brooks", "price": 0, "pdfUrl": "/pdffiles/book40.pdf", "cover": "/covers/book40.jpg", "description": "Mysteries among the trees.", "publisher": "Brooks House", "publishedDate": "2021-09-18" },
 
-      "cover": "/covers/book9.jpg",
-      "description": "A time travel novel with amazing depth.",
-      "publisher": "StoneBridge",
-      "publishedDate": "2024-12-02"
-    },
-    {
-      "id": 10,
-      "title": "Breaking Boundaries",
-      "author": "Mia Collins",
-      "price": 10.75,
-      "pdfUrl": "https://example.com/files/learning-react.pdf",
+    { "id": 41, "title": "Beyond Steel", "author": "Cole Rivers", "price": 22.4, "pdfUrl": "/pdffiles/book41.pdf", "cover": "/covers/book41.jpg", "description": "A future ruled by metal.", "publisher": "Rivers Media", "publishedDate": "2025-04-02" },
+    { "id": 42, "title": "Soft Lullabies", "author": "Ella Frost", "price": 0, "pdfUrl": "/pdffiles/book42.pdf", "cover": "/covers/book42.jpg", "description": "Poems for the gentle soul.", "publisher": "Frost Books", "publishedDate": "2023-11-11" },
+    { "id": 43, "title": "Iron Waves", "author": "Chase Knight", "price": 11.65, "pdfUrl": "/pdffiles/book43.pdf", "cover": "/covers/book43.jpg", "description": "Battles at sea and sky.", "publisher": "Knight Media", "publishedDate": "2024-12-25" },
+    { "id": 44, "title": "The Light Inside", "author": "Hannah Wells", "price": 0, "pdfUrl": "/pdffiles/book44.pdf", "cover": "/covers/book44.jpg", "description": "A discovery of inner strength.", "publisher": "Wells House", "publishedDate": "2022-03-15" },
+    { "id": 45, "title": "Frozen Wings", "author": "Jordan Blake", "price": 15.5, "pdfUrl": "/pdffiles/book45.pdf", "cover": "/covers/book45.jpg", "description": "A struggle against icy fate.", "publisher": "BlakeWorks", "publishedDate": "2023-06-12" },
 
-      "cover": "/covers/book10.jpg",
-      "description": "How to overcome limitations and thrive.",
-      "publisher": "Collins Media",
-      "publishedDate": "2023-09-25"
-    }
+    { "id": 46, "title": "Quiet Mountain", "author": "Harper Quinn", "price": 0, "pdfUrl": "/pdffiles/book46.pdf", "cover": "/covers/book46.jpg", "description": "A mindful hike into silence.", "publisher": "Quinn Press", "publishedDate": "2024-04-27" },
+    { "id": 47, "title": "Burning Sands", "author": "Ryan Gray", "price": 18.75, "pdfUrl": "/pdffiles/book47.pdf", "cover": "/covers/book47.jpg", "description": "A journey across dangerous deserts.", "publisher": "Gray Media", "publishedDate": "2025-02-08" },
+    { "id": 48, "title": "Petals of Time", "author": "Chloe Adams", "price": 0, "pdfUrl": "/pdffiles/book48.pdf", "cover": "/covers/book48.jpg", "description": "Moments frozen in memory.", "publisher": "Adams Press", "publishedDate": "2023-08-19" },
+    { "id": 49, "title": "Starfall Legacy", "author": "Theo Knight", "price": 12.45, "pdfUrl": "/pdffiles/book49.pdf", "cover": "/covers/book49.jpg", "description": "A legacy written in the stars.", "publisher": "Knight Publishing", "publishedDate": "2024-01-04" },
+    { "id": 50, "title": "Dreams of Tomorrow", "author": "Emily Foster", "price": 9.25, "pdfUrl": "/pdffiles/book50.pdf", "cover": "/covers/book50.jpg", "description": "A futuristic story of innovation.", "publisher": "Foster Future", "publishedDate": "2025-01-18" }
   ]
 }

@@ -88,7 +88,7 @@ export default function AuthPage() {
         <input
           type="text"
           placeholder="Full Name"
-          className="w-full rounded-lg border border-gray-300 py-2 pl-5 transition focus:ring-2 focus:ring-green-500 focus:outline-none mb-4"
+          className="w-full rounded-lg border border-gray-300 py-2 pl-5 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
           onChange={(e) =>
             setSignupData({ ...signupData, name: e.target.value })
           }
@@ -97,7 +97,7 @@ export default function AuthPage() {
         <input
           type="email"
           placeholder="Email"
-          className="w-full rounded-lg border border-gray-300 py-2 pl-5 transition focus:ring-2 focus:ring-green-500 focus:outline-none mb-4"
+          className="w-full rounded-lg border border-gray-300 py-2 pl-5 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
           onChange={(e) =>
             setSignupData({ ...signupData, email: e.target.value })
           }
@@ -107,7 +107,7 @@ export default function AuthPage() {
           <input
             type={showSignupPassword ? "text" : "password"}
             placeholder="Password"
-            className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-green-500 focus:outline-none mb-4"
+            className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
             onChange={(e) =>
               setSignupData({ ...signupData, password: e.target.value })
             }
@@ -124,7 +124,7 @@ export default function AuthPage() {
 
         <button
           onClick={handleSignup}
-          className="w-full bg-blue-600 text-white py-3 rounded"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded"
         >
           Sign Up
         </button>
@@ -132,12 +132,12 @@ export default function AuthPage() {
 
       {/* LOGIN FORM */}
       <div>
-        <h2 className="text-2xl font-bold mb-4 text-green-600">Login</h2>
+        <h2 className="text-2xl font-bold mb-4 text-blue-600">Login</h2>
 
         <input
           type="email"
           placeholder="Email"
-          className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-green-500 focus:outline-none mb-4"
+          className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
           onChange={(e) =>
             setLoginData({ ...loginData, email: e.target.value })
           }
@@ -147,7 +147,7 @@ export default function AuthPage() {
           <input
             type={showLoginPassword ? "text" : "password"}
             placeholder="Password"
-            className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-green-500 focus:outline-none mb-4"
+            className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
             onChange={(e) =>
               setLoginData({ ...loginData, password: e.target.value })
             }
@@ -164,7 +164,7 @@ export default function AuthPage() {
 
         <button
           onClick={handleLogin}
-          className="w-full bg-green-600 text-white py-3 rounded"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded"
         >
           Login
         </button>

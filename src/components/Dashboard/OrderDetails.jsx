@@ -1,0 +1,166 @@
+import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { FiClock, FiLoader, FiCheckCircle } from "react-icons/fi";
+
+export default function OrderDetails() {
+  const { id } = useParams();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        const res = await fetch("http://localhost:5001/purchased");
+        const data = await res.json();
+        const arr = data.purchased || data;
+
+        if (id) {
+          const found = arr.find((o) => o.id == id);
+          setOrder(found || null);
+        }
+
+        setTimeout(() => setLoading(false), 800);
+      } catch (error) {
+        console.error("Error fetching order:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [id]);
+
+  // ⭐ SAME BADGE AS ORDERS TAB
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "pending":
+        return (
+          <span className="flex items-center gap-1 text-yellow-600 bg-yellow-100 px-2 py-1 text-xs rounded">
+            <FiClock /> Pending
+          </span>
+        );
+      case "active":
+      case "processing":
+        return (
+          <span className="flex items-center gap-1 text-blue-600 bg-blue-100 px-2 py-1 text-xs rounded">
+            <FiLoader /> {status}
+          </span>
+        );
+      case "completed":
+        return (
+          <span className="flex items-center gap-1 text-green-600 bg-green-100 px-2 py-1 text-xs rounded">
+            <FiCheckCircle /> Completed
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">
+            {status}
+          </span>
+        );
+    }
+  };
+
+  // ❌ No ID
+  if (!id) {
+    return (
+      <div className="p-6 text-center border border-gray-200 rounded-lg shadow-md">
+        <h1 className="text-xl font-bold">Order Details</h1>
+        <p className="text-gray-500 mt-3">No order selected.</p>
+      </div>
+    );
+  }
+
+  // 🔄 Loading Spinner
+  if (loading) {
+    return (
+      <div className="flex  border border-gray-300 shadow-md  rounded-lg justify-center items-center py-10">
+        <svg className="h-12 w-12 animate-spin text-blue-600" viewBox="0 0 50 50">
+          <circle className="opacity-25" cx="25" cy="25" r="20" stroke="currentColor" strokeWidth="5" fill="none" />
+          <circle className="opacity-75" cx="25" cy="25" r="20" stroke="currentColor" strokeWidth="5" strokeDasharray="31.4 188.4" strokeLinecap="round" fill="none" />
+        </svg>
+      </div>
+    );
+  }
+
+  // ❌ Order Not Found
+  if (!order) {
+    return (
+      <div className="p-6 text-center">
+        <h1 className="text-xl font-bold">Order Details</h1>
+        <p className="text-red-500 mt-3">Order not found.</p>
+      </div>
+    );
+  }
+
+  // 📅 Format Date
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
+  return (
+    <div className="p-2">
+      <h1 className="text-xl font-semibold mb-4">Order Details</h1>
+
+      <div className="p-5 border rounded-xl shadow-sm hover:shadow-md transition bg-white">
+        
+        {/* IMAGE + DETAILS */}
+        <div className="flex flex-col md:flex-row gap-5">
+
+          <img
+            src={order.cover}
+            className="lg:w-32 md:w-32 w-full lg:h-44 md:h-32 h-auto object-cover rounded-md shadow"
+            alt={order.title}
+          />
+
+          <div className="flex-1">
+            <div className="flex lg:flex-row md:flex-row flex-col lg:justify-between md:justify-between items-start lg:items-center md:items-center">
+              
+              <h2 className="lg:text-lg md:text-lg text-[20px] font-bold">{order.title}</h2>
+
+              {/* ⭐ STATUS BADGE */}
+              <div className="mt-2">{getStatusBadge(order.status)}</div>
+            </div>
+
+            <p className="text-sm text-gray-500">by {order.author}</p>
+
+            <p className="mt-2">
+              <span className="text-sm text-gray-600">Price: </span>
+              <span className="font-semibold">${order.price}</span>
+            </p>
+
+            <p className="mt-1">
+              <span className="text-sm text-gray-600">Payment Method: </span>
+              {order.paymentmethod}
+            </p>
+
+            <p className="mt-2 flex items-center">
+              <span className="text-sm text-gray-600">Date: </span>
+              <span className="ml-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow">
+                {formatDate(order.timestamp)}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* ID + BACK BUTTON */}
+        <div className="flex flex-col gap-2 lg:flex-row md:flex-row justify-between mt-5">
+          <div className="flex gap-1 border border-gray-300 px-2 py-1 rounded-md shadow-md mt-2">
+            <span>Order ID:</span>
+            <span>#{order.id}</span>
+          </div>
+
+          <button
+            onClick={() => window.history.back()}
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
+          >
+            Back to Orders
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}

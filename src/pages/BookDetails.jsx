@@ -19,7 +19,7 @@ export default function BookDetails() {
 
 
   useEffect(() => {
-    fetch(`http://localhost:5000/books`) // Adjust this URL to your API endpoint
+    fetch(`http://localhost:5100/books`) // Adjust this URL to your API endpoint
       .then((res) => res.json())
       .then((data) => {
         const found = data.find((b) => slugify(b.title) === title);

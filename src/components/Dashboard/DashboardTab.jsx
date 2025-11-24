@@ -1,0 +1,80 @@
+    import { useEffect, useState } from "react";
+    import { FiDownload, FiClock, FiLoader, FiPackage } from "react-icons/fi";
+
+    export default function DashboardTab() {
+    const [downloads, setDownloads] = useState(0);
+    const [pending, setPending] = useState(0);
+    const [active, setActive] = useState(0);
+    const [totalOrders, setTotalOrders] = useState(0);
+
+    useEffect(() => {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user) return;
+
+        // Fetch Orders
+        fetch("http://localhost:5001/purchased")
+        .then((res) => res.json())
+        .then((data) => {
+            const arr = data.purchased || data;
+            const userOrders = arr.filter((o) => o.email === user.email);
+
+            setPending(userOrders.filter((o) => o.status === "pending").length);
+            setActive(
+            userOrders.filter(
+                (o) => o.status === "active" || o.status === "processing"
+            ).length
+            );
+            setTotalOrders(userOrders.length);
+        });
+
+        // Fetch Downloads
+        fetch("http://localhost:5003/downloads")
+        .then((res) => res.json())
+        .then((data) => {
+            const userDownloads = data.filter((d) => d.userId === user.id);
+            setDownloads(userDownloads.length);
+        });
+    }, []);
+
+    return (
+        <div>
+        <h1 className="text-2xl font-semibold mb-6">Welcome to your dashboard</h1>
+
+        {/* GRID BOXES */}
+        <div className="w-full flex justify-center">
+
+        <div className="flex gap-5 w-full    lg:flex-row md:flex-row flex-col">
+
+            {/* DOWNLOADS */}
+            <div className="bg-white border shadow p-3 w-full  rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition">
+            <FiDownload className="text-4xl text-blue-500 mb-2" />
+            <p className="text-3xl font-bold text-blue-600">{downloads}</p>
+            <p className="text-gray-600   mt-1">Downloaded Books</p>
+            </div>
+
+            {/* PENDING */}
+            <div className="bg-white border shadow p-5 w-full rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition">
+            <FiClock className="text-4xl text-blue-500 mb-2" />
+            <p className="text-3xl font-bold text-blue-600">{pending}</p>
+            <p className="text-gray-600 mt-1">Pending Orders</p>
+            </div>
+
+            {/* ACTIVE */}
+            <div className="bg-white border shadow p-5 w-full rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition">
+            <FiLoader className="text-4xl text-blue-500 mb-2" />
+            <p className="text-3xl font-bold text-blue-600">{active}</p>
+            <p className="text-gray-600 mt-1">Active Orders</p>
+            </div>
+
+            {/* TOTAL ORDERS */}
+            <div className="bg-white border shadow p-5 w-full  rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition">
+            <FiPackage className="text-4xl text-blue-500 mb-2" />
+            <p className="text-3xl font-bold text-blue-600">{totalOrders}</p>
+            <p className="text-gray-600 mt-1">Total Orders</p>
+            </div>
+
+        </div>
+        </div>
+        </div>
+    );
+    }

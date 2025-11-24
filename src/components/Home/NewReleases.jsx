@@ -1,56 +1,65 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 export default function NewReleases() {
   const [booksData, setBooksData] = useState([]);
-  const [loading, setLoading] = useState(true);  // Loading state
+  const [loading, setLoading] = useState(true);
+
   const slugify = (text) => {
-    return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
+    return text
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^\w\-]+/g, "");
   };
 
-  // Fetch books data
-useEffect(() => {
-  fetch('http://localhost:5000/books')  // Adjust the URL as per your API endpoint
-    .then((response) => response.json())
-    .then((data) => {
-      console.log('API Response:', data);  // Log the response to check its structure
-      if (Array.isArray(data)) {
-        setBooksData(data);  // If it's an array, directly set it to state
-      } else if (data && data.books) {
-        setBooksData(data.books);  // If books are inside a 'books' key
-      } else {
-        console.error('No books data found.');
-      }
-      setLoading(false);
-    })
-    .catch((error) => {
-      console.error('Error fetching books:', error);
-      setLoading(false);
-    });
-}, []);
-
-
+  useEffect(() => {
+    fetch("http://localhost:5100/books")
+      .then((response) => response.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setBooksData(data);
+        } else if (data && data.books) {
+          setBooksData(data.books);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching books:", error);
+        setLoading(false);
+      });
+  }, []);
 
   if (loading) {
-    return <div>Loading...</div>;  // Show a loading indicator
+    return <div>Loading...</div>;
   }
 
-  // Limiting to 4 books only
-  const limitedBooks = booksData.slice(0, 4);
+  // ✅ Sort by publishedDate (newest → oldest)
+  const newestBooks = [...booksData]
+    .sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate))
+    .slice(0, 4);
+
+  const sortedAll = [...booksData].sort(
+    (a, b) => new Date(b.publishedDate) - new Date(a.publishedDate)
+  );
+
+  // ☑ Ka qaado inta new releases aad rabto (tusaale: 12)
+  const latestBooks = sortedAll.slice(0, 12);
 
   return (
     <div className="w-full mt-10">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">New Releases</h2>
-        <Link to="/all-new-releases" className="text-blue-600 hover:underline">
-          View All ({booksData.length})
+        <h2 className="text-2xl ml-0 font-bold text-blue-600 tracking-tight">New Releases</h2>
+        <Link to="/all-new-releases" className="text-blue-600 border border-gray-300 px-2 py-1 shadow-md hover:shadow-lg rounded-md">
+          View All ({latestBooks.length})
         </Link>
       </div>
 
-      {/* Book Grid Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {limitedBooks.map((book) => (
-          <div key={book.id} className="bg-white rounded-lg shadow-lg p-3 transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
+        {newestBooks.map((book) => (
+          <div
+            key={book.id}
+            className="bg-white rounded-lg shadow-lg p-3 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+          >
             <Link to={`/book/${slugify(book.title)}`} className="block">
               <img
                 src={book.cover}
@@ -60,7 +69,9 @@ useEffect(() => {
               <div className="mt-4">
                 <h3 className="text-lg font-semibold">{book.title}</h3>
                 <p className="text-gray-600 text-sm">{book.author}</p>
-                <p className="text-blue-600 font-semibold mt-2">${book.price}</p>
+                <p className="text-blue-600 font-bold mt-2">
+                  {book.price === 0 ? "Free" : `Price: $${book.price}`}
+                </p>
               </div>
             </Link>
           </div>
