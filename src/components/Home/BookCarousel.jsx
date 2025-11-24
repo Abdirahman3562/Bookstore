@@ -13,6 +13,8 @@ export default function BookCarousel() {
   const [booksData, setBooksData] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+    const [allBooksData, setAllBooksData] = useState([]);  // Holds all books
+
 
   useEffect(() => {
     fetch("http://localhost:5100/books")
@@ -20,7 +22,10 @@ export default function BookCarousel() {
       .then((data) => {
         // 👉 Kaliya soo qaado 10 buug
         const limitedBooks = data.slice(0, 10);
+        const Allbooks = data; // For all books
         setBooksData(limitedBooks);
+        setAllBooksData(Allbooks); // Store all books in state
+
         setLoading(false);
       })
       .catch((error) => {
@@ -70,7 +75,7 @@ export default function BookCarousel() {
             to="/books"
             className="text-blue-600 border border-gray-300 px-2 py-1 shadow-md hover:shadow-lg rounded-md"
           >
-            View All ({booksData.length})
+            View All ({allBooksData.length})
           </Link>
 
           {/* Buttons */}
