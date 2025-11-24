@@ -21,12 +21,15 @@ import OrderDetails from "./components/Dashboard/OrderDetails";
 import DiscountAlert from "./components/Home/DiscountAlert";
 import AccountDetails from "./components/Dashboard/AccountDetails";
 import AllNewReleases from "./pages/AllNewReleases";
+import AdPopup from "./components/Home/AdPopup";
 
 function App() {
   return (
     <div className="w-full max-w-5xl mx-auto mt-2">
       <DiscountAlert />
       <Navbar />
+
+       <AdPopup />
 
       <Toaster position="top-right" />
       <Routes>

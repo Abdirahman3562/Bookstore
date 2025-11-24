@@ -55,7 +55,7 @@ export default function About() {
       {/* TEAM / FOUNDER CARD */}
       <section className="px-6 lg:px-20 pb-20">
         <div
-          className="max-w-[48rem] mx-auto bg-white hover:shadow-lg border border-gray-200 
+          className="max-w-6xl mx-auto bg-white hover:shadow-lg border border-gray-200 
                   rounded-xl shadow-md p-6 flex flex-col md:flex-row items-center gap-6"
         >
           {/* IMAGE */}
