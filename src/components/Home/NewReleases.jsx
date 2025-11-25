@@ -47,7 +47,7 @@ export default function NewReleases() {
 
   return (
     <div className="w-full mt-10">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 p-4">
         <h2 className="text-2xl ml-0 font-bold text-blue-600 tracking-tight">New Releases</h2>
         <Link to="/all-new-releases" className="text-blue-600 border border-gray-300 px-2 py-1 shadow-md hover:shadow-lg rounded-md">
           View All ({latestBooks.length})

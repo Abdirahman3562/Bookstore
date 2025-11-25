@@ -33,3 +33,28 @@
 .animate-slideUp {
   animation: slideUp 0.5s ease-in forwards;
 }
+
+
+
+/* resources/css/scrollbar.css */
+
+.scrollbar-hide {
+  -ms-overflow-style: none;     /* IE/Edge */
+  scrollbar-width: none;        /* Firefox */
+  scrollbar-gutter: stable;     /* optional */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+
+
+
+@media print{
+    .noPrint{
+        display:none !important;
+    }
+
+}

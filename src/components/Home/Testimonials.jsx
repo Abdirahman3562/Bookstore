@@ -1,0 +1,94 @@
+import React, { useEffect, useState } from "react";
+import { FaQuoteRight, FaStar } from "react-icons/fa";
+
+export default function Testimonials() {
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+ useEffect(() => {
+  fetch("http://localhost:5004/Testimonials")
+    .then((res) => res.json())
+    .then((data) => {
+      // Haddii ay array tahay
+      if (Array.isArray(data)) {
+        setTestimonials(data);
+      }
+      // Haddii ay object tahay oo ay leedahay key-ga Testimonials
+      else if (data.Testimonials) {
+        setTestimonials(data.Testimonials);
+      } 
+      // fallback empty
+      else {
+        setTestimonials([]);
+      }
+
+      setLoading(false);
+    })
+    .catch(() => {
+      setError(true);
+      setLoading(false);
+    });
+}, []);
+
+
+  if (loading) return <p className="text-center text-gray-600">Loading testimonials...</p>;
+  if (error) return <p className="text-center text-red-500">Failed to load testimonials.</p>;
+
+  return (
+    <section className="py-20">
+      <div className="max-w-7xl mx-auto px-6">
+
+        {/* Header */}
+        <div className="text-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-blue-600">
+            What Book Lovers Say
+          </h2>
+          <div className="mt-2 h-1 w-24 bg-blue-600 rounded-full mx-auto"></div>
+        </div>
+
+        {/* Testimonials Grid */}
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {testimonials.map((t) => (
+            <div
+              key={t.id}
+              className="bg-[#edf4f5] border border-gray-200 hover:border-blue-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition relative"
+            >
+              {/* Stars */}
+              <div className="flex gap-1 text-blue-600 mb-3">
+                {[...Array(5)].map((_, idx) => (
+                  <FaStar key={idx} />
+                ))}
+              </div>
+
+              {/* Tag */}
+              <span className="inline-block text-xs font-semibold text-blue-600 bg-emerald-50 px-3 py-1 rounded-full mb-4">
+                {t.tag}
+              </span>
+
+              {/* Quote */}
+              <p className="text-gray-700 italic leading-relaxed relative">
+                “{t.quote}”
+              </p>
+              <FaQuoteRight className="absolute text-5xl text-gray-200 top-4 right-4" />
+
+              {/* Author */}
+              <div className="flex items-center gap-4 mt-6">
+                <img
+                  src={t.img}
+                  alt={t.name}
+                  className="w-12 h-12 rounded-full object-cover "
+                />
+                <div>
+                  <h4 className="font-bold text-gray-900">{t.name}</h4>
+                  <p className="text-sm text-gray-500">{t.role}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </section>
+  );
+}

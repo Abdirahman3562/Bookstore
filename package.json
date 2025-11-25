@@ -8,15 +8,19 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "concurrently \"npm run server:books\" \"npm run server:purchased\" \"npm run server:user\" \"npm run server:downloads\" \"npm run dev\"",
+    "start": "concurrently \"npm run server:books\" \"npm run server:purchased\" \"npm run server:user\" \"npm run server:downloads\" \"npm run server:Testimonials\" \"npm run server:authors\" \"npm run server:blogs\" \"npm run dev\"",
     "server:books": "json-server --watch src/data/books.json --port 5100  --host 0.0.0.0",
     "server:purchased": "json-server --watch src/data/purchased.json --port 5001 --host 0.0.0.0",
     "server:user": "json-server --watch src/data/users.json --port 5002 --host 0.0.0.0",
-    "server:downloads": "json-server --watch src/data/downloads.json --port 5003 --host 0.0.0.0"
+    "server:downloads": "json-server --watch src/data/downloads.json --port 5003 --host 0.0.0.0",
+    "server:Testimonials": "json-server --watch src/data/Testimonials.json --port 5004 --host 0.0.0.0",
+    "server:authors": "json-server --watch src/data/authors.json --port 5005 --host 0.0.0.0",
+    "server:blogs": "json-server --watch src/data/blogs.json --port 5006 --host 0.0.0.0"
   },
   "dependencies": {
     "concurrently": "^9.2.1",
     "json-server": "^1.0.0-beta.3",
+    "lucide-react": "^0.554.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",

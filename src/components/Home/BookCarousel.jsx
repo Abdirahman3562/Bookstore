@@ -60,7 +60,7 @@ export default function BookCarousel() {
 
   return (
     <div className="relative w-full mt-10  mb-20">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex lg:flex-row md:flex-row flex-col justify-between lg:items-center md:items-center lg:ml-0 md:ml-0 ml-4 mb-4">
         <div className="mb-4">
           <h1 className="text-3xl font-bold text-blue-600 tracking-tight">
             Books
@@ -70,7 +70,7 @@ export default function BookCarousel() {
           </p>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 justify-end mr-4">
           <Link
             to="/books"
             className="text-blue-600 border border-gray-300 px-2 py-1 shadow-md hover:shadow-lg rounded-md"

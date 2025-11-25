@@ -1,0 +1,52 @@
+{
+  "Testimonials": [
+    {
+      "id": 1,
+      "name": "Amina Warsame",
+      "role": "Buug-jecel / Reader",
+      "tag": "Buugaag tayo sare leh",
+      "img": "https://randomuser.me/api/portraits/women/44.jpg",
+      "quote": "BookStore-ka wuxuu noqday meesha aan ugu jecelahay inaan buugaagta ka iibsado. Buug kasta oo aan qaaday wuxuu ahaa mid cusub, nadiif ah, oo qiimo jaban leh."
+    },
+    {
+      "id": 2,
+      "name": "Abdi Fatah Ali",
+      "role": "Ebook Reader",
+      "tag": "Ebooks fudud oo si degdeg ah loo helo",
+      "img": "https://randomuser.me/api/portraits/men/41.jpg",
+      "quote": "Waxaan jeclahay sida ay ebooks-ka degdeg u soo dhacaan marka aan iibsado. Website-ku waa mid sahlan, akhriskana wuu fududeeyaa."
+    },
+    {
+      "id": 3,
+      "name": "Huda Mohamed",
+      "role": "Student",
+      "tag": "Buugaag waxbarasho qiimo fiican",
+      "img": "https://randomuser.me/api/portraits/women/31.jpg",
+      "quote": "Waxaan ka helay buugaag aan jaamacadda ugu baahnaa adigoo qiimo dhimis fiican wata. BookStore runtii wuu iga badbaadiyay waqti iyo kharash."
+    },
+    {
+      "id": 4,
+      "name": "Mohamed Farah",
+      "role": "Writer & Researcher",
+      "tag": "Adeeg macmiil aad u wanaagsan",
+      "img": "https://randomuser.me/api/portraits/men/53.jpg",
+      "quote": "Markii buug aan dalbaday dib u dhac ku yimid, adeegga macmiilka ayaa si degdeg ah ii caawiyay. Aad baan ugu qancay sida ay u daryeelaan macaamiisha."
+    },
+    {
+      "id": 5,
+      "name": "Khadra Abdullahi",
+      "role": "Book Collector",
+      "tag": "Noocyo buugaag badan",
+      "img": "https://randomuser.me/api/portraits/women/55.jpg",
+      "quote": "BookStore wuxuu leeyahay buugaag aad u fara badan — laga bilaabo novel ilaa buugaag horumarineed. Mar kasta waxaan ka helaa wax cusub."
+    },
+    {
+      "id": 6,
+      "name": "Sahal Osman",
+      "role": "Casual Reader",
+      "tag": "Delivery degdeg ah",
+      "img": "https://randomuser.me/api/portraits/men/22.jpg",
+      "quote": "Runtii waan ka yaabay sida degdegga ah ee buugaagtu ii soo gaareen. Adeegga waa heer caalami!"
+    }
+  ]
+}

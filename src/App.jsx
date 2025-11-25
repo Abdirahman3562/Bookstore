@@ -22,14 +22,19 @@ import DiscountAlert from "./components/Home/DiscountAlert";
 import AccountDetails from "./components/Dashboard/AccountDetails";
 import AllNewReleases from "./pages/AllNewReleases";
 import AdPopup from "./components/Home/AdPopup";
+import AuthorPage from "./pages/AuthorPage";
+import BlogPage from "./pages/BlogPage";
+import SinglePostPage from "./pages/SinglePostPage";
+import ScrollToTop from "./pages/ScrollToTop"
 
 function App() {
   return (
     <div className="w-full max-w-5xl mx-auto mt-2">
+        <ScrollToTop />
       <DiscountAlert />
       <Navbar />
 
-       <AdPopup />
+      <AdPopup />
 
       <Toaster position="top-right" />
       <Routes>
@@ -39,6 +44,9 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/books" element={<Books />} />
         <Route path="/book/:title" element={<BookDetails />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:title" element={<SinglePostPage />} />
+        <Route path="/u/:username" element={<AuthorPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/all-new-releases" element={<AllNewReleases />} />

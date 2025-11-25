@@ -117,6 +117,13 @@ export default function Navbar() {
         >
           About
         </NavLink>
+
+         <NavLink
+          to="/blog"
+          className={({ isActive }) => (isActive ? activeClass : normalClass)}
+        >
+          Blog
+        </NavLink>
         <NavLink
           to="/contact"
           className={({ isActive }) => (isActive ? activeClass : normalClass)}
@@ -205,6 +212,19 @@ export default function Navbar() {
             >
               About
             </NavLink>
+
+            <NavLink
+              to="/blog"
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                isActive
+                  ? "border-b-2 w-[50px] border-blue-600 text-blue-600 font-bold pb-1"
+                  : "text-gray-600 hover:text-blue-600 pb-1"
+              }
+            >
+              Blog
+            </NavLink>
+
             <NavLink
               to="/contact"
               onClick={() => setMenuOpen(false)}
