@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'; // You can replace with actual link to 
 
 export default function EbookAd() {
   return (
-    <div className="bg-blue-100 lg:p-4 md:p-4 px-6 rounded-lg shadow-lg max-w-6xl mx-auto mt-5">
+    <div className="bg-blue-100 lg:p-4 md:p-4 px-6 rounded-lg shadow-lg  mt-5">
       <div className="flex flex-col lg:flex-row items-center mt-6">
         {/* Text Section */}
         <div className="flex flex-col lg:mr-8 order-2 lg:order-1">

@@ -46,7 +46,7 @@ export default function NewReleases() {
   const latestBooks = sortedAll.slice(0, 12);
 
   return (
-    <div className="w-full mt-10">
+    <div className="w-full mt-10 px-4 lg:px-0 md:px-0">
       <div className="flex justify-between items-center mb-6 p-4">
         <h2 className="text-2xl ml-0 font-bold text-blue-600 tracking-tight">New Releases</h2>
         <Link to="/all-new-releases" className="text-blue-600 border border-gray-300 px-2 py-1 shadow-md hover:shadow-lg rounded-md">
@@ -58,7 +58,7 @@ export default function NewReleases() {
         {newestBooks.map((book) => (
           <div
             key={book.id}
-            className="bg-white rounded-lg shadow-lg p-3 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+            className="bg-white border border-gray-200   rounded-lg shadow-lg p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
           >
             <Link to={`/book/${slugify(book.title)}`} className="block">
               <img

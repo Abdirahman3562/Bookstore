@@ -76,7 +76,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="w-full bg-white shadow p-4 flex justify-between items-center relative">
+    <nav className="w-full max-w-8xl    bg-white shadow p-4 flex justify-between items-center relative">
       <NavLink to="/" className="text-2xl font-bold text-blue-600">
         BookStore
       </NavLink>

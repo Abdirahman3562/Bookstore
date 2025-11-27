@@ -2,7 +2,7 @@ import { FaApple, FaGooglePlay } from "react-icons/fa";
 
 export default function AppDownloadBanner() {
   return (
-    <div className="bg-[#2563eb] mt-10 py-8 px-4 text-center text-white">
+    <div className="bg-[#2563eb] rounded-md mt-10 py-8 px-2 m-4 lg:m-0 md:m-0 text-center text-white">
       <h2 className="text-base sm:text-lg md:text-xl font-semibold mb-6 max-w-2xl mx-auto">
         Read your Bookshop.org ebooks anytime, anywhere with the free
         Bookshop.org apps for iOS and Android.

@@ -106,7 +106,7 @@ export default function BookCarousel() {
         </div>
       </div>
 
-      <div className="overflow-hidden w-full">
+      <div className="overflow-hidden px-4 lg:px-0 md:px-0 w-full">
         <div
           className="flex transition-transform duration-500 ease-in-out py-4"
           style={{

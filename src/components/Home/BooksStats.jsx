@@ -32,10 +32,10 @@ export default function BooksStats() {
   const countBuy = useCountUp(ready ? buyBooks : 0);
 
   const box =
-    "bg-white border shadow hover:shadow-md  p-5 w-full rounded-xl flex flex-col items-center justify-center";
+    "bg-white  border shadow hover:shadow-md   px-5 py-5 w-full rounded-xl flex flex-col items-center justify-center";
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mx-auto mt-10">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6  lg:p-0 md:p-0 p-4 mx-auto mt-10">
 
       {/* ALL BOOKS */}
       <div className={box}>

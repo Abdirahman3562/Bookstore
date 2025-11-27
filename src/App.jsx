@@ -29,8 +29,9 @@ import ScrollToTop from "./pages/ScrollToTop"
 
 function App() {
   return (
-    <div className="w-full max-w-5xl mx-auto mt-2">
-        <ScrollToTop />
+  
+    <div className="w-full max-w-7xl mx-auto">
+           <ScrollToTop />
       <DiscountAlert />
       <Navbar />
 
@@ -87,8 +88,12 @@ function App() {
         />
       </Routes>
 
-      <Footer />
+                <Footer />
+
+
+   
     </div>
+
   );
 }
 

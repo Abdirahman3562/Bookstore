@@ -22,7 +22,7 @@ export default function HeroSlider() {
   }, []);
 
   return (
-    <div className=" w-full overflow-hidden">
+    <div className=" w-full  rounded-md overflow-hidden">
       {/* Sawirka hadda la muujinayo */}
       <img
         src={images[currentIndex]}
@@ -31,11 +31,11 @@ export default function HeroSlider() {
       />
 
       {/* Indicator (dhibcaha) */}
-      <div className="absolute lg:top-[72%] md:top-[72%] top-[47%] left-1/2 transform -translate-x-1/2 flex space-x-2">
+      <div className="absolute lg:top-[68%] md:top-[72%] top-[55%] xl:top-[46%] left-1/2 transform -translate-x-1/2 flex space-x-2">
         {images.map((_, index) => (
           <span
             key={index}
-            className={`w-3 h-3 rounded-full ${currentIndex === index ? 'bg-[#2563eb]' : 'bg-gray-600'}`}
+            className={`w-3 h-3 rounded-full ${currentIndex === index ? 'bg-[#2563eb]' : 'bg-gray-200'}`}
           ></span>
         ))}
       </div>
