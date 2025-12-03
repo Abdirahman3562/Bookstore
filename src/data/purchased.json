@@ -47,6 +47,22 @@
       "pdfUrl": "/pdffiles/book1.pdf",
       "status": "active",
       "timestamp": "2025-11-26T12:51:43.772Z"
+    },
+    {
+      "id": "1764618133785",
+      "userId": "e2bd",
+      "userName": "samafale",
+      "email": "samafale@gmail.com",
+      "bookId": "1",
+      "title": "Echoes of Eternity",
+      "author": "Liam Carter",
+      "cover": "/covers/book1.jpg",
+      "price": 14.99,
+      "paymentmethod": "EVC Plus",
+      "isFree": false,
+      "pdfUrl": "/pdffiles/book1.pdf",
+      "status": "active",
+      "timestamp": "2025-12-01T19:42:13.785Z"
     }
   ]
 }

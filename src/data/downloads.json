@@ -41,6 +41,20 @@
       "isFree": true,
       "pdfUrl": "/pdffiles/book2.pdf",
       "timestamp": "2025-11-26T12:50:44.883Z"
+    },
+    {
+      "id": "1cd1",
+      "userId": "e2bd",
+      "userName": "samafale",
+      "email": "samafale@gmail.com",
+      "bookId": "2",
+      "title": "Winds of Freedom",
+      "author": "Ava Thompson",
+      "cover": "/covers/book2.jpg",
+      "price": 0,
+      "isFree": true,
+      "pdfUrl": "/pdffiles/book2.pdf",
+      "timestamp": "2025-12-01T19:45:10.959Z"
     }
   ]
 }

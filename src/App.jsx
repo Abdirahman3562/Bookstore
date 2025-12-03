@@ -25,75 +25,76 @@ import AdPopup from "./components/Home/AdPopup";
 import AuthorPage from "./pages/AuthorPage";
 import BlogPage from "./pages/BlogPage";
 import SinglePostPage from "./pages/SinglePostPage";
-import ScrollToTop from "./pages/ScrollToTop"
+import ScrollToTop from "./pages/ScrollToTop";
 
 function App() {
   return (
-  
-    <div className="w-full max-w-7xl mx-auto">
-           <ScrollToTop />
-      <DiscountAlert />
-      <Navbar />
+    <div>
+      
+        <DiscountAlert />
+        <Navbar />
+    
 
-      <AdPopup />
+      <div className="w-full max-w-[64rem] mx-auto">
+        <ScrollToTop />
 
-      <Toaster position="top-right" />
-      <Routes>
-        {/* Public Pages */}
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/books" element={<Books />} />
-        <Route path="/book/:title" element={<BookDetails />} />
-        <Route path="/blog" element={<BlogPage />} />
-        <Route path="/blog/:title" element={<SinglePostPage />} />
-        <Route path="/u/:username" element={<AuthorPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/all-new-releases" element={<AllNewReleases />} />
-        <Route path="/thank-you" element={<ThankYouPage />} />
+        <AdPopup />
 
-        {/* Auth Page */}
-        <Route path="/auth" element={<AuthPage />} />
+        <Toaster position="top-right" />
+        <Routes>
+          {/* Public Pages */}
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/books" element={<Books />} />
+          <Route path="/book/:title" element={<BookDetails />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:title" element={<SinglePostPage />} />
+          <Route path="/u/:username" element={<AuthorPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/all-new-releases" element={<AllNewReleases />} />
+          <Route path="/thank-you" element={<ThankYouPage />} />
 
-        {/* Protected Dashboard */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          {/* Default Dashboard tab (index route) */}
-          <Route index element={<Dashboard />} />
-          <Route path="orders" element={<div>Orders Section</div>} />
-          <Route path="orderdetails" element={<OrderDetails />} />
-          <Route path="orderdetails/:id" element={<OrderDetails />} />
-          <Route path="orders/:id" element={<OrderDetails />} />
-          <Route path="downloads" element={<div>Downloads Section</div>} />
-          <Route path="addresses" element={<div>Addresses Section</div>} />
-          <Route path="account" element={<div>Account Section</div>} />
-          <Route path="account" element={<AccountDetails />} />
-        </Route>
+          {/* Auth Page */}
+          <Route path="/auth" element={<AuthPage />} />
 
-        {/* Protected Reader */}
-        <Route
-          path="/reader/:id"
-          element={
-            <ProtectedRoute>
-              <Reader />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+          {/* Protected Dashboard */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            {/* Default Dashboard tab (index route) */}
+            <Route index element={<Dashboard />} />
+            <Route path="orders" element={<div>Orders Section</div>} />
+            <Route path="orderdetails" element={<OrderDetails />} />
+            <Route path="orderdetails/:id" element={<OrderDetails />} />
+            <Route path="orders/:id" element={<OrderDetails />} />
+            <Route path="downloads" element={<div>Downloads Section</div>} />
+            <Route path="addresses" element={<div>Addresses Section</div>} />
+            <Route path="account" element={<div>Account Section</div>} />
+            <Route path="account" element={<AccountDetails />} />
+          </Route>
 
-                <Footer />
+          {/* Protected Reader */}
+          <Route
+            path="/reader/:id"
+            element={
+              <ProtectedRoute>
+                <Reader />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
 
-
-   
+      
+      </div>
+      <Footer />
     </div>
-
   );
 }
 

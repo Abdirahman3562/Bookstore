@@ -3,135 +3,166 @@ import { Link } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 export default function BookCarousel() {
-  const slugify = (text) => {
-    return text
+  const slugify = (text) =>
+    text
       .toLowerCase()
       .replace(/\s+/g, "-")
       .replace(/[^\w\-]+/g, "");
-  };
 
   const [booksData, setBooksData] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-    const [allBooksData, setAllBooksData] = useState([]);  // Holds all books
-
+  const [allBooksData, setAllBooksData] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   useEffect(() => {
     fetch("http://localhost:5100/books")
-      .then((response) => response.json())
+      .then((res) => res.json())
       .then((data) => {
-        // 👉 Kaliya soo qaado 10 buug
-        const limitedBooks = data.slice(0, 10);
-        const Allbooks = data; // For all books
-        setBooksData(limitedBooks);
-        setAllBooksData(Allbooks); // Store all books in state
-
+        setBooksData(data.slice(0, 10));
+        setAllBooksData(data);
         setLoading(false);
       })
-      .catch((error) => {
-        console.error("Error loading books:", error);
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return <div>Loading books...</div>;
-  }
+  const visibleBooks = 5;
+  const bookWidth = 180;
+  const spaceWidth = 20;
 
-  const visibleBooks = 5; // number of books shown per slide
-  const bookWidth = 192;
-  const spaceWidth = 16;
-  const slideWidth = bookWidth + spaceWidth;
+  const maxIndex =
+    booksData.length > visibleBooks ? booksData.length - visibleBooks : 0;
 
-  const nextBook = () => {
-    if (currentIndex + visibleBooks < booksData.length) {
-      setCurrentIndex((prev) => prev + 1);
-    }
+  const nextSlide = () => {
+    setCurrentIndex(
+      (prev) => (prev >= maxIndex ? 0 : prev + 1) // Loop forever
+    );
   };
 
-  const prevBook = () => {
+  const prevSlide = () => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
     }
   };
 
-  const isPrevDisabled = currentIndex === 0;
-  const isNextDisabled = currentIndex + visibleBooks >= booksData.length;
+  const goToSlide = (i) => {
+    if (i <= maxIndex) setCurrentIndex(i);
+  };
+
+  useEffect(() => {
+    if (loading) return;
+
+    const timer = setInterval(() => {
+      nextSlide(); // Always move forward
+    }, 3000); // 3-second interval
+
+    return () => clearInterval(timer);
+  }, [currentIndex, loading, maxIndex]);
+
+  useEffect(() => {
+    if (!isAutoPlaying || loading) return;
+
+    const timer = setInterval(() => {
+      if (currentIndex < maxIndex) {
+        nextSlide();
+      } else {
+        setIsAutoPlaying(false);
+      }
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [currentIndex, isAutoPlaying, loading, maxIndex]);
+
+  if (loading) {
+    return <div className="text-center py-10">Loading books...</div>;
+  }
 
   return (
-    <div className="relative w-full mt-10  mb-20">
-      <div className="flex lg:flex-row md:flex-row flex-col justify-between lg:items-center md:items-center lg:ml-0 md:ml-0 ml-4 mb-4">
-        <div className="mb-4">
-          <h1 className="text-3xl font-bold text-blue-600 tracking-tight">
-            Books
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Discover the latest releases and top picks
-          </p>
-        </div>
+    <div className="relative w-full mt-10 mb-20">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-4 px-4">
+        <div className="flex justify-between  rounded-md  p-2  lg:p-1 md:p-1  items-center w-full">
+          {/* LEFT SIDE */}
+          <div>
+            <h1 className="lg:text-3xl md:text-3xl text-sm font-bold text-blue-600">
+              Books
+            </h1>
+            <p className="text-gray-500 lg:text-sm md:text-sm text-[10px] ">
+              Discover the latest releases
+            </p>
+          </div>
 
-        <div className="flex gap-4 justify-end mr-4">
-          <Link
-            to="/books"
-            className="text-blue-600 border border-gray-300 px-2 py-1 shadow-md hover:shadow-lg rounded-md"
-          >
-            View All ({allBooksData.length})
-          </Link>
+          {/* RIGHT SIDE */}
+          <div className="flex items-center gap-4">
+            <Link
+              to="/books"
+              className="text-blue-600 border px-3 py-1 lg:text-[18px] md:text-[18px] text-[12px] rounded-md shadow-md"
+            >
+              View All ({allBooksData.length})
+            </Link>
 
-          {/* Buttons */}
-
-          <div className="flex space-x-2">
-            {/* Previous Button */}
             <button
-              onClick={prevBook}
-              disabled={isPrevDisabled}
-              className={`p-2 rounded-full border border-gray-300 hover:bg-gray-100 ${
-                isPrevDisabled ? "opacity-50 cursor-not-allowed" : ""
+              onClick={prevSlide}
+              disabled={currentIndex === 0}
+              className={`lg:p-2 md:p-2 p-1 rounded-full border ${
+                currentIndex === 0
+                  ? "opacity-30 cursor-not-allowed"
+                  : "hover:bg-gray-100"
               }`}
             >
-              <FaChevronLeft className="w-4 h-4 text-gray-500" />
+              <FaChevronLeft />
             </button>
 
-            {/* Next Button */}
             <button
-              onClick={nextBook}
-              disabled={isNextDisabled}
-              className={`p-2 rounded-full border border-gray-300 hover:bg-gray-100 ${
-                isNextDisabled ? "opacity-50 cursor-not-allowed" : ""
+              onClick={nextSlide}
+              disabled={currentIndex >= maxIndex}
+              className={`lg:p-2 md:p-2 p-1 rounded-full border ${
+                currentIndex >= maxIndex
+                  ? "opacity-30 cursor-not-allowed"
+                  : "hover:bg-gray-100"
               }`}
             >
-              <FaChevronRight className="w-4 h-4 text-gray-500" />
+              <FaChevronRight />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="overflow-hidden px-4 lg:px-0 md:px-0 w-full">
-        <div
-          className="flex transition-transform duration-500 ease-in-out py-4"
-          style={{
-            transform: `translateX(-${currentIndex * slideWidth}px)`,
-            width: `${booksData.length * slideWidth}px`,
-          }}
-        >
-          {booksData.map((book, index) => (
-            <Link
-              key={book.id}
-              to={`/book/${slugify(book.title)}`}
-              className="w-48 flex-shrink-0 bg-white rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
-              style={{
-                marginRight:
-                  index < booksData.length - 1 ? `${spaceWidth}px` : "0",
-              }}
-            >
-              <img
-                src={book.cover}
-                alt={book.title}
-                className="w-full h-56 object-cover rounded-t-lg"
-              />
-            </Link>
-          ))}
+      <div className="relative w-full    px-4">
+        <div className="overflow-hidden rounded-xl">
+          <div
+            className="flex transition-transform duration-700 ease-out"
+            style={{
+              transform: `translateX(-${
+                currentIndex * (bookWidth + spaceWidth)
+              }px)`,
+              gap: `${spaceWidth}px`,
+            }}
+          >
+            {booksData.map((book) => (
+              <div
+                key={book.id}
+                className="flex-shrink-0 bg-white mb-4 rounded-xl shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden"
+                style={{ width: bookWidth }}
+              >
+                <Link to={`/book/${slugify(book.title)}`}>
+                  <img
+                    src={book.cover}
+                    alt={book.title}
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-3">
+                    <h3 className="font-semibold text-sm line-clamp-2">
+                      {book.title}
+                    </h3>
+                    <p className="text-xs text-gray-500">View details</p>
+                  </div>
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
+
+       
       </div>
     </div>
   );
