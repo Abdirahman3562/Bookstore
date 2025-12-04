@@ -1,121 +1,154 @@
+# Bookstore Full-Stack Application
 
-BookStore Project
+A complete full-stack bookstore application with React frontend, Express.js backend with MongoDB, and React admin panel.
 
-Welcome to the BookStore project! This is a modern and responsive web application that allows users to browse, view, and buy books. It displays book details including title, author, description, price, and more in a visually appealing manner.
+## Project Structure
 
-📝 Table of Contents
+```
+bookstore/
+├── front/          # React Frontend (Customer-facing)
+├── back/           # Node.js/Express Backend with MongoDB
+├── admin/          # React Admin Panel
+├── package.json    # Root package.json with scripts
+└── README.md
+```
 
-Project Description
+## Getting Started
 
-Technologies Used
+### Prerequisites
+- Node.js (v16 or higher)
+- MongoDB (local or cloud instance)
+- npm or yarn
 
-Features
+### Installation
 
-Installation Instructions
+1. **Clone or navigate to the project directory**
 
-Usage
+2. **Install all dependencies:**
+   ```bash
+   npm run install:all
+   ```
 
-Contributing
+3. **Set up environment variables:**
+   - Copy `back/.env.example` to `back/.env`
+   - Update the MongoDB URI and other settings
 
-License
+4. **Start MongoDB** (if running locally):
+   ```bash
+   mongod
+   ```
 
-📖 Project Description
+### Running the Application
 
-The BookStore application is designed to provide an intuitive and seamless browsing experience for users looking to discover and purchase books. It offers detailed book pages, showcasing essential details such as:
-
-Book Title
-
-Author
-
-Description
-
-Price
-
-Publisher
-
-Published Date
-
-Cover Image
-
-With a modern, responsive design using React and Tailwind CSS, this application ensures a smooth and user-friendly experience across devices.
-
-🚀 Technologies Used
-
-React: A JavaScript library for building user interfaces.
-
-React Router: Used for routing to different pages in the application.
-
-Tailwind CSS: A utility-first CSS framework for building custom designs.
-
-Vite: A fast and modern build tool.
-
-✨ Features
-
-Browse Books: View a grid of available books with key details like title, author, and price.
-
-Book Details: Get detailed information about each book, including a description, publisher, and price.
-
-Responsive Design: The website is fully responsive, ensuring a good experience on mobile and desktop devices.
-
-Buy Now Button: The "Buy Now" button lets users proceed to the purchase process (in a real-world scenario, this would be connected to an e-commerce platform).
-
-Dynamic Book URLs: Books are accessible via URL slugs, ensuring SEO-friendly and shareable links.
-
-💻 Installation Instructions
-1. Clone the repository
-git clone https://github.com/your-username/bookstore.git
-
-2. Install Dependencies
-
-Make sure you have Node.js installed. Run the following command to install the necessary dependencies:
-
-cd bookstore
-npm install
-
-3. Run the Development Server
-
-Start the development server:
-
+#### Development Mode (Recommended)
+Run all three parts simultaneously:
+```bash
 npm run dev
+```
 
+This will start:
+- Frontend: http://localhost:5173
+- Backend: http://localhost:5100
+- Admin Panel: http://localhost:3000
 
-This will start the app locally at http://localhost:5174.
+#### Individual Services
+```bash
+# Frontend only
+npm run dev:front
 
-🏁 Usage
+# Backend only
+npm run dev:back
 
-Open the browser and go to http://localhost:5174 to view the homepage.
+# Admin only
+npm run dev:admin
+```
 
-Browse through the available books.
+#### Production Mode
+```bash
+npm run start
+```
 
-Click on a book to view its detailed page.
+## API Endpoints
 
-Press the "Buy Now" button (in a real application, this would take you to the checkout page).
+### Books
+- `GET /api/books` - Get all books
+- `GET /api/books/:id` - Get single book
+- `POST /api/books` - Create book (admin)
+- `PUT /api/books/:id` - Update book (admin)
+- `DELETE /api/books/:id` - Delete book (admin)
 
-🤝 Contributing
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/logout` - User logout
 
-We welcome contributions! To contribute:
+## Features
 
-Fork the repository.
+### Frontend (Customer)
+- Browse books with carousel
+- Search and filter books
+- User authentication
+- Shopping cart and checkout
+- User dashboard
 
-Create a new branch (git checkout -b feature-branch).
+### Admin Panel
+- Manage books (CRUD operations)
+- Manage users
+- View orders
+- Analytics dashboard
 
-Make your changes and commit them (git commit -am 'Add new feature').
+### Backend
+- RESTful API
+- MongoDB database
+- JWT authentication
+- File upload support
+- Rate limiting and security
 
-Push to your forked repository (git push origin feature-branch).
+## Technology Stack
 
-Submit a pull request.
+### Frontend
+- React 18
+- React Router
+- Tailwind CSS
+- Vite
 
-📝 License
+### Backend
+- Node.js
+- Express.js
+- MongoDB with Mongoose
+- JWT Authentication
+- CORS, Helmet, Rate Limiting
 
-This project is licensed under the MIT License - see the LICENSE
- file for details.
+### Admin Panel
+- React 18
+- React Router
+- Tailwind CSS (can be customized)
 
-📱 Screenshots
+## Development
 
-Here are a few screenshots of the application in action:
+### Adding New Features
+1. Frontend features: Work in `front/` directory
+2. Backend APIs: Work in `back/` directory
+3. Admin features: Work in `admin/` directory
 
-Home Page
+### Database Schema
+Books, Users, Orders, Categories, etc. (defined in `back/models/`)
 
-Book Details Page
+## Deployment
 
-✨ Enjoy exploring the BookStore! Feel free to contribute or modify it for your own needs.
+Each part can be deployed separately:
+- Frontend: Vercel, Netlify, or any static hosting
+- Backend: Heroku, Railway, or any Node.js hosting
+- Admin: Same as frontend
+- Database: MongoDB Atlas or any MongoDB hosting
+
+## Contributing
+
+1. Create a feature branch
+2. Make changes in the appropriate directory
+3. Test all three parts
+4. Submit a pull request
+
+## License
+
+MIT License

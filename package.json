@@ -1,45 +1,29 @@
 {
-  "name": "bookstore",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "bookstore-fullstack",
+  "version": "1.0.0",
+  "description": "Full-stack bookstore application with React frontend, Express backend, and React admin panel",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "start": "concurrently \"npm run server:books\" \"npm run server:purchased\" \"npm run server:user\" \"npm run server:downloads\" \"npm run server:Testimonials\" \"npm run server:authors\" \"npm run server:blogs\" \"npm run dev\"",
-    "server:books": "json-server --watch src/data/books.json --port 5100  --host 0.0.0.0",
-    "server:purchased": "json-server --watch src/data/purchased.json --port 5001 --host 0.0.0.0",
-    "server:user": "json-server --watch src/data/users.json --port 5002 --host 0.0.0.0",
-    "server:downloads": "json-server --watch src/data/downloads.json --port 5003 --host 0.0.0.0",
-    "server:Testimonials": "json-server --watch src/data/Testimonials.json --port 5004 --host 0.0.0.0",
-    "server:authors": "json-server --watch src/data/authors.json --port 5005 --host 0.0.0.0",
-    "server:blogs": "json-server --watch src/data/blogs.json --port 5006 --host 0.0.0.0"
-  },
-  "dependencies": {
-    "concurrently": "^9.2.1",
-    "json-server": "^1.0.0-beta.3",
-    "lucide-react": "^0.554.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-hot-toast": "^2.6.0",
-    "react-icons": "^5.5.0",
-    "react-pdf": "^10.2.0",
-    "react-router-dom": "^7.9.6"
+    "dev": "concurrently \"npm run dev:front\" \"npm run dev:back\" \"npm run dev:admin\"",
+    "dev:front": "cd front && npm run dev",
+    "dev:back": "cd back && npm run dev",
+    "dev:admin": "cd admin && npm start",
+    "start": "concurrently \"npm run start:front\" \"npm run start:back\" \"npm run start:admin\"",
+    "start:front": "cd front && npm run build && npm run preview",
+    "start:back": "cd back && npm start",
+    "start:admin": "cd admin && npm run build && serve -s build -l 3001",
+    "install:all": "npm install && cd front && npm install && cd ../back && npm install && cd ../admin && npm install",
+    "clean": "cd front && npm run build && cd ../back && npm run build && cd ../admin && npm run build"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "autoprefixer": "^10.4.22",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.18",
-    "vite": "^7.2.4"
-  }
+    "concurrently": "^8.2.2",
+    "serve": "^14.2.1"
+  },
+  "keywords": ["bookstore", "fullstack", "react", "express", "mongodb"],
+  "author": "Your Name",
+  "license": "MIT",
+  "workspaces": [
+    "front",
+    "back",
+    "admin"
+  ]
 }
