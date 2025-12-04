@@ -16,7 +16,7 @@ export default function HeroSlider() {
   }, []);
 
   return (
-    <div className="relative w-full rounded-md overflow-hidden">
+    <div className="relative w-screen left-1/2 right-1/2 -mx-[50vw] rounded-md overflow-hidden">
 
       {/* Image */}
       <img
@@ -26,7 +26,7 @@ export default function HeroSlider() {
       />
 
       {/* Indicators - Always bottom center */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+      {/* <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
         {images.map((_, index) => (
           <span
             key={index}
@@ -35,7 +35,7 @@ export default function HeroSlider() {
             }`}
           ></span>
         ))}
-      </div>
+      </div> */}
 
     </div>
   );
