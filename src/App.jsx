@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -26,14 +26,20 @@ import AuthorPage from "./pages/AuthorPage";
 import BlogPage from "./pages/BlogPage";
 import SinglePostPage from "./pages/SinglePostPage";
 import ScrollToTop from "./pages/ScrollToTop";
+import HerroSlider from "./components/Home/HerroSlider";
 
 function App() {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
   return (
     <div>
-      
+
         <DiscountAlert />
         <Navbar />
-    
+
+        {/* HeroSlider - Full Width, Only on Home Page */}
+        {isHomePage && <HerroSlider />}
 
       <div className="w-full max-w-[64rem] mx-auto">
         <ScrollToTop />
