@@ -28,27 +28,45 @@ import SinglePostPage from "./pages/SinglePostPage";
 import ScrollToTop from "./pages/ScrollToTop";
 import HerroSlider from "./components/Home/HerroSlider";
 
+// admin
+import AdminLogin from "./admin/pages/AdminLogin";
+import ADminDashboard from "./admin/pages/Dashboard";
+import AdminLayout from "./admin/layouts/AdminLayout";
+import BooksAdmin from "./admin/pages/BooksAdmin";
+import DownloadsAdmin from "./admin/pages/DownloadsAdmin";
+import PurchasedAdmin from "./admin/pages/PurchasedAdmin";
+import TestimonialsAdmin from "./admin/pages/TestimonialsAdmin";
+import UsersAdmin from "./admin/pages/UsersAdmin";
+import AuthorsAdmin from "./admin/pages/AuthorsAdmin";
+import BlogsAdmin from "./admin/pages/BlogsAdmin";
+import AddAdminUser from "./admin/pages/AddAdminUser";
+import AdminUsersAdmin from "./admin/pages/AdminUsersAdmin";
+import MyProfile from "./admin/pages/MyProfile";
+import Notifications from "./admin/pages/Notifications";
+import AdminProtectedRoute from "./admin/components/AdminProtectedRoute";
+
 function App() {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
+
+  // check routes
+  const isHomePage = location.pathname === "/";
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
     <div>
+      {/* PUBLIC UI ONLY */}
+      {!isAdminRoute && <DiscountAlert />}
+      {!isAdminRoute && <Navbar />}
+      {!isAdminRoute && isHomePage && <HerroSlider />}
 
-        <DiscountAlert />
-        <Navbar />
-
-        {/* HeroSlider - Full Width, Only on Home Page */}
-        {isHomePage && <HerroSlider />}
-
-      <div className="w-full max-w-[64rem] mx-auto">
+      {/* Wrapper size (public only) */}
+      <div className={`${!isAdminRoute && "w-full max-w-[64rem] mx-auto"}`}>
         <ScrollToTop />
-
         <AdPopup />
-
         <Toaster position="top-right" />
+
         <Routes>
-          {/* Public Pages */}
+          {/* ================= Public Pages ================= */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
@@ -65,7 +83,128 @@ function App() {
           {/* Auth Page */}
           <Route path="/auth" element={<AuthPage />} />
 
-          {/* Protected Dashboard */}
+          {/* ================= Admin Pages ================= */}
+          <Route path="/admin" element={<AdminLogin />} />
+
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminProtectedRoute>
+                <AdminLayout>
+                  <ADminDashboard />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/books"
+            element={
+              <AdminLayout>
+                <BooksAdmin />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/downloads"
+            element={
+              <AdminLayout>
+                <DownloadsAdmin />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/purchased"
+            element={
+              <AdminLayout>
+                <PurchasedAdmin />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/testimonials"
+            element={
+              <AdminLayout>
+                <TestimonialsAdmin />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/users"
+            element={
+              <AdminLayout>
+                <UsersAdmin />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/authors"
+            element={
+              <AdminLayout>
+                <AuthorsAdmin />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/blogs"
+            element={
+              <AdminLayout>
+                <BlogsAdmin />
+              </AdminLayout>
+            }
+          />
+
+          <Route
+            path="/admin/add-admin-user"
+            element={
+              <AdminProtectedRoute>
+                <AdminLayout>
+                  <AddAdminUser />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/admin-users"
+            element={
+              <AdminProtectedRoute>
+                <AdminLayout>
+                  <AdminUsersAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/my-profile"
+            element={
+              <AdminProtectedRoute>
+                <AdminLayout>
+                  <MyProfile />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/notifications"
+            element={
+              <AdminProtectedRoute>
+                <AdminLayout>
+                  <Notifications />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            }
+          />
+
+          {/* ================= User Dashboard ================= */}
           <Route
             path="/dashboard"
             element={
@@ -74,7 +213,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* Default Dashboard tab (index route) */}
             <Route index element={<Dashboard />} />
             <Route path="orders" element={<div>Orders Section</div>} />
             <Route path="orderdetails" element={<OrderDetails />} />
@@ -82,7 +220,6 @@ function App() {
             <Route path="orders/:id" element={<OrderDetails />} />
             <Route path="downloads" element={<div>Downloads Section</div>} />
             <Route path="addresses" element={<div>Addresses Section</div>} />
-            <Route path="account" element={<div>Account Section</div>} />
             <Route path="account" element={<AccountDetails />} />
           </Route>
 
@@ -96,10 +233,10 @@ function App() {
             }
           />
         </Routes>
-
-      
       </div>
-      <Footer />
+
+      {/* PUBLIC FOOTER ONLY */}
+      {!isAdminRoute && <Footer />}
     </div>
   );
 }

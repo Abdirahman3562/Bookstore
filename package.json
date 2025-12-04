@@ -5,21 +5,22 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon backend/server.js",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "start": "concurrently \"npm run server:books\" \"npm run server:purchased\" \"npm run server:user\" \"npm run server:downloads\" \"npm run server:Testimonials\" \"npm run server:authors\" \"npm run server:blogs\" \"npm run dev\"",
-    "server:books": "json-server --watch src/data/books.json --port 5100  --host 0.0.0.0",
-    "server:purchased": "json-server --watch src/data/purchased.json --port 5001 --host 0.0.0.0",
-    "server:user": "json-server --watch src/data/users.json --port 5002 --host 0.0.0.0",
-    "server:downloads": "json-server --watch src/data/downloads.json --port 5003 --host 0.0.0.0",
-    "server:Testimonials": "json-server --watch src/data/Testimonials.json --port 5004 --host 0.0.0.0",
-    "server:authors": "json-server --watch src/data/authors.json --port 5005 --host 0.0.0.0",
-    "server:blogs": "json-server --watch src/data/blogs.json --port 5006 --host 0.0.0.0"
+    "dev": "concurrently \"npm run server:books\" \"npm run server:purchased\" \"npm run server:user\" \"npm run server:downloads\" \"npm run server:Testimonials\" \"npm run server:authors\" \"npm run server:blogs\" \"npm run dev:backend\" \"npm run dev:front\"",
+    "dev:front": "cd front && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "cd front && npm run build",
+    "lint": "cd front && npm run lint",
+    "preview": "cd front && npm run preview",
+    "start": "concurrently \"npm run dev\" \"npm run server:books\" \"npm run server:purchased\" \"npm run server:user\" \"npm run server:downloads\" \"npm run server:Testimonials\" \"npm run server:authors\" \"npm run server:blogs\" \"npm run dev:backend\"",
+    "server:books": "json-server --watch front/src/data/books.json --port 5100  --host 0.0.0.0",
+    "server:purchased": "json-server --watch front/src/data/purchased.json --port 5001 --host 0.0.0.0",
+    "server:user": "json-server --watch front/src/data/users.json --port 5002 --host 0.0.0.0",
+    "server:downloads": "json-server --watch front/src/data/downloads.json --port 5003 --host 0.0.0.0",
+    "server:Testimonials": "json-server --watch front/src/data/Testimonials.json --port 5004 --host 0.0.0.0",
+    "server:authors": "json-server --watch front/src/data/authors.json --port 5005 --host 0.0.0.0",
+    "server:blogs": "json-server --watch front/src/data/blogs.json --port 5006 --host 0.0.0.0"
   },
   "dependencies": {
-    "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
@@ -39,6 +40,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.22",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
@@ -49,4 +51,3 @@
     "vite": "^7.2.4"
   }
 }
-
