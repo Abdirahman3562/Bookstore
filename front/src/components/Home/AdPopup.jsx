@@ -9,7 +9,7 @@ export default function AdPopup() {
     const interval = setInterval(() => {
       setShow(true);
       setTimeout(() => setAnimate(true), 50); // start animation
-    }, 1200000); // 20 minutes
+    }, 12000); // 21 minutes
 
     return () => clearInterval(interval);
   }, []);

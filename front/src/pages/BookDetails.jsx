@@ -19,11 +19,16 @@ export default function BookDetails() {
 
 
   useEffect(() => {
-    fetch(`http://localhost:5100/books`) // Adjust this URL to your API endpoint
+    fetch(`http://localhost:3000/api/books`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((responseData) => {
+        const data = responseData.data || [];
         const found = data.find((b) => slugify(b.title) === title);
         setBook(found);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching book:", error);
         setLoading(false);
       });
   }, [title]);
@@ -40,7 +45,7 @@ export default function BookDetails() {
     let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
     // Check if already in cart
-    const exists = cart.find((item) => item.id === book.id);
+    const exists = cart.find((item) => (item._id || item.id) === (book._id || book.id));
     if (exists) {
       toast.error("Already added to cart!"); // Show error if already in cart
       return;
@@ -68,18 +73,27 @@ export default function BookDetails() {
     return;
   }
 
-  // Fetch current downloads from JSON Server
-  fetch("http://localhost:5003/downloads") // Get the download data from the server
+  // Extract filename from PDF URL
+  const filename = pdfUrl.split('/').pop();
+  
+  // Use protected PDF endpoint with user authentication
+  const userId = user._id || user.id;
+  const userEmail = user.email;
+  const protectedUrl = `http://localhost:3000/api/pdf/${filename}?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(userEmail)}`;
+
+  // Fetch current downloads from backend API
+  fetch("http://localhost:3000/api/downloads")
     .then((res) => {
       if (!res.ok) {
         throw new Error("Failed to fetch downloads data");
       }
       return res.json();
     })
-    .then((downloads) => {
+    .then((responseData) => {
+      const downloads = responseData.data || [];
       // Check if the user has already downloaded the book
       const alreadyDownloaded = downloads.some(
-        (download) => download.bookId === book.id && download.userId === user.id
+        (download) => (download.bookId === (book._id || book.id)) && (download.userId === user.id || download.userId === user._id)
       );
 
       if (alreadyDownloaded) {
@@ -89,10 +103,10 @@ export default function BookDetails() {
 
       // If not already downloaded, allow the download
       const downloadData = {
-        userId: user.id,
+        userId: user._id || user.id,
         userName: user.name,
         email: user.email,
-        bookId: book.id, // Ensure we're using book's ID
+        bookId: book._id || book.id, // Ensure we're using book's ID
         title,
         author,
         cover,
@@ -102,16 +116,35 @@ export default function BookDetails() {
         timestamp: new Date().toISOString(),
       };
 
-      // Create a download link and trigger the download
-      const link = document.createElement("a");
-      link.href = pdfUrl;
-      link.download = `${title}.pdf`; // Ensure the correct title is used
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Fetch PDF from protected endpoint and trigger download
+      fetch(protectedUrl)
+        .then((res) => {
+          if (!res.ok) {
+            if (res.status === 403) {
+              throw new Error("Access denied: You don't have permission to download this book");
+            }
+            throw new Error("Failed to download PDF");
+          }
+          return res.blob();
+        })
+        .then((blob) => {
+          // Create a download link and trigger the download
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `${title}.pdf`; // Ensure the correct title is used
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        })
+        .catch((error) => {
+          console.error("Download error:", error);
+          toast.error(error.message || "Failed to download PDF. Please try again.");
+        });
 
-      // Add the downloaded book to JSON Server
-      fetch("http://localhost:5003/downloads", {
+      // Add the downloaded book to backend API
+      fetch("http://localhost:3000/api/downloads", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -149,9 +182,12 @@ export default function BookDetails() {
     <div className="py-6 px-4 max-w-6xl mx-auto bg-white rounded-lg shadow-lg">
       <div className="flex flex-col lg:flex-row items-center gap-6">
         <img
-          src={book.cover}
+          src={book.cover ? `http://localhost:3000${book.cover}` : 'https://via.placeholder.com/300x450?text=No+Image'}
           alt={book.title}
           className="w-full lg:w-1/3 h-80 object-cover rounded-lg shadow-md mb-4 lg:mb-0"
+          onError={(e) => {
+            e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
+          }}
         />
 
         <div className="flex flex-col lg:w-2/3">

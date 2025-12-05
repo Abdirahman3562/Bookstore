@@ -62,7 +62,7 @@ export default function Navbar() {
   // Handle add to cart
   const addToCart = (book) => {
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const bookExists = cart.find((item) => item.id === book.id);
+    const bookExists = cart.find((item) => (item._id || item.id) === (book._id || book.id));
     if (!bookExists) {
       cart.push(book);
       localStorage.setItem("cart", JSON.stringify(cart));

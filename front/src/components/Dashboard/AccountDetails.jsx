@@ -13,23 +13,34 @@ export default function AccountDetails() {
   const [preview, setPreview] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [twoStepVerification, setTwoStepVerification] = useState(false);
+  const [originalPassword, setOriginalPassword] = useState("");
 
   useEffect(() => {
     const loggedUser = JSON.parse(localStorage.getItem("user"));
     if (!loggedUser) return;
 
-    fetch(`http://localhost:5002/users/${loggedUser.id}`)
+    const userId = loggedUser._id || loggedUser.id;
+
+    fetch(`http://localhost:3000/api/users/${userId}`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((responseData) => {
+        const data = responseData.data || responseData;
         setUser(data);
-        setName(data.name);
-        setEmail(data.email);
-        setPassword(data.password);
-        setConfirmPassword(data.password);
-        setAvatar(data.avatar);
-        setPreview(data.avatar);
+        setName(data.name || "");
+        setEmail(data.email || "");
+        const userPassword = data.password || "";
+        setPassword(userPassword);
+        setConfirmPassword(userPassword);
+        setOriginalPassword(userPassword);
+        setAvatar(data.avatar || "");
+        setPreview(data.avatar || "");
+        setTwoStepVerification(data.twoStepVerification || false);
       })
-      .catch(() => toast.error("Failed to load user data"));
+      .catch((error) => {
+        console.error("Error fetching user:", error);
+        toast.error("Failed to load user data");
+      });
   }, []);
 
   const handleImage = (e) => {
@@ -44,27 +55,53 @@ export default function AccountDetails() {
   };
 
   const handleUpdate = async () => {
-    if (password !== confirmPassword) {
+    // Only check password match if password is being changed
+    if (password && password !== confirmPassword) {
       toast.error("Passwords do not match!");
       return;
     }
 
-    const updatedUser = {
-      ...user,
+    if (!user) {
+      toast.error("User data not loaded");
+      return;
+    }
+
+    const userId = user._id || user.id;
+    const updateData = {
       name,
       email,
-      password,
       avatar: preview, // base64 image directly saved!
+      twoStepVerification,
     };
 
-    await fetch(`http://localhost:5002/users/${user.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedUser),
-    });
+    // Only include password if it's different from the original (user wants to change it)
+    if (password && password !== originalPassword && password.trim() !== "") {
+      updateData.password = password;
+      updateData.currentPassword = originalPassword; // Send current password for verification
+    }
 
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    toast.success("Profile updated!");
+    try {
+      const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok && responseData.success) {
+        const updatedUserData = responseData.data || { ...user, ...updateData };
+        localStorage.setItem("user", JSON.stringify(updatedUserData));
+        setUser(updatedUserData);
+        toast.success("Profile updated!");
+      } else {
+        const errorMessage = responseData.message || responseData.error || "Failed to update profile";
+        toast.error(errorMessage);
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast.error("An error occurred while updating profile");
+    }
   };
 
   if (!user) return <p>Loading user...</p>;
@@ -172,6 +209,27 @@ export default function AccountDetails() {
             >
               {showConfirmPass ? <FiEyeOff size={20} /> : <FiEye size={20} />}
             </button>
+          </div>
+        </div>
+
+        {/* 2-STEP VERIFICATION TOGGLE */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="font-semibold text-lg">2-Step Verification</label>
+              <p className="text-sm text-gray-600 mt-1">
+                When enabled, you'll receive an OTP code via email when logging in
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={twoStepVerification}
+                onChange={(e) => setTwoStepVerification(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
           </div>
         </div>
 

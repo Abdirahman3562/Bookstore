@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -8,11 +8,13 @@ export default function AddAdminUser() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [authors, setAuthors] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     adminRole: "author", // default to author
+    authorId: "", // Link to author
     permissions: {
       dashboard: false,
       books: false,
@@ -20,11 +22,25 @@ export default function AddAdminUser() {
       purchased: false,
       testimonials: false,
       users: false,
-      authors: false,
+      authors: true, // Auto-check authors permission for author role
       blogs: true, // default blogs to true for authors
       addAdminUser: false
     }
   });
+
+  // Fetch authors list
+  useEffect(() => {
+    const fetchAuthors = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/authors");
+        const data = response.data.data || [];
+        setAuthors(data);
+      } catch (error) {
+        console.error("Error fetching authors:", error);
+      }
+    };
+    fetchAuthors();
+  }, []);
 
   // If admin role is selected, give all permissions
   const handleRoleChange = (role) => {
@@ -32,6 +48,7 @@ export default function AddAdminUser() {
       setFormData((prev) => ({
         ...prev,
         adminRole: role,
+        authorId: "", // Clear authorId for admin
         permissions: {
           dashboard: true,
           books: true,
@@ -45,7 +62,7 @@ export default function AddAdminUser() {
         }
       }));
     } else {
-      // For author, only blogs is checked by default
+      // For author role, automatically check "authors" and "blogs" permissions
       setFormData((prev) => ({
         ...prev,
         adminRole: role,
@@ -56,7 +73,7 @@ export default function AddAdminUser() {
           purchased: false,
           testimonials: false,
           users: false,
-          authors: false,
+          authors: true, // Auto-check authors permission for author role
           blogs: true,
           addAdminUser: false
         }
@@ -85,7 +102,7 @@ export default function AddAdminUser() {
 
       if (response.data.success) {
         toast.success("Admin user created successfully!");
-        navigate("/admin/users");
+        navigate("/admin/admin-users");
       }
     } catch (error) {
       console.error("Error creating admin user:", error);
@@ -210,6 +227,77 @@ export default function AddAdminUser() {
             </div>
           </div>
 
+          {/* Author Selection - Only show when role is "author" */}
+          {formData.adminRole === "author" && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <UserPlus className="w-5 h-5" />
+                Link to Author Profile
+              </h2>
+              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Select which author profile this admin user should be linked to:
+                </p>
+                {authors.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No authors found. Please create an author first.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                    {authors.map((author) => (
+                      <label
+                        key={author._id}
+                        className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                          formData.authorId === author._id
+                            ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 dark:border-blue-600"
+                            : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="authorId"
+                          value={author._id}
+                          checked={formData.authorId === author._id}
+                          onChange={(e) => setFormData({ ...formData, authorId: e.target.value })}
+                          className="w-4 h-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {author.avatar ? (
+                            <img
+                              src={author.avatar}
+                              alt={author.name}
+                              className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                              {author.name
+                                ? author.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .toUpperCase()
+                                    .slice(0, 2)
+                                : "A"}
+                            </div>
+                          )}
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                            {author.name}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                  This will link the admin user to the selected author profile. When this author logs in, they will see comments on their blogs.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Permissions */}
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -256,7 +344,7 @@ export default function AddAdminUser() {
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
-              onClick={() => navigate("/admin/users")}
+              onClick={() => navigate("/admin/admin-users")}
               className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancel

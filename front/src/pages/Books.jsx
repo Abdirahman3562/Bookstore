@@ -19,9 +19,10 @@ export default function Books() {
 
   // Fetching books data from API
 useEffect(() => {
-  fetch("http://localhost:5100/books")
+  fetch("http://localhost:3000/api/books")
     .then((response) => response.json())
-    .then((data) => {
+    .then((responseData) => {
+      const data = responseData.data || [];
       console.log("API DATA:", data);
 
       if (Array.isArray(data)) {
@@ -47,11 +48,14 @@ useEffect(() => {
   return (
     <div className="py-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
       {books.map((book) => (
-        <div key={book.id} className="border p-4 rounded shadow">
+        <div key={book._id || book.id} className="border p-4 rounded shadow">
           <img
-            src={book.cover} // Check if the cover is correct, should be a valid image path
+            src={book.cover ? `http://localhost:3000${book.cover}` : 'https://via.placeholder.com/300x450?text=No+Image'}
             className="w-full h-60 object-cover"
             alt={book.title}
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
+            }}
           />
 
           <h2 className="text-xl font-semibold mt-2">Title: {book.title}</h2>

@@ -3,7 +3,7 @@ import Blog from "../models/blogs.model.js";
 // GET ALL BLOGS
 export const getAllBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find({}).sort({ createdAt: -1 });
+    const blogs = await Blog.find({}).populate('authorId', 'name username avatar verified bio social').sort({ createdAt: -1 });
     
     res.status(200).json({
       success: true,
@@ -20,7 +20,7 @@ export const getAllBlogs = async (req, res) => {
 // GET SINGLE BLOG
 export const getBlogById = async (req, res) => {
   try {
-    const blog = await Blog.findById(req.params.id);
+    const blog = await Blog.findById(req.params.id).populate('authorId', 'name username avatar verified bio social');
     if (!blog) {
       return res.status(404).json({ success: false, message: "Blog not found" });
     }

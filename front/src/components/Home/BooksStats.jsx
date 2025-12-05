@@ -10,9 +10,10 @@ export default function BooksStats() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:5100/books")
+    fetch("http://localhost:3000/api/books")
       .then((res) => res.json())
-      .then((data) => {
+      .then((responseData) => {
+        const data = responseData.data || [];
         const free = data.filter((b) => {
           const price = String(b.price).toLowerCase();
           return price === "free" || price === "0" || b.price === 0;
@@ -22,6 +23,10 @@ export default function BooksStats() {
         setFreeBooks(free);
         setBuyBooks(data.length - free);
 
+        setReady(true);
+      })
+      .catch((error) => {
+        console.error("Error fetching books:", error);
         setReady(true);
       });
   }, []);

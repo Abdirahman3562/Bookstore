@@ -13,6 +13,10 @@ const purchasedSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  phone: {
+    type: String,
+    default: ""
+  },
   bookId: {
     type: String,
     required: true

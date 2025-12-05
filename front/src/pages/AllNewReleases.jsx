@@ -14,10 +14,11 @@ export default function AllNewReleases() {
 }
 
   useEffect(() => {
-    fetch("http://localhost:5100/books")
+    fetch("http://localhost:3000/api/books")
       .then((res) => res.json())
-      .then((data) => {
-        const allBooks = Array.isArray(data) ? data : data.books;
+      .then((responseData) => {
+        const data = responseData.data || [];
+        const allBooks = Array.isArray(data) ? data : (data.books || []);
 
         // ⭐ Sort newest -> oldest
         const sortedBooks = [...allBooks].sort(
@@ -44,11 +45,14 @@ export default function AllNewReleases() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {books.map((book) => (
-          <div key={book.id} className="bg-white shadow-lg rounded-lg p-3">
+          <div key={book._id || book.id} className="bg-white shadow-lg rounded-lg p-3">
             <img
-              src={book.cover}
+              src={book.cover ? `http://localhost:3000${book.cover}` : 'https://via.placeholder.com/300x450?text=No+Image'}
               alt={book.title}
               className="w-full h-48 object-cover rounded"
+              onError={(e) => {
+                e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
+              }}
             />
             <h2 className="mt-3 text-lg font-semibold">{book.title}</h2>
             <p className="text-gray-600 text-sm">{book.author}</p>

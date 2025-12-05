@@ -27,19 +27,89 @@ function BlogPage() {
   // 🧠 Fetch blogs & authors oo isku dar
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:5006/blogs").then((r) => r.json()),
-      fetch("http://localhost:5005/authors").then((r) => r.json()),
+      fetch("http://localhost:3000/api/blogs").then((r) => r.json()),
+      fetch("http://localhost:3000/api/authors").then((r) => r.json()).catch(() => ({ data: [] })),
     ])
-      .then(([blogsData, authorsData]) => {
-        const merged = blogsData.map((blog) => {
-          const author = authorsData.find(
-            (a) => Number(a.id) === Number(blog.authorId)
-          );
-        return {
+      .then(([blogsResponse, authorsResponse]) => {
+        const blogsData = blogsResponse.data || [];
+        const authorsData = authorsResponse.data || [];
+        
+        // Filter only published blogs
+        const publishedBlogs = blogsData.filter(blog => blog.status === 'published');
+        
+        const merged = publishedBlogs.map((blog) => {
+          // Handle authorId - could be ObjectId, string, or nested object
+          let authorIdValue = "";
+          if (blog.authorId) {
+            if (typeof blog.authorId === "string") {
+              authorIdValue = blog.authorId;
+            } else if (blog.authorId._id) {
+              authorIdValue = blog.authorId._id;
+            } else if (blog.authorId.toString) {
+              authorIdValue = blog.authorId.toString();
+            }
+          }
+          
+          // Check if authorId is populated (object) with name or username
+          const isAuthorPopulated = blog.authorId && typeof blog.authorId === 'object' && (blog.authorId.name || blog.authorId.username);
+          
+          // Find author by comparing string values
+          let author = null;
+          if (isAuthorPopulated) {
+            author = blog.authorId;
+          } else {
+            author = authorsData.find((a) => {
+              const authorId = String(a._id || a.id || "");
+              return authorId === authorIdValue;
+            });
+          }
+          
+          // Format date from publishedDate
+          const date = blog.publishedDate || blog.date || blog.createdAt;
+          
+          // Construct thumbnail URL - handle base64, http, and file paths
+          let thumbnailUrl = "/images/placeholder.jpg";
+          if (blog.thumbnail && blog.thumbnail.trim() !== '') {
+            // Check if it's base64
+            if (blog.thumbnail.startsWith('data:image/')) {
+              thumbnailUrl = blog.thumbnail;
+            } else if (blog.thumbnail.startsWith('http://') || blog.thumbnail.startsWith('https://')) {
+              thumbnailUrl = blog.thumbnail;
+            } else if (blog.thumbnail.startsWith('/uploads/')) {
+              thumbnailUrl = `http://localhost:3000${blog.thumbnail}`;
+            } else if (blog.thumbnail.startsWith('uploads/')) {
+              thumbnailUrl = `http://localhost:3000/${blog.thumbnail}`;
+            } else {
+              thumbnailUrl = `http://localhost:3000/uploads/${blog.thumbnail}`;
+            }
+          }
+          
+          // Construct author image URL - handle base64, http, and file paths
+          let authorImageUrl = "/default-avatar.png";
+          if (author && author.avatar && author.avatar.trim() !== '') {
+            // Check if it's base64
+            if (author.avatar.startsWith('data:image/')) {
+              authorImageUrl = author.avatar;
+            } else if (author.avatar.startsWith('http://') || author.avatar.startsWith('https://')) {
+              authorImageUrl = author.avatar;
+            } else if (author.avatar.startsWith('/uploads/')) {
+              authorImageUrl = `http://localhost:3000${author.avatar}`;
+            } else if (author.avatar.startsWith('uploads/')) {
+              authorImageUrl = `http://localhost:3000/${author.avatar}`;
+            } else {
+              authorImageUrl = `http://localhost:3000/uploads/${author.avatar}`;
+            }
+          }
+          
+          return {
             ...blog,
-            authorName: author ? author.name : "Unknown Author",
-            authorImage: author ? author.avatar : "/default-avatar.png",
+            id: blog._id || blog.id,
+            date: date,
+            authorName: (author && author.name && author.name.trim() !== '') ? author.name : "Unknown Author",
+            username: (author && author.username && author.username.trim() !== '') ? author.username : "",
+            authorImage: authorImageUrl,
             verified: !!author?.verified,
+            thumbnail: thumbnailUrl,
           };
         });
         setArticles(merged);
@@ -115,7 +185,7 @@ function BlogPage() {
           <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {pageArticles.map((article) => (
               <div
-                key={article.id}
+                key={article._id || article.id}
                 className="bg-[#edf4f5] border border-gray-200 rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
               >
                 <Link
@@ -125,9 +195,10 @@ function BlogPage() {
                   className="relative block"
                 >
                   <img
-                    src={article.thumbnail}
+                    src={article.thumbnail || "/images/placeholder.jpg"}
                     alt={article.title}
                     className="w-full h-48 object-cover transition-transform duration-500 ease-in-out transform hover:scale-110"
+                    onError={(e) => (e.target.src = "/images/placeholder.jpg")}
                   />
                   <div className="absolute top-0 left-0 px-2 py-0 m-1 bg-blue-100 text-blue-600 text-sm font-semibold rounded-full">
                     {article.category}
@@ -143,19 +214,39 @@ function BlogPage() {
                     {article.title}
                   </h3>
                   <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                    {article.content}
+                    {(() => {
+                      // Strip HTML tags for preview
+                      const text = article.content || "";
+                      return text.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+                    })()}
                   </p>
 
                   {/* Author */}
                   <div className="flex justify-between items-center mt-4">
                     <div className="flex items-center gap-2">
-                      <img
-                        src={article.authorImage}
-                        alt={article.authorName}
-                        className="w-8 h-8 rounded-full object-cover border border-gray-300"
-                      />
+                      {article.authorImage && article.authorImage !== "/default-avatar.png" ? (
+                        <img
+                          src={article.authorImage}
+                          alt={article.authorName}
+                          className="w-8 h-8 rounded-full object-cover border border-gray-300 flex-shrink-0"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            const fallback = e.target.nextElementSibling;
+                            if (fallback) fallback.style.display = "flex";
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className={`w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300 flex-shrink-0 ${
+                          article.authorImage && article.authorImage !== "/default-avatar.png" ? "hidden" : ""
+                        }`}
+                      >
+                        <span className="text-xs text-gray-500 font-semibold">
+                          {article.authorName ? article.authorName.charAt(0).toUpperCase() : "?"}
+                        </span>
+                      </div>
                       <p className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                        {article.authorName}
+                        {article.username}
                         {article.verified && (
                           <FaCheckCircle className="text-blue-600 text-[16px]" />
                         )}

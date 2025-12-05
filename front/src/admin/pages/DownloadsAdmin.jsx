@@ -202,12 +202,13 @@ export default function DownloadsAdmin() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px]">
+              <table className="w-full min-w-[1200px]">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
                     <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">User</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Downloads</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">User Total</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Book</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Download Count</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Price</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Type</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Date</th>
@@ -246,6 +247,16 @@ export default function DownloadsAdmin() {
                             <p className="font-medium text-gray-900 dark:text-white text-sm">{download.title}</p>
                             <p className="text-gray-600 dark:text-gray-400 text-xs">by {download.author}</p>
                           </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="inline-flex items-center justify-center w-10 h-10 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-sm font-bold">
+                            {download.downloadCount || 1}
+                          </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            {(download.downloadCount || 1) === 1 ? 'time' : 'times'}
+                          </span>
                         </div>
                       </td>
                       <td className="py-3 px-4 font-semibold text-green-600 dark:text-green-400 text-sm">${download.price}</td>

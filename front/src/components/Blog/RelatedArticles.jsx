@@ -9,7 +9,7 @@ export default function RelatedArticles({
 }) {
   // Filter related posts by same category but exclude current post
   const filteredPosts = relatedPosts.filter(
-    (post) => post.category === currentPostCategory && post.id !== currentPostId
+    (post) => post.category === currentPostCategory && (post._id || post.id) !== currentPostId
   );
 
   // Helper: slugify title
@@ -25,7 +25,7 @@ export default function RelatedArticles({
         <ul className="space-y-6">
           {filteredPosts.map((post) => (
             <li
-              key={post.id}
+              key={post._id || post.id}
               className="flex items-center gap-4 hover:bg-blue-100 transition-all duration-300 rounded-lg p-2"
             >
               {/* Thumbnail */}
@@ -35,7 +35,11 @@ export default function RelatedArticles({
               >
                 <img
                   src={
-                    post.thumbnail || "/images/placeholders/article-thumb.jpg"
+                    post.thumbnail?.startsWith('http') 
+                      ? post.thumbnail 
+                      : post.thumbnail 
+                        ? `http://localhost:3000${post.thumbnail.startsWith('/') ? post.thumbnail : `/${post.thumbnail}`}`
+                        : "/images/placeholders/article-thumb.jpg"
                   }
                   alt={post.title}
                   className="w-20 h-14 object-cover rounded-md border border-blue-200"
@@ -56,7 +60,7 @@ export default function RelatedArticles({
                 </Link>
                 <p className="text-xs text-blue-600  mt-1 flex items-center gap-1">
                   <FaCalendarAlt className="inline" />
-                  {new Date(post.date).toLocaleDateString(undefined, {
+                  {new Date(post.publishedDate || post.date || post.createdAt).toLocaleDateString(undefined, {
                     year: "numeric",
                     month: "long",
                     day: "numeric",

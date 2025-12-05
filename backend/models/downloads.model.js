@@ -49,6 +49,10 @@ const downloadSchema = new mongoose.Schema({
   notDownloaded: {
     type: Boolean,
     default: false
+  },
+  downloadCount: {
+    type: Number,
+    default: 1
   }
 }, {
   timestamps: true

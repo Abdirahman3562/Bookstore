@@ -6,6 +6,9 @@ import {
   FaGithub,
   FaLinkedin,
   FaTwitter,
+  FaYoutube,
+  FaFacebook,
+  FaInstagram,
   FaCheckCircle,
 } from "react-icons/fa";
 
@@ -17,6 +20,12 @@ function AuthorPage() {
 
   // ✅ Helper: convert title to slug
   const toSlug = (str) => str?.toLowerCase().trim().replace(/\s+/g, "-") ?? "";
+
+  // ✅ Helper: strip HTML tags
+  const stripHtml = (html) => {
+    if (!html) return "";
+    return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  };
 
   // ✅ Relative time helper
   const getRelativeTime = (dateString) => {
@@ -42,9 +51,10 @@ function AuthorPage() {
         setLoading(true);
 
         // 1️⃣ Fetch all authors
-        const aRes = await fetch("http://localhost:5005/authors");
+        const aRes = await fetch("http://localhost:3000/api/authors");
         if (!aRes.ok) throw new Error("Failed to load authors");
-        const aData = await aRes.json();
+        const aResponse = await aRes.json();
+        const aData = aResponse.data || [];
 
         // find by username (case-insensitive)
         const found = aData.find(
@@ -58,28 +68,73 @@ function AuthorPage() {
           return;
         }
 
+        const authorId = found._id || found.id;
+
+        let authorImageUrl = "/images/authors/default.jpg";
+        if (found.avatar && found.avatar.trim() !== '') {
+          // Check if it's base64
+          if (found.avatar.startsWith('data:image/')) {
+            authorImageUrl = found.avatar;
+          } else if (found.avatar.startsWith('http://') || found.avatar.startsWith('https://')) {
+            authorImageUrl = found.avatar;
+          } else if (found.avatar.startsWith('/uploads/')) {
+            authorImageUrl = `http://localhost:3000${found.avatar}`;
+          } else if (found.avatar.startsWith('uploads/')) {
+            authorImageUrl = `http://localhost:3000/${found.avatar}`;
+          } else {
+            authorImageUrl = `http://localhost:3000/uploads/${found.avatar}`;
+          }
+        }
+        
         setAuthor({
-          id: found.id,
+          id: authorId,
           username: found.username,
           name: found.name,
-          image: found.avatar,
+          image: authorImageUrl,
           bio: found.bio || "No bio available yet.",
           verified: !!found.verified,
           badge: found.badge || null,
           social: found.social || {},
         });
 
-        // 2️⃣ Fetch blogs and filter by authorId or username
-        const pRes = await fetch("http://localhost:5006/blogs");
+        // 2️⃣ Fetch blogs and filter by authorId
+        const pRes = await fetch("http://localhost:3000/api/blogs");
         if (!pRes.ok) throw new Error("Failed to load blogs");
-        const blogs = await pRes.json();
+        const blogsResponse = await pRes.json();
+        const blogs = blogsResponse.data || [];
 
-        const posts = blogs.filter(
-          (p) =>
-            Number(p.authorId) === Number(found.id) ||
-            p.authorName?.toLowerCase().replace(/\s+/g, "") ===
-              found.username?.toLowerCase()
-        );
+        const posts = blogs
+          .filter(blog => blog.status === 'published')
+          .filter(
+            (p) => {
+              const blogAuthorId = p.authorId?._id || p.authorId?.toString() || p.authorId;
+              return blogAuthorId?.toString() === authorId?.toString();
+            }
+          )
+          .map(blog => {
+            let thumbnailUrl = "/images/placeholder.jpg";
+            if (blog.thumbnail && blog.thumbnail.trim() !== '') {
+              // Check if it's base64
+              if (blog.thumbnail.startsWith('data:image/')) {
+                thumbnailUrl = blog.thumbnail;
+              } else if (blog.thumbnail.startsWith('http://') || blog.thumbnail.startsWith('https://')) {
+                thumbnailUrl = blog.thumbnail;
+              } else if (blog.thumbnail.startsWith('/uploads/')) {
+                thumbnailUrl = `http://localhost:3000${blog.thumbnail}`;
+              } else if (blog.thumbnail.startsWith('uploads/')) {
+                thumbnailUrl = `http://localhost:3000/${blog.thumbnail}`;
+              } else {
+                thumbnailUrl = `http://localhost:3000/uploads/${blog.thumbnail}`;
+              }
+            }
+            
+            return {
+              ...blog,
+              id: blog._id || blog.id,
+              date: blog.publishedDate || blog.date || blog.createdAt,
+              thumbnail: thumbnailUrl,
+            };
+          });
 
         setArticles(posts || []);
       } catch (err) {
@@ -128,7 +183,7 @@ function AuthorPage() {
         <div className="flex-1 ml-12 md:ml-6 mt-4 md:mt-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-1">
-              {author.name}
+              {author.username}
               {author.verified && (
                 <FaCheckCircle
                   className="text-blue-600 text-lg"
@@ -148,48 +203,81 @@ function AuthorPage() {
 
           {/* ✅ Social Links */}
           <div className="flex flex-wrap gap-2 mt-6">
-            {social.website && (
-              <a
-                href={social.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-blue-100 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
-              >
-                <FaGlobe className="text-gray-500 text-lg" />
-                <span>Website</span>
-              </a>
-            )}
-            {social.github && (
+            {social.github && social.github.trim() !== '' && (
               <a
                 href={social.github}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-blue-100 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
               >
-                <FaGithub className="text-gray-800 text-lg" />
+                <FaGithub className="text-blue-600 text-lg" />
                 <span>GitHub</span>
               </a>
             )}
-            {social.linkedin && (
+            {social.linkedin && social.linkedin.trim() !== '' && (
               <a
                 href={social.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-blue-100 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
               >
-                <FaLinkedin className="text-blue-700 text-lg" />
+                <FaLinkedin className="text-blue-600 text-lg" />
                 <span>LinkedIn</span>
               </a>
             )}
-            {social.twitter && (
+            {social.twitter && social.twitter.trim() !== '' && (
               <a
                 href={social.twitter}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-blue-100 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
               >
-                <FaTwitter className="text-blue-400 text-lg" />
+                <FaTwitter className="text-blue-600 text-lg" />
                 <span>Twitter</span>
+              </a>
+            )}
+            {social.website && social.website.trim() !== '' && (
+              <a
+                href={social.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+              >
+                <FaGlobe className="text-blue-600 text-lg" />
+                <span>Website</span>
+              </a>
+            )}
+            {social.youtube && social.youtube.trim() !== '' && (
+              <a
+                href={social.youtube}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+              >
+                <FaYoutube className="text-blue-600 text-lg" />
+                <span>YouTube</span>
+              </a>
+            )}
+            {social.facebook && social.facebook.trim() !== '' && (
+              <a
+                href={social.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+              >
+                <FaFacebook className="text-blue-600 text-lg" />
+                <span>Facebook</span>
+              </a>
+            )}
+            {social.instagram && social.instagram.trim() !== '' && (
+              <a
+                href={social.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+              >
+                <FaInstagram className="text-blue-600 text-lg" />
+                <span>Instagram</span>
               </a>
             )}
           </div>
@@ -208,7 +296,7 @@ function AuthorPage() {
           {articles.map((post) => (
             <Link
               to={`/blog/${toSlug(post.title)}`}
-              key={post.id}
+              key={post._id || post.id}
               className="relative bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-blue-100 overflow-hidden group"
             >
               <img
@@ -235,11 +323,11 @@ function AuthorPage() {
 
                 <div className="inline-flex items-center gap-1 text-xs font-medium bg-blue-100 text-blue-600 px-2 py-1 rounded-md shadow-sm">
                   <FaCalendarAlt className="text-[12px]" />
-                  <span>{getRelativeTime(post.date)}</span>
+                  <span>{getRelativeTime(post.publishedDate || post.date || post.createdAt)}</span>
                 </div>
 
                 <p className="text-gray-700 text-sm line-clamp-3 leading-relaxed">
-                  {post.content}
+                  {stripHtml(post.content)}
                 </p>
               </div>
             </Link>

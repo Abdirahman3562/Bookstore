@@ -13,9 +13,10 @@ export default function NewReleases() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:5100/books")
+    fetch("http://localhost:3000/api/books")
       .then((response) => response.json())
-      .then((data) => {
+      .then((responseData) => {
+        const data = responseData.data || [];
         if (Array.isArray(data)) {
           setBooksData(data);
         } else if (data && data.books) {
@@ -57,14 +58,17 @@ export default function NewReleases() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {newestBooks.map((book) => (
           <div
-            key={book.id}
+            key={book._id || book.id}
             className="bg-white border border-gray-200   rounded-lg shadow-lg p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
           >
             <Link to={`/book/${slugify(book.title)}`} className="block">
               <img
-                src={book.cover}
+                src={book.cover ? `http://localhost:3000${book.cover}` : 'https://via.placeholder.com/300x400?text=No+Image'}
                 alt={book.title}
                 className="w-full lg:h-28 md:h-28 h-40 object-cover rounded-t-lg"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/300x400?text=No+Image';
+                }}
               />
               <div className="mt-4">
                 <h3 className="text-lg font-semibold">{book.title}</h3>

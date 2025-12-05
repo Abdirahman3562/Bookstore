@@ -40,17 +40,18 @@ export default function CheckoutPage() {
   }
 
   // Fetch the existing purchases to check for pending orders
-  fetch("http://localhost:5001/purchased")
+  fetch("http://localhost:3000/api/purchased")
     .then((res) => res.json())
-    .then((existingPurchases) => {
+    .then((responseData) => {
+      const existingPurchases = responseData.data || [];
       let canProceed = true;
 
       // Loop through cartItems and check if the user already has a pending order for the same book
       cartItems.forEach((item) => {
         const alreadyPurchased = existingPurchases.some(
           (purchase) =>
-            purchase.userId === user.id &&
-            purchase.bookId === item.id &&
+            (purchase.userId === (user._id || user.id)) &&
+            (purchase.bookId === (item._id || item.id)) &&
             purchase.status === "pending"
         );
 
@@ -65,11 +66,11 @@ export default function CheckoutPage() {
         // Loop through cartItems and create the purchase order data
         cartItems.forEach((item) => {
           const purchaseData = {
-            id: Date.now().toString(), // unique ID for the purchase record
-            userId: user.id,
+            userId: (user._id || user.id)?.toString(), // Ensure it's a string
             userName: user.name,
-            email: user.email,
-            bookId: item.id,
+            email: user.email?.toLowerCase(), // Normalize email to lowercase
+            phone: phone || "", // Include phone number from checkout form
+            bookId: (item._id || item.id)?.toString(), // Ensure it's a string
             title: item.title,
             author: item.author,
             cover: item.cover,
@@ -82,7 +83,7 @@ export default function CheckoutPage() {
           };
 
           // Send POST request to save purchase data
-          fetch("http://localhost:5001/purchased", {
+          fetch("http://localhost:3000/api/purchased", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -103,6 +104,10 @@ export default function CheckoutPage() {
 
         // Dispatch cartUpdated event to notify the Navbar to update the cart count
         window.dispatchEvent(new Event("cartUpdated"));
+
+        // Set flag in sessionStorage to indicate user just completed checkout
+        sessionStorage.setItem("justCompletedCheckout", "true");
+        sessionStorage.setItem("checkoutTimestamp", new Date().toISOString());
 
         // Navigate to the "Thank You" page or confirmation
         navigate("/thank-you");
@@ -156,13 +161,16 @@ export default function CheckoutPage() {
           <h3 className="text-xl font-semibold text-gray-800">Your Cart</h3>
           {cartItems.map((item) => (
             <div
-              key={item.id}
+              key={item._id || item.id}
               className="flex items-center justify-between p-4 border rounded-lg shadow-md bg-white mb-4"
             >
               <img
-                src={item.cover}
+                src={item.cover ? `http://localhost:3000${item.cover}` : 'https://via.placeholder.com/80x112?text=No+Image'}
                 alt={item.title}
                 className="w-20 h-28 object-cover rounded-md"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/80x112?text=No+Image';
+                }}
               />
               <div className="ml-4 flex-grow">
                 <h3 className="text-xl font-semibold text-gray-800">

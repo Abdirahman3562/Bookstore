@@ -32,12 +32,17 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 
 export default function BlogsAdmin() {
   const [blogs, setBlogs] = useState([]);
   const [authors, setAuthors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [notificationsCount, setNotificationsCount] = useState(0);
 
   // Function to strip HTML tags and get plain text
   const stripHtml = (html) => {
@@ -57,6 +62,10 @@ export default function BlogsAdmin() {
   const [commentToDelete, setCommentToDelete] = useState({ commentId: null, replyId: null });
   const [editingBlog, setEditingBlog] = useState(null);
   const [thumbnailChanged, setThumbnailChanged] = useState(false);
+  const [replyBox, setReplyBox] = useState({ commentId: null, replyId: null });
+  const [replyText, setReplyText] = useState("");
+  const [editingReply, setEditingReply] = useState({ commentId: null, replyId: null });
+  const [editReplyText, setEditReplyText] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     category: "",
@@ -413,11 +422,394 @@ export default function BlogsAdmin() {
     }
   };
 
+  // Handle reply to comment or reply
+  const handleReply = async (commentId, replyId = null) => {
+    if (!blogForComments || !replyText.trim()) {
+      toast.error("Please enter a reply");
+      return;
+    }
+
+    if (!currentUser) {
+      toast.error("User not found");
+      return;
+    }
+
+    try {
+      // Get current comments
+      const comments = blogForComments.comments || [];
+      
+      // Function to find and update replies recursively
+      const findAndUpdateReply = (replies, targetReplyId) => {
+        if (!replies || replies.length === 0) return false;
+        
+        for (let i = 0; i < replies.length; i++) {
+          const reply = replies[i];
+          const replyIdStr = String(reply.id || reply._id || "");
+          const targetId = String(targetReplyId || "");
+          
+          // If this is the reply we're replying to
+          if (replyIdStr === targetId) {
+            replies[i] = {
+              ...reply,
+              replies: [
+                ...(reply.replies || []),
+                {
+                  id: Date.now().toString(),
+                  userId: (currentUser._id || currentUser.id)?.toString(),
+                  username: currentUser.name || "Admin",
+                  avatar: (() => {
+                    // Get avatar from currentUser, or from linked author if available
+                    if (currentUser.avatar) return currentUser.avatar;
+                    if (currentUser.authorId && authors.length > 0) {
+                      const authorIdStr = String(currentUser.authorId._id || currentUser.authorId || "");
+                      const linkedAuthor = authors.find(a => String(a._id || a.id || "") === authorIdStr);
+                      if (linkedAuthor && linkedAuthor.avatar) return linkedAuthor.avatar;
+                    }
+                    return "";
+                  })(),
+                  reply: replyText.trim(),
+                  date: Date.now(),
+                  replies: [],
+                },
+              ],
+            };
+            return true;
+          }
+          
+          // Recursively check nested replies
+          if (reply.replies && reply.replies.length > 0) {
+            if (findAndUpdateReply(reply.replies, targetReplyId)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+      
+      // Function to update comments
+      const updateComments = (commentsList) => {
+        return commentsList.map((c) => {
+          const commentIdStr = String(c.id || c._id || "");
+          const targetCommentId = String(commentId || "");
+          
+          // If replying to a comment (not a reply)
+          if (!replyId && commentIdStr === targetCommentId) {
+            return {
+              ...c,
+              replies: [
+                ...(c.replies || []),
+                {
+                  id: Date.now().toString(),
+                  userId: (currentUser._id || currentUser.id)?.toString(),
+                  username: currentUser.name || "Admin",
+                  avatar: (() => {
+                    // Get avatar from currentUser, or from linked author if available
+                    if (currentUser.avatar) return currentUser.avatar;
+                    if (currentUser.authorId && authors.length > 0) {
+                      const authorIdStr = String(currentUser.authorId._id || currentUser.authorId || "");
+                      const linkedAuthor = authors.find(a => String(a._id || a.id || "") === authorIdStr);
+                      if (linkedAuthor && linkedAuthor.avatar) return linkedAuthor.avatar;
+                    }
+                    return "";
+                  })(),
+                  reply: replyText.trim(),
+                  date: Date.now(),
+                  replies: [],
+                },
+              ],
+            };
+          }
+          
+          // If replying to a reply, search in this comment's replies
+          if (replyId && c.replies && c.replies.length > 0) {
+            const repliesCopy = [...c.replies];
+            if (findAndUpdateReply(repliesCopy, replyId)) {
+              return {
+                ...c,
+                replies: repliesCopy,
+              };
+            }
+          }
+          
+          // Recursively update nested structure
+          return {
+            ...c,
+            replies: updateComments(c.replies || []),
+          };
+        });
+      };
+
+      const updatedComments = updateComments(comments);
+
+      // Update blog with new comments
+      const response = await axios.put(
+        `http://localhost:3000/api/blogs/${blogForComments._id}`,
+        { comments: updatedComments }
+      );
+
+      if (response.data.success || response.data.data) {
+        toast.success("Reply added successfully!");
+        
+        // Update the blog data in state
+        const updatedBlog = response.data.data || blogForComments;
+        updatedBlog.comments = updatedComments;
+        setBlogForComments(updatedBlog);
+        
+        // Also update the blogs list
+        await fetchBlogs();
+        
+        // Clear reply box
+        setReplyText("");
+        setReplyBox({ commentId: null, replyId: null });
+      }
+    } catch (error) {
+      console.error("Error adding reply:", error);
+      toast.error("Failed to add reply");
+    }
+  };
+
+  // Handle edit reply
+  const handleEditReply = async (commentId, replyId) => {
+    if (!blogForComments || !editReplyText.trim()) {
+      toast.error("Please enter reply text");
+      return;
+    }
+
+    try {
+      const comments = blogForComments.comments || [];
+      
+      // Function to update reply text recursively
+      const updateReplyText = (replies) => {
+        if (!replies || replies.length === 0) return replies;
+        
+        return replies.map((r) => {
+          const replyIdStr = String(r.id || r._id || "");
+          const targetReplyId = String(replyId || "");
+          
+          if (replyIdStr === targetReplyId) {
+            return {
+              ...r,
+              reply: editReplyText.trim(),
+              edited: true,
+            };
+          }
+          
+          // Recursively update nested replies
+          return {
+            ...r,
+            replies: updateReplyText(r.replies || []),
+          };
+        });
+      };
+
+      // Find the comment and update its replies
+      const updatedComments = comments.map((c) => {
+        const commentIdStr = String(c.id || c._id || "");
+        const targetCommentId = String(commentId || "");
+        
+        if (commentIdStr === targetCommentId) {
+          return {
+            ...c,
+            replies: updateReplyText(c.replies || []),
+          };
+        }
+        
+        // Recursively check nested replies in this comment
+        return {
+          ...c,
+          replies: updateReplyText(c.replies || []),
+        };
+      });
+
+      // Update blog with edited reply
+      const response = await axios.put(
+        `http://localhost:3000/api/blogs/${blogForComments._id}`,
+        { comments: updatedComments }
+      );
+
+      if (response.data.success || response.data.data) {
+        toast.success("Reply updated successfully!");
+        
+        // Update the blog data in state
+        const updatedBlog = response.data.data || blogForComments;
+        updatedBlog.comments = updatedComments;
+        setBlogForComments(updatedBlog);
+        
+        // Also update the blogs list
+        await fetchBlogs();
+        
+        // Clear edit state
+        setEditReplyText("");
+        setEditingReply({ commentId: null, replyId: null });
+      }
+    } catch (error) {
+      console.error("Error updating reply:", error);
+      toast.error("Failed to update reply");
+    }
+  };
+
+  // Fetch current admin user data
+  const fetchCurrentUser = async () => {
+    try {
+      const adminEmail = localStorage.getItem("admin_email");
+      if (!adminEmail) return;
+
+      // Try admins API first
+      try {
+        const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+        const admins = adminsResponse.data.data || [];
+        const admin = admins.find(a => a.email === adminEmail);
+        if (admin) {
+          // If admin has authorId, try to get avatar from author profile
+          let userWithAvatar = { ...admin };
+          if (admin.authorId && !admin.avatar) {
+            try {
+              const authorsResponse = await axios.get("http://localhost:3000/api/authors");
+              const authors = authorsResponse.data.data || [];
+              const authorIdStr = String(admin.authorId._id || admin.authorId || "");
+              const linkedAuthor = authors.find(a => String(a._id || a.id || "") === authorIdStr);
+              if (linkedAuthor && linkedAuthor.avatar) {
+                userWithAvatar.avatar = linkedAuthor.avatar;
+              }
+            } catch (error) {
+              console.log("Could not fetch author avatar");
+            }
+          }
+          setCurrentUser(userWithAvatar);
+          setUserRole(admin.adminRole || admin.role || "admin");
+          return;
+        }
+      } catch (error) {
+        console.log("Admins API not available, trying users API");
+      }
+
+      // Fallback to users API
+      const usersResponse = await axios.get("http://localhost:3000/api/users");
+      const users = usersResponse.data.data || [];
+      const user = users.find(u => u.email === adminEmail);
+      if (user) {
+        // If user has authorId, try to get avatar from author profile
+        let userWithAvatar = { ...user };
+        if (user.authorId && !user.avatar) {
+          try {
+            const authorsResponse = await axios.get("http://localhost:3000/api/authors");
+            const authors = authorsResponse.data.data || [];
+            const authorIdStr = String(user.authorId._id || user.authorId || "");
+            const linkedAuthor = authors.find(a => String(a._id || a.id || "") === authorIdStr);
+            if (linkedAuthor && linkedAuthor.avatar) {
+              userWithAvatar.avatar = linkedAuthor.avatar;
+            }
+          } catch (error) {
+            console.log("Could not fetch author avatar");
+          }
+        }
+        setCurrentUser(userWithAvatar);
+        setUserRole(user.adminRole || user.role || "admin");
+      }
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
+  };
+
+  // Fetch notifications count for authors
+  const fetchNotificationsCount = async () => {
+    if (userRole !== "author" || !currentUser) return;
+    
+    try {
+      // Get the authorId from admin user record (this links admin user to author profile)
+      // If authorId exists in admin user, use it; otherwise fallback to currentUser._id
+      let currentAuthorId = "";
+      if (currentUser.authorId) {
+        // authorId from admin user record (links to authors collection)
+        currentAuthorId = String(currentUser.authorId._id || currentUser.authorId || "");
+      } else {
+        // Fallback: use admin user's _id (for backward compatibility)
+        currentAuthorId = String(currentUser._id || currentUser.id || "");
+      }
+      
+      if (!currentAuthorId) return;
+
+      // Count comments on author's blogs from current blogs state
+      let count = 0;
+      blogs.forEach(blog => {
+        let blogAuthorId = "";
+        if (blog.authorId) {
+          if (typeof blog.authorId === "string") {
+            blogAuthorId = blog.authorId;
+          } else if (blog.authorId._id) {
+            blogAuthorId = blog.authorId._id;
+          } else if (blog.authorId.toString) {
+            blogAuthorId = blog.authorId.toString();
+          }
+        }
+        if (String(blogAuthorId) === currentAuthorId) {
+          count += blog.comments?.length || 0;
+        }
+      });
+      
+      setNotificationsCount(count);
+    } catch (error) {
+      console.error("Error fetching notifications count:", error);
+    }
+  };
+
   // Load data on component mount
   useEffect(() => {
-    fetchBlogs();
+    fetchCurrentUser();
     fetchAuthors();
   }, []);
+
+  // Fetch blogs after user role is determined
+  useEffect(() => {
+    if (userRole !== null) {
+      fetchBlogs();
+    }
+  }, [userRole, currentUser]);
+
+  // Update notifications count when blogs change
+  useEffect(() => {
+    if (userRole === "author" && currentUser && blogs.length >= 0) {
+      // Get the authorId from admin user record (this links admin user to author profile)
+      // If authorId exists in admin user, use it; otherwise fallback to currentUser._id
+      let currentAuthorId = "";
+      if (currentUser.authorId) {
+        // authorId from admin user record (links to authors collection)
+        currentAuthorId = String(currentUser.authorId._id || currentUser.authorId || "");
+      } else {
+        // Fallback: use admin user's _id (for backward compatibility)
+        currentAuthorId = String(currentUser._id || currentUser.id || "");
+      }
+      
+      if (!currentAuthorId) return;
+
+      // Count comments on author's blogs
+      let count = 0;
+      blogs.forEach(blog => {
+        let blogAuthorId = "";
+        if (blog.authorId) {
+          if (typeof blog.authorId === "string") {
+            blogAuthorId = blog.authorId;
+          } else if (blog.authorId._id) {
+            blogAuthorId = blog.authorId._id;
+          } else if (blog.authorId.toString) {
+            blogAuthorId = blog.authorId.toString();
+          }
+        }
+        if (String(blogAuthorId) === currentAuthorId) {
+          count += blog.comments?.length || 0;
+        }
+      });
+      
+      setNotificationsCount(count);
+    }
+  }, [blogs, userRole, currentUser]);
+
+  // Fetch notifications when user role is set
+  useEffect(() => {
+    if (userRole === "author" && currentUser) {
+      fetchNotificationsCount();
+    }
+  }, [userRole, currentUser]);
 
   if (loading) {
     return (
@@ -437,9 +829,23 @@ export default function BlogsAdmin() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 sm:gap-0">
           <div className="flex items-center gap-3">
             <FileText className="w-8 h-8 text-blue-600 dark:text-blue-500" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              Blogs Management
-            </h1>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                Blogs Management
+              </h1>
+              {userRole && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 font-medium">
+                    {userRole === "author" ? "Author" : "Admin"}
+                  </span>
+                  {userRole === "author" && notificationsCount > 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 font-medium">
+                      {notificationsCount} new comment{notificationsCount !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
@@ -552,9 +958,24 @@ export default function BlogsAdmin() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {blogs.map((blog) => {
-                const author = authors.find(
-                  (a) => a._id === blog.authorId || a.id === blog.authorId
-                );
+                // Handle authorId - could be ObjectId, string, or nested object
+                let authorIdValue = "";
+                if (blog.authorId) {
+                  if (typeof blog.authorId === "string") {
+                    authorIdValue = blog.authorId;
+                  } else if (blog.authorId._id) {
+                    authorIdValue = blog.authorId._id;
+                  } else if (blog.authorId.toString) {
+                    authorIdValue = blog.authorId.toString();
+                  }
+                }
+                
+                // Find author by comparing string values
+                const author = authors.find((a) => {
+                  const authorId = String(a._id || a.id || "");
+                  return authorId === authorIdValue;
+                });
+                
                 const commentsCount = blog.comments?.length || 0;
 
                 return (
@@ -616,24 +1037,28 @@ export default function BlogsAdmin() {
                       {/* Author & Date */}
                       <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
                         <div className="flex items-center gap-2">
-                          {author &&
-                          author.avatar &&
-                          author.avatar.trim() !== "" ? (
+                          {author && author.avatar && author.avatar.trim() !== "" ? (
                             <img
                               src={author.avatar}
-                              alt={author.name}
-                              className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                              alt={author.name || "Author"}
+                              className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
                               onError={(e) => {
+                                // Hide image and show fallback
                                 e.target.style.display = "none";
+                                const fallback = e.target.nextElementSibling;
+                                if (fallback) fallback.style.display = "flex";
                               }}
                             />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                              <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                            </div>
-                          )}
+                          ) : null}
+                          <div 
+                            className={`w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 ${
+                              author && author.avatar && author.avatar.trim() !== "" ? "hidden" : ""
+                            }`}
+                          >
+                            <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          </div>
                           <span className="text-sm text-gray-700 dark:text-gray-300">
-                            {author ? author.name.split(" ")[0] : "Unknown"}
+                            {author && author.name ? author.name.split(" ")[0] : "Unknown"}
                           </span>
                         </div>
                         {blog.publishedDate && (
@@ -1201,8 +1626,37 @@ export default function BlogsAdmin() {
               ) : (
                 <div className="space-y-6">
                   {blogForComments.comments.map((comment, index) => {
+                    // Check if current user is the blog author
+                    let isBlogAuthor = false;
+                    if (currentUser && blogForComments.authorId) {
+                      let blogAuthorId = "";
+                      if (typeof blogForComments.authorId === "string") {
+                        blogAuthorId = blogForComments.authorId;
+                      } else if (blogForComments.authorId._id) {
+                        blogAuthorId = blogForComments.authorId._id;
+                      } else if (blogForComments.authorId.toString) {
+                        blogAuthorId = blogForComments.authorId.toString();
+                      }
+                      
+                      // Check if current user's authorId matches blog's authorId
+                      if (currentUser.authorId) {
+                        const currentAuthorId = String(currentUser.authorId._id || currentUser.authorId || "");
+                        if (currentAuthorId === blogAuthorId) {
+                          isBlogAuthor = true;
+                        }
+                      }
+                      
+                      // Also check if user role is "author" and their _id matches (for backward compatibility)
+                      if (!isBlogAuthor && userRole === "author" && currentUser._id) {
+                        const currentUserId = String(currentUser._id || currentUser.id || "");
+                        if (currentUserId === blogAuthorId) {
+                          isBlogAuthor = true;
+                        }
+                      }
+                    }
+                    
                     // Recursive function to render nested replies
-                    const renderReplies = (replies, depth = 0, parentCommentId = null) => {
+                    const renderReplies = (replies, depth = 0, parentCommentId = null, isBlogAuthorParam = false) => {
                       if (!replies || replies.length === 0) return null;
                       const marginLeft = Math.min(depth * 4, 16);
                       // Use parentCommentId if provided, otherwise use the main comment ID
@@ -1223,14 +1677,33 @@ export default function BlogsAdmin() {
                                     className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
                                     onError={(e) => {
                                       e.target.style.display = "none";
+                                      const fallback = e.target.nextElementSibling;
+                                      if (fallback) {
+                                        fallback.style.display = "flex";
+                                      }
+                                    }}
+                                    onLoad={(e) => {
+                                      const fallback = e.target.nextElementSibling;
+                                      if (fallback) {
+                                        fallback.style.display = "none";
+                                      }
                                     }}
                                   />
                                 ) : null}
-                                {(!reply.avatar || reply.avatar.trim() === "") && (
-                                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                                    <User className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 dark:text-gray-500" />
-                                  </div>
-                                )}
+                                <div 
+                                  className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center flex-shrink-0 text-white text-xs font-semibold ${
+                                    reply.avatar && reply.avatar.trim() !== "" ? "hidden" : ""
+                                  }`}
+                                >
+                                  {reply.username 
+                                    ? reply.username
+                                        .split(" ")
+                                        .map((n) => n[0])
+                                        .join("")
+                                        .toUpperCase()
+                                        .slice(0, 2)
+                                    : "U"}
+                                </div>
                                 <div className="flex-1 min-w-0 pr-1 sm:pr-2">
                                   <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
                                     <span className="font-semibold text-gray-900 dark:text-white text-xs sm:text-sm">
@@ -1247,22 +1720,128 @@ export default function BlogsAdmin() {
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm whitespace-pre-wrap break-words">
-                                    {reply.reply || reply.comment || "No content"}
-                                  </p>
+                                  {/* Edit mode or display mode */}
+                                  {editingReply.commentId === currentParentId && editingReply.replyId === (reply.id || reply._id) ? (
+                                    <div className="mt-2 space-y-2">
+                                      <textarea
+                                        rows="3"
+                                        value={editReplyText}
+                                        onChange={(e) => setEditReplyText(e.target.value)}
+                                        className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                                        placeholder="Edit your reply..."
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleEditReply(currentParentId, reply.id || reply._id)}
+                                          className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1"
+                                        >
+                                          <Edit className="w-3 h-3" />
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setEditingReply({ commentId: null, replyId: null });
+                                            setEditReplyText("");
+                                          }}
+                                          className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <p className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm whitespace-pre-wrap break-words">
+                                        {reply.reply || reply.comment || "No content"}
+                                      </p>
+                                      {/* Action buttons */}
+                                      <div className="flex items-center gap-2 mt-2">
+                                        {/* Reply button - hide if this is current user's reply */}
+                                        {currentUser && String(reply.userId || "") !== String(currentUser._id || currentUser.id || "") && (
+                                          <button
+                                            onClick={() => setReplyBox({ commentId: currentParentId, replyId: reply.id || reply._id })}
+                                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                            title="Reply to this reply"
+                                          >
+                                            <MessageSquare className="w-3 h-3" />
+                                            Reply
+                                          </button>
+                                        )}
+                                        {/* Edit button - only for reply author */}
+                                        {currentUser && String(reply.userId || "") === String(currentUser._id || currentUser.id || "") && (
+                                          <button
+                                            onClick={() => {
+                                              setEditingReply({ commentId: currentParentId, replyId: reply.id || reply._id });
+                                              setEditReplyText(reply.reply || reply.comment || "");
+                                            }}
+                                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                            title="Edit your reply"
+                                          >
+                                            <Edit className="w-3 h-3" />
+                                            Edit
+                                          </button>
+                                        )}
+                                      </div>
+                                      {/* Reply box */}
+                                      {replyBox.commentId === currentParentId && replyBox.replyId === (reply.id || reply._id) && (
+                                        <div className="mt-2 space-y-2">
+                                          <textarea
+                                            rows="2"
+                                            value={replyText}
+                                            onChange={(e) => setReplyText(e.target.value)}
+                                            className="w-full px-3 py-2 text-xs sm:text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                                            placeholder="Write a reply..."
+                                          />
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={() => handleReply(currentParentId, reply.id || reply._id)}
+                                              className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1"
+                                            >
+                                              <Send className="w-3 h-3" />
+                                              Reply
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                setReplyBox({ commentId: null, replyId: null });
+                                                setReplyText("");
+                                              }}
+                                              className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                            >
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
-                                <button
-                                  onClick={() => openDeleteCommentModal(currentParentId, reply.id || reply._id)}
-                                  className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0 mt-0.5"
-                                  title="Delete reply"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                </button>
+                                <div className="flex flex-col gap-1">
+                                  {/* Delete button - for reply author, blog author, all authors, or admin */}
+                                  {(() => {
+                                    // Check if current user is the reply author
+                                    const isReplyAuthor = currentUser && (
+                                      String(reply.userId || "") === String(currentUser._id || currentUser.id || "") ||
+                                      String(reply.userId || "") === String(currentUser.authorId?._id || currentUser.authorId || "") ||
+                                      (reply.username && currentUser.name && reply.username.toLowerCase() === currentUser.name.toLowerCase())
+                                    );
+                                    
+                                    // All authors can delete all replies
+                                    return isReplyAuthor || isBlogAuthorParam || userRole === "author" || userRole === "admin";
+                                  })() ? (
+                                    <button
+                                      onClick={() => openDeleteCommentModal(currentParentId, reply.id || reply._id)}
+                                      className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0 mt-0.5"
+                                      title="Delete reply"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    </button>
+                                  ) : null}
+                                </div>
                               </div>
                               {/* Render nested replies recursively */}
                               {reply.replies &&
                                 reply.replies.length > 0 &&
-                                renderReplies(reply.replies, depth + 1, currentParentId)}
+                                renderReplies(reply.replies, depth + 1, currentParentId, isBlogAuthorParam)}
                             </div>
                           ))}
                         </div>
@@ -1282,15 +1861,32 @@ export default function BlogsAdmin() {
                                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
                                 onError={(e) => {
                                   e.target.style.display = "none";
-                                  const fallback = e.target.parentElement.querySelector('.avatar-fallback');
-                                  if (fallback) fallback.style.display = "flex";
+                                  const fallback = e.target.nextElementSibling;
+                                  if (fallback) {
+                                    fallback.style.display = "flex";
+                                  }
+                                }}
+                                onLoad={(e) => {
+                                  const fallback = e.target.nextElementSibling;
+                                  if (fallback) {
+                                    fallback.style.display = "none";
+                                  }
                                 }}
                               />
                             ) : null}
                             <div 
-                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 avatar-fallback ${comment.avatar && comment.avatar.trim() !== "" ? "hidden" : ""}`}
+                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center flex-shrink-0 text-white text-xs sm:text-sm font-semibold ${
+                                comment.avatar && comment.avatar.trim() !== "" ? "hidden" : ""
+                              }`}
                             >
-                              <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500" />
+                              {comment.username 
+                                ? comment.username
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .toUpperCase()
+                                    .slice(0, 2)
+                                : "U"}
                             </div>
                             <div className="flex-1 min-w-0 pr-1 sm:pr-2">
                               <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
@@ -1308,21 +1904,159 @@ export default function BlogsAdmin() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base whitespace-pre-wrap break-words mb-2">
-                                {comment.comment || "No content"}
-                              </p>
-                              {/* Render replies */}
-                              {comment.replies &&
-                                comment.replies.length > 0 &&
-                                renderReplies(comment.replies)}
+                              {/* Edit mode or display mode */}
+                              {editingReply.commentId === (comment.id || comment._id) && !editingReply.replyId ? (
+                                <div className="mt-2 space-y-2">
+                                  <textarea
+                                    rows="3"
+                                    value={editReplyText}
+                                    onChange={(e) => setEditReplyText(e.target.value)}
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                                    placeholder="Edit your comment..."
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={async () => {
+                                        // Update comment text
+                                        const updatedComments = blogForComments.comments.map((c) => {
+                                          if (String(c.id || c._id) === String(comment.id || comment._id)) {
+                                            return {
+                                              ...c,
+                                              comment: editReplyText.trim(),
+                                              edited: true,
+                                            };
+                                          }
+                                          return c;
+                                        });
+
+                                        try {
+                                          const response = await axios.put(
+                                            `http://localhost:3000/api/blogs/${blogForComments._id}`,
+                                            { comments: updatedComments }
+                                          );
+
+                                          if (response.data.success || response.data.data) {
+                                            toast.success("Comment updated successfully!");
+                                            const updatedBlog = response.data.data || blogForComments;
+                                            updatedBlog.comments = updatedComments;
+                                            setBlogForComments(updatedBlog);
+                                            await fetchBlogs();
+                                            setEditingReply({ commentId: null, replyId: null });
+                                            setEditReplyText("");
+                                          }
+                                        } catch (error) {
+                                          console.error("Error updating comment:", error);
+                                          toast.error("Failed to update comment");
+                                        }
+                                      }}
+                                      className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingReply({ commentId: null, replyId: null });
+                                        setEditReplyText("");
+                                      }}
+                                      className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base whitespace-pre-wrap break-words mb-2">
+                                    {comment.comment || "No content"}
+                                  </p>
+                                  {/* Action buttons */}
+                                  <div className="flex items-center gap-2 mt-2">
+                                    {/* Reply button - hide if this is current user's comment */}
+                                    {currentUser && String(comment.userId || "") !== String(currentUser._id || currentUser.id || "") && (
+                                      <button
+                                        onClick={() => setReplyBox({ commentId: comment.id || comment._id, replyId: null })}
+                                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                        title="Reply to this comment"
+                                      >
+                                        <MessageSquare className="w-4 h-4" />
+                                        Reply
+                                      </button>
+                                    )}
+                                    {/* Edit button - only for comment author */}
+                                    {currentUser && String(comment.userId || "") === String(currentUser._id || currentUser.id || "") && (
+                                      <button
+                                        onClick={() => {
+                                          setEditingReply({ commentId: comment.id || comment._id, replyId: null });
+                                          setEditReplyText(comment.comment || "");
+                                        }}
+                                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                        title="Edit your comment"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                        Edit
+                                      </button>
+                                    )}
+                                  </div>
+                                  {/* Reply box */}
+                                  {replyBox.commentId === (comment.id || comment._id) && !replyBox.replyId && (
+                                    <div className="mt-3 space-y-2">
+                                      <textarea
+                                        rows="3"
+                                        value={replyText}
+                                        onChange={(e) => setReplyText(e.target.value)}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                                        placeholder="Write a reply..."
+                                      />
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleReply(comment.id || comment._id)}
+                                          className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                                        >
+                                          <Send className="w-4 h-4" />
+                                          Reply
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setReplyBox({ commentId: null, replyId: null });
+                                            setReplyText("");
+                                          }}
+                                          className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {/* Render replies */}
+                                  {comment.replies &&
+                                    comment.replies.length > 0 &&
+                                    renderReplies(comment.replies, 0, null, isBlogAuthor)}
+                                </>
+                              )}
                             </div>
-                            <button
-                              onClick={() => openDeleteCommentModal(comment.id || comment._id)}
-                              className="p-1.5 sm:p-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0 mt-0.5"
-                              title="Delete comment"
-                            >
-                              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                            </button>
+                            <div className="flex flex-col gap-1">
+                              {/* Delete button - for comment author, blog author, all authors, or admin */}
+                              {(() => {
+                                // Check if current user is the comment author
+                                const isCommentAuthor = currentUser && (
+                                  String(comment.userId || "") === String(currentUser._id || currentUser.id || "") ||
+                                  String(comment.userId || "") === String(currentUser.authorId?._id || currentUser.authorId || "") ||
+                                  (comment.username && currentUser.name && comment.username.toLowerCase() === currentUser.name.toLowerCase())
+                                );
+                                
+                                // All authors can delete all comments
+                                return isCommentAuthor || isBlogAuthor || userRole === "author" || userRole === "admin";
+                              })() ? (
+                                <button
+                                  onClick={() => openDeleteCommentModal(comment.id || comment._id)}
+                                  className="p-1.5 sm:p-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0 mt-0.5"
+                                  title="Delete comment"
+                                >
+                                  <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </button>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                       );

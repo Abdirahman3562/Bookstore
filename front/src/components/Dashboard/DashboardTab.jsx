@@ -11,12 +11,24 @@
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user) return;
 
+        const userId = (user._id || user.id)?.toString(); // Convert to string
+        const userEmail = user.email?.toLowerCase(); // Normalize email
+
         // Fetch Orders
-        fetch("http://localhost:5001/purchased")
+        fetch("http://localhost:3000/api/purchased")
         .then((res) => res.json())
-        .then((data) => {
-            const arr = data.purchased || data;
-            const userOrders = arr.filter((o) => o.email === user.email);
+        .then((responseData) => {
+            const data = responseData.data || [];
+            const userOrders = data.filter((o) => {
+                const orderUserId = o.userId?.toString();
+                const orderEmail = o.email?.toLowerCase();
+                return (
+                    orderUserId === userId ||
+                    orderEmail === userEmail ||
+                    (o.userId && o.userId.toString() === userId) ||
+                    (o.email && o.email.toLowerCase() === userEmail)
+                );
+            });
 
             setPending(userOrders.filter((o) => o.status === "pending").length);
             setActive(
@@ -25,14 +37,29 @@
             ).length
             );
             setTotalOrders(userOrders.length);
+        })
+        .catch((error) => {
+            console.error("Error fetching orders:", error);
         });
 
         // Fetch Downloads
-        fetch("http://localhost:5003/downloads")
+        fetch("http://localhost:3000/api/downloads")
         .then((res) => res.json())
-        .then((data) => {
-            const userDownloads = data.filter((d) => d.userId === user.id);
+        .then((responseData) => {
+            const data = responseData.data || [];
+            const userDownloads = data.filter((d) => {
+                const downloadUserId = d.userId?.toString();
+                return (
+                    downloadUserId === userId ||
+                    d.userId === userId ||
+                    (d.userId && d.userId.toString() === userId) ||
+                    d.userId === user.id
+                );
+            });
             setDownloads(userDownloads.length);
+        })
+        .catch((error) => {
+            console.error("Error fetching downloads:", error);
         });
     }, []);
 

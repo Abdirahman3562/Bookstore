@@ -189,18 +189,47 @@ export default function AuthorsAdmin() {
     try {
       const authorData = { ...formData };
       
-      // If updating and avatar hasn't changed, don't send it
+      // Clean up empty social media fields
+      const cleanedSocial = {};
+      Object.keys(authorData.social).forEach(key => {
+        if (authorData.social[key] && authorData.social[key].trim() !== '') {
+          cleanedSocial[key] = authorData.social[key].trim();
+        }
+      });
+      authorData.social = cleanedSocial;
+      
+      // Clean up other empty fields (but keep required ones)
+      if (!authorData.location || authorData.location.trim() === '') {
+        authorData.location = '';
+      }
+      if (!authorData.website || authorData.website.trim() === '') {
+        authorData.website = '';
+      }
+      if (!authorData.bio || authorData.bio.trim() === '') {
+        authorData.bio = '';
+      }
+      
+      // Handle avatar field
       if (editingAuthor && !avatarChanged) {
+        // If updating and avatar hasn't changed, don't send it (API will keep existing)
         delete authorData.avatar;
+      } else if (!authorData.avatar || authorData.avatar.trim() === '') {
+        // If avatar is empty and was changed, send empty string to remove it
+        if (avatarChanged && editingAuthor) {
+          authorData.avatar = '';
+        } else {
+          // For new authors or when not changed, don't send empty avatar
+          delete authorData.avatar;
+        }
       }
 
       if (editingAuthor) {
         // Update existing author
-        await axios.put(`http://localhost:3000/api/authors/${editingAuthor._id}`, authorData);
+        const response = await axios.put(`http://localhost:3000/api/authors/${editingAuthor._id}`, authorData);
         toast.success("Author updated successfully!");
       } else {
         // Create new author
-        await axios.post("http://localhost:3000/api/authors", authorData);
+        const response = await axios.post("http://localhost:3000/api/authors", authorData);
         toast.success("Author created successfully!");
       }
 
@@ -209,10 +238,18 @@ export default function AuthorsAdmin() {
       await fetchAuthors();
     } catch (error) {
       console.error("Error saving author:", error);
+      console.error("Error response:", error.response?.data);
+      
       if (error.response?.status === 413) {
         toast.error("Image is too large. Please use a smaller image.");
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else if (error.message) {
+        toast.error(`Error: ${error.message}`);
       } else {
-        toast.error(editingAuthor ? "Failed to update author" : "Failed to create author");
+        toast.error(editingAuthor ? "Failed to update author. Please check the console for details." : "Failed to create author. Please check the console for details.");
       }
     }
   };
@@ -638,12 +675,23 @@ export default function AuthorsAdmin() {
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50"
                   />
                   {formData.avatar && (
-                    <div className="mt-2">
+                    <div className="mt-2 relative inline-block">
                       <img
                         src={formData.avatar}
                         alt="Preview"
                         className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
                       />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, avatar: "" });
+                          setAvatarChanged(true);
+                        }}
+                        className="absolute -top-2 -right-2 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg"
+                        title="Remove avatar"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   )}
                 </div>

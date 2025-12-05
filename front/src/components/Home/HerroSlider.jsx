@@ -16,7 +16,7 @@ export default function HeroSlider() {
   }, []);
 
   return (
-    <div className="relative w-screen left-1/2 right-1/2 -mx-[50vw] rounded-md overflow-hidden">
+    <div className="relative w-full rounded-md overflow-hidden">
 
       {/* Image */}
       <img

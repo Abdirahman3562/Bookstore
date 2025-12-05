@@ -14,17 +14,19 @@ export default function CommentSection() {
   const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    fetch("http://localhost:5006/blogs")
+    fetch("http://localhost:3000/api/blogs")
       .then((res) => res.json())
-      .then((blogs) => {
+      .then((response) => {
+        const blogs = response.data || [];
         const slug = (txt) => txt.toLowerCase().replace(/\s+/g, "-");
         const post = blogs.find((b) => slug(b.title) === title);
 
         if (post) {
-          setPostId(post.id);
+          setPostId(post._id || post.id);
           setComments(post.comments || []);
         }
-      });
+      })
+      .catch((err) => console.error("Error fetching blog:", err));
   }, [title, refresh]);
 
   const handleSubmit = async (e) => {
@@ -32,10 +34,10 @@ export default function CommentSection() {
     if (!comment.trim()) return;
 
     const newComment = {
-      id: Date.now(),
-      userId: user.id,
+      id: Date.now().toString(),
+      userId: (user._id || user.id)?.toString(),
       username: user.name,
-      avatar: user.avatar,
+      avatar: user.avatar || "",
       comment,
       date: Date.now(),
       replies: [],
@@ -43,16 +45,24 @@ export default function CommentSection() {
 
     setLoading(true);
 
-    await fetch(`http://localhost:5006/blogs/${postId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comments: [...comments, newComment] }),
-    });
+    try {
+      const response = await fetch(`http://localhost:3000/api/blogs/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comments: [...comments, newComment] }),
+      });
 
-    setComment("");
-    setLoading(false);
-    setRefresh(!refresh);
-    toast.success("Comment Added");
+      if (!response.ok) throw new Error("Failed to add comment");
+
+      setComment("");
+      setRefresh(!refresh);
+      toast.success("Comment Added");
+    } catch (err) {
+      console.error("Error adding comment:", err);
+      toast.error("Failed to add comment");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReply = async (commentId, text) => {
@@ -84,13 +94,20 @@ export default function CommentSection() {
 
     const updated = updateReplies(comments);
 
-    await fetch(`http://localhost:5006/blogs/${postId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comments: updated }),
-    });
+    try {
+      const response = await fetch(`http://localhost:3000/api/blogs/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comments: updated }),
+      });
 
-    setRefresh(!refresh);
+      if (!response.ok) throw new Error("Failed to add reply");
+      setRefresh(!refresh);
+      toast.success("Reply added");
+    } catch (err) {
+      console.error("Error adding reply:", err);
+      toast.error("Failed to add reply");
+    }
   };
 
   return (

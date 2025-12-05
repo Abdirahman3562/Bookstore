@@ -116,7 +116,7 @@ export default function CommentReplies({
 
             <div className="flex gap-3 text-xs text-blue-600 mt-2">
               {/* Reply — only for others, NOT for you */}
-              {user?.id !== r.userId && (
+              {user && (user._id || user.id)?.toString() !== r.userId?.toString() && (
                 <button
                   className="flex items-center gap-1"
                   onClick={() =>
@@ -128,7 +128,7 @@ export default function CommentReplies({
               )}
 
               {/* Edit — only for you */}
-              {user?.id === r.userId && (
+              {user && (user._id || user.id)?.toString() === r.userId?.toString() && (
                 <button
                   className="flex items-center gap-1"
                   onClick={() => {

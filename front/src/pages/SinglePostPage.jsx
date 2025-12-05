@@ -7,6 +7,9 @@ import {
   FaGithub,
   FaLinkedin,
   FaTwitter,
+  FaYoutube,
+  FaFacebook,
+  FaInstagram,
 } from "react-icons/fa";
 import RelatedArticles from "../components/Blog/RelatedArticles";
 import CommentSection from "../components/Blog/CommentSection";
@@ -38,13 +41,67 @@ function SinglePostPage() {
     const loadBlogs = async () => {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:5006/blogs");
+        const res = await fetch("http://localhost:3000/api/blogs");
         if (!res.ok) throw new Error("Failed to load blogs");
-        const data = await res.json();
+        const response = await res.json();
+        const data = response.data || [];
 
-        setArticles(data);
-        const selected = data.find((b) => toSlug(b.title) === title);
-        setArticle(selected || null);
+        // Filter only published blogs
+        const publishedBlogs = data.filter(blog => blog.status === 'published');
+        
+        setArticles(publishedBlogs.map(blog => {
+          let thumbnailUrl = "/images/placeholder.jpg";
+          if (blog.thumbnail && blog.thumbnail.trim() !== '') {
+            // Check if it's base64
+            if (blog.thumbnail.startsWith('data:image/')) {
+              thumbnailUrl = blog.thumbnail;
+            } else if (blog.thumbnail.startsWith('http://') || blog.thumbnail.startsWith('https://')) {
+              thumbnailUrl = blog.thumbnail;
+            } else if (blog.thumbnail.startsWith('/uploads/')) {
+              thumbnailUrl = `http://localhost:3000${blog.thumbnail}`;
+            } else if (blog.thumbnail.startsWith('uploads/')) {
+              thumbnailUrl = `http://localhost:3000/${blog.thumbnail}`;
+            } else {
+              thumbnailUrl = `http://localhost:3000/uploads/${blog.thumbnail}`;
+            }
+          }
+          
+          return {
+            ...blog,
+            id: blog._id || blog.id,
+            date: blog.publishedDate || blog.date || blog.createdAt,
+            thumbnail: thumbnailUrl,
+          };
+        }));
+        
+        const selected = publishedBlogs.find((b) => toSlug(b.title) === title);
+        if (selected) {
+          let thumbnailUrl = "/images/placeholder.jpg";
+          if (selected.thumbnail && selected.thumbnail.trim() !== '') {
+            // Check if it's base64
+            if (selected.thumbnail.startsWith('data:image/')) {
+              thumbnailUrl = selected.thumbnail;
+            } else if (selected.thumbnail.startsWith('http://') || selected.thumbnail.startsWith('https://')) {
+              thumbnailUrl = selected.thumbnail;
+            } else if (selected.thumbnail.startsWith('/uploads/')) {
+              thumbnailUrl = `http://localhost:3000${selected.thumbnail}`;
+            } else if (selected.thumbnail.startsWith('uploads/')) {
+              thumbnailUrl = `http://localhost:3000/${selected.thumbnail}`;
+            } else {
+              thumbnailUrl = `http://localhost:3000/uploads/${selected.thumbnail}`;
+            }
+          }
+          
+          setArticle({
+            ...selected,
+            id: selected._id || selected.id,
+            date: selected.publishedDate || selected.date || selected.createdAt,
+            thumbnail: thumbnailUrl,
+            authorId: selected.authorId, // Preserve authorId for author lookup
+          });
+        } else {
+          setArticle(null);
+        }
       } catch (err) {
         console.error("Error loading article:", err);
       } finally {
@@ -62,15 +119,93 @@ function SinglePostPage() {
     const loadAuthor = async () => {
       try {
         setAuthorLoading(true);
-        const res = await fetch("http://localhost:5005/authors");
-        if (!res.ok) throw new Error("Failed to load authors");
-        const authors = await res.json();
+        
+        // Handle authorId - could be ObjectId, string, or nested object
+        let authorIdValue = "";
+        if (article.authorId) {
+          if (typeof article.authorId === "string") {
+            authorIdValue = article.authorId;
+          } else if (article.authorId._id) {
+            authorIdValue = article.authorId._id;
+          } else if (article.authorId.toString) {
+            authorIdValue = article.authorId.toString();
+          }
+        }
+        
+        // Check if authorId is already populated (object with name or username property)
+        const isAuthorPopulated = article.authorId && typeof article.authorId === 'object' && (article.authorId.name || article.authorId.username);
+        
+        if (isAuthorPopulated) {
+          // Use populated author data directly
+          const authorData = article.authorId;
+          let avatarUrl = "/images/authors/default.jpg";
+          if (authorData.avatar && authorData.avatar.trim() !== '') {
+            // Check if it's base64
+            if (authorData.avatar.startsWith('data:image/')) {
+              avatarUrl = authorData.avatar;
+            } else if (authorData.avatar.startsWith('http://') || authorData.avatar.startsWith('https://')) {
+              avatarUrl = authorData.avatar;
+            } else if (authorData.avatar.startsWith('/uploads/')) {
+              avatarUrl = `http://localhost:3000${authorData.avatar}`;
+            } else if (authorData.avatar.startsWith('uploads/')) {
+              avatarUrl = `http://localhost:3000/${authorData.avatar}`;
+            } else {
+              avatarUrl = `http://localhost:3000/uploads/${authorData.avatar}`;
+            }
+          }
+          
+          setAuthor({
+            id: authorData._id || authorData.id,
+            name: (authorData.name && authorData.name.trim() !== '') ? authorData.name : "Unknown Author",
+            username: authorData.username,
+            avatar: avatarUrl,
+            bio: authorData.bio || "No bio available yet.",
+            verified: authorData.verified || false,
+            social: authorData.social || {},
+          });
+        } else {
+          // Fetch authors and find matching one
+          const res = await fetch("http://localhost:3000/api/authors");
+          if (!res.ok) throw new Error("Failed to load authors");
+          const response = await res.json();
+          const authors = response.data || [];
 
-        const matched = authors.find(
-          (a) => Number(a.id) === Number(article.authorId)
-        );
+          // Find author by comparing string values
+          const matched = authors.find((a) => {
+            const authorId = String(a._id || a.id || "");
+            return authorId === authorIdValue;
+          });
 
-        setAuthor(matched || null);
+          if (matched) {
+            let avatarUrl = "/images/authors/default.jpg";
+            if (matched.avatar && matched.avatar.trim() !== '') {
+              // Check if it's base64
+              if (matched.avatar.startsWith('data:image/')) {
+                avatarUrl = matched.avatar;
+              } else if (matched.avatar.startsWith('http://') || matched.avatar.startsWith('https://')) {
+                avatarUrl = matched.avatar;
+              } else if (matched.avatar.startsWith('/uploads/')) {
+                avatarUrl = `http://localhost:3000${matched.avatar}`;
+              } else if (matched.avatar.startsWith('uploads/')) {
+                avatarUrl = `http://localhost:3000/${matched.avatar}`;
+              } else {
+                avatarUrl = `http://localhost:3000/uploads/${matched.avatar}`;
+              }
+            }
+            
+            setAuthor({
+              id: matched._id || matched.id,
+              name: (matched.name && matched.name.trim() !== '') ? matched.name : "Unknown Author",
+              username: matched.username,
+              avatar: avatarUrl,
+              bio: matched.bio || "No bio available yet.",
+              verified: matched.verified || false,
+              social: matched.social || {},
+            });
+          } else {
+            setAuthor(null);
+          }
+        }
       } catch (err) {
         console.error("Error loading author:", err);
         setAuthor(null);
@@ -85,16 +220,28 @@ function SinglePostPage() {
   // 3️⃣ Calculate number of posts by this author
   useEffect(() => {
     if (!author || !articles.length) return;
-    const posts = articles.filter(
-      (p) => Number(p.authorId) === Number(author.id)
-    );
+    const authorId = String(author._id || author.id || "");
+    const posts = articles.filter((p) => {
+      // Handle authorId - could be ObjectId, string, or nested object
+      let postAuthorIdValue = "";
+      if (p.authorId) {
+        if (typeof p.authorId === "string") {
+          postAuthorIdValue = p.authorId;
+        } else if (p.authorId._id) {
+          postAuthorIdValue = p.authorId._id;
+        } else if (p.authorId.toString) {
+          postAuthorIdValue = p.authorId.toString();
+        }
+      }
+      return String(postAuthorIdValue) === authorId;
+    });
     setAuthorPosts(posts);
   }, [author, articles]);
 
   // 4️⃣ Related posts (same category)
   const relatedPosts = article
     ? articles.filter(
-        (p) => p.category === article.category && p.id !== article.id
+        (p) => p.category === article.category && (p._id || p.id) !== (article._id || article.id)
       )
     : [];
 
@@ -118,11 +265,11 @@ function SinglePostPage() {
   const social = author?.social || {};
 
   return (
-    <div className=" py-2 lg:px-0 md:px-0 px-2 mt-2">
+    <div className="w-full max-w-7xl mx-auto py-2 lg:px-4 md:px-4 px-2 mt-2">
       {/* Thumbnail + Meta */}
-      <div className="relative mb-8">
+      <div className="relative mb-8 w-full overflow-hidden">
         <img
-          src={article.thumbnail}
+          src={article.thumbnail || "/images/placeholder.jpg"}
           alt={article.title}
           className="w-full h-80 object-cover rounded-xl"
           onError={(e) => (e.target.src = "/images/placeholder.jpg")}
@@ -137,32 +284,44 @@ function SinglePostPage() {
       </div>
 
       {/* Title + Author Info */}
-      <div className=" px-2">
-        <h1 className="w-full lg:text-3xl  md:text-3xl text-2xl font-extrabold text-gray-900 mb-6">
+      <div className="w-full px-2 lg:px-4 md:px-4">
+        <h1 className="w-full lg:text-3xl md:text-3xl text-xl font-extrabold text-gray-900 mb-6 break-words">
           {article.title}
         </h1>
 
         <div className="flex items-center space-x-3">
-          <img
-            src={
-              author?.avatar ||
-              article.authorImage ||
-              "/images/authors/default.jpg"
-            }
-            alt={author?.name || article.authorName || "Author"}
-            className="w-10 h-10 rounded-full object-cover border border-gray-300"
-            onError={(e) => (e.target.src = "/images/authors/default.jpg")}
-          />
+          {author?.avatar && author.avatar !== "/images/authors/default.jpg" ? (
+            <img
+              src={author.avatar}
+              alt={author?.name || article.authorName || "Author"}
+              className="w-10 h-10 rounded-full object-cover border border-gray-300 flex-shrink-0"
+              onError={(e) => {
+                e.target.style.display = "none";
+                const fallback = e.target.nextElementSibling;
+                if (fallback) fallback.style.display = "flex";
+              }}
+            />
+          ) : null}
+          <div 
+            className={`w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300 flex-shrink-0 ${
+              author?.avatar && author.avatar !== "/images/authors/default.jpg" ? "hidden" : ""
+            }`}
+          >
+            <span className="text-xs text-gray-500 font-semibold">
+              {author?.name ? author.name.charAt(0).toUpperCase() : "?"}
+            </span>
+          </div>
           <div className="flex flex-col mt-2 text-sm text-gray-600">
             <span className="font-medium text-gray-900 flex items-center gap-1">
               <Link
                 to={`/u/${
                   author?.username ||
-                  article.authorName?.toLowerCase().replace(/\s+/g, "")
+                  article.authorName?.toLowerCase().replace(/\s+/g, "") ||
+                  "unknown"
                 }`}
                 className="hover:text-blue-600"
               >
-                {author?.name || article.authorName || "Unknown Author"}
+                {author?.username || article.authorName || "Unknown Author"}
               </Link>
               {author?.verified && (
                 <FaCheckCircle
@@ -180,45 +339,89 @@ function SinglePostPage() {
       </div>
 
       {/* Article Content */}
-      <div className="prose lg:prose-2xl  p-4 lg:p-0 md:p-0     text-gray-700 mt-8 max-w-4xl mx-auto">
-        {article.content}
+      <div className="w-full px-2 lg:px-4 md:px-4">
+        <div 
+          className="prose prose-sm lg:prose-xl max-w-none w-full text-gray-700 mt-8 overflow-hidden break-words"
+          style={{
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+          }}
+        >
+          <div
+            className="w-full overflow-hidden"
+            style={{
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+            }}
+            dangerouslySetInnerHTML={{ 
+              __html: (() => {
+                const content = article.content || "";
+                if (!content) return "";
+                // Make images responsive - left aligned on mobile, centered on desktop
+                return content.replace(
+                  /<img([^>]*)>/gi,
+                  '<img$1 class="block lg:mx-auto" style="max-width: 100%; height: auto; display: block; margin: 1rem 0; margin-left: 0; margin-right: auto;" />'
+                );
+              })()
+            }}
+          />
+        </div>
       </div>
 
       {/* Author Profile Section */}
-      <div className="mt-10 ">
+      <div className="mt-10 w-full px-2 lg:px-4 md:px-4">
         {authorLoading ? (
           <div className="text-gray-500">Loading author...</div>
         ) : author ? (
-          <div className="flex flex-col md:flex-row  items-center md:items-start hover:shadow-md    rounded-xl shadow-md">
+          <div className="flex flex-col md:flex-row items-center md:items-start hover:shadow-md rounded-xl shadow-md p-4 md:p-6 w-full overflow-hidden">
             {/* Author Avatar */}
-            <img
-              src={author.avatar || "/images/authors/default.jpg"}
-              alt={author.name}
-              className="w-56 h-56 rounded-xl object-cover border-emerald-500"
-              onError={(e) => (e.target.src = "/images/authors/default.jpg")}
-            />
+            <div className="flex-shrink-0 mb-4 md:mb-0">
+              {author.avatar && author.avatar !== "/images/authors/default.jpg" ? (
+                <img
+                  src={author.avatar}
+                  alt={author.name}
+                  className="w-32 h-32 md:w-56 md:h-56 rounded-xl object-cover border-emerald-500"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    const fallback = e.target.nextElementSibling;
+                    if (fallback) fallback.style.display = "flex";
+                  }}
+                />
+              ) : null}
+              <div 
+                className={`w-32 h-32 md:w-56 md:h-56 rounded-xl bg-gray-200 flex items-center justify-center border border-emerald-500 ${
+                  author.avatar && author.avatar !== "/images/authors/default.jpg" ? "hidden" : ""
+                }`}
+              >
+                <span className="text-2xl md:text-4xl text-gray-500 font-semibold">
+                  {author.name ? author.name.charAt(0).toUpperCase() : "?"}
+                </span>
+              </div>
+            </div>
 
             {/* Author Info */}
-            <div className="flex-1   md:ml-6 mt-4 md:mt-0 px-20 lg:px-0 md:px-0">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-1">
-                  {author.name}
+            <div className="flex-1 w-full md:ml-6 mt-4 md:mt-0 px-2 lg:px-4 md:px-4 min-w-0 overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 w-full">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-1 break-words">
+                  {author.username}
                   {author.verified && (
                     <FaCheckCircle
-                      className="text-blue-600 text-lg "
+                      className="text-blue-600 text-lg flex-shrink-0"
                       title="Verified Author"
                     />
                   )}
                 </h2>
               </div>
-              <p className="text-gray-600 mt-1">@{author.username}</p>
-              <p className="text-gray-700 mt-4 max-w-xl">
+              {author.username && (
+                <p className="text-gray-600 mt-1 break-words">@{author.username}</p>
+              )}
+              <p className="text-gray-700 mt-4 w-full break-words">
                 "{author.bio || "No bio available yet."}"
               </p>
 
               {/* Social Links */}
-              <div className="flex flex-wrap gap-2 mt-6">
-                {social.github && (
+              <div className="flex flex-wrap gap-2 mt-6 w-full">
+                {social.github && social.github.trim() !== '' && (
                   <a
                     href={social.github}
                     target="_blank"
@@ -229,7 +432,7 @@ function SinglePostPage() {
                     <span>GitHub</span>
                   </a>
                 )}
-                {social.linkedin && (
+                {social.linkedin && social.linkedin.trim() !== '' && (
                   <a
                     href={social.linkedin}
                     target="_blank"
@@ -240,7 +443,7 @@ function SinglePostPage() {
                     <span>LinkedIn</span>
                   </a>
                 )}
-                {social.twitter && (
+                {social.twitter && social.twitter.trim() !== '' && (
                   <a
                     href={social.twitter}
                     target="_blank"
@@ -251,7 +454,7 @@ function SinglePostPage() {
                     <span>Twitter</span>
                   </a>
                 )}
-                {social.website && (
+                {social.website && social.website.trim() !== '' && (
                   <a
                     href={social.website}
                     target="_blank"
@@ -262,13 +465,46 @@ function SinglePostPage() {
                     <span>Website</span>
                   </a>
                 )}
+                {social.youtube && social.youtube.trim() !== '' && (
+                  <a
+                    href={social.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+                  >
+                    <FaYoutube className="text-blue-600 text-lg" />
+                    <span>YouTube</span>
+                  </a>
+                )}
+                {social.facebook && social.facebook.trim() !== '' && (
+                  <a
+                    href={social.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+                  >
+                    <FaFacebook className="text-blue-600 text-lg" />
+                    <span>Facebook</span>
+                  </a>
+                )}
+                {social.instagram && social.instagram.trim() !== '' && (
+                  <a
+                    href={social.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
+                  >
+                    <FaInstagram className="text-blue-600 text-lg" />
+                    <span>Instagram</span>
+                  </a>
+                )}
               </div>
             </div>
 
             {/* ✅ Dynamic Post Count */}
-            <div className="mt-6 mr-2   mb-2 md:mt-0 md:ml-6 text-blue-600 text-sm font-semibold border border-blue-600 rounded-full px-4 py-2">
+            <div className="mt-4 md:mt-0 md:ml-6 mb-2 md:mb-0 text-blue-600 text-sm font-semibold border border-blue-600 rounded-full px-4 py-2 flex-shrink-0 self-center md:self-start">
               Posts{" "}
-              <span className="ml-1  text-blue-600">
+              <span className="ml-1 text-blue-600">
                 ({authorPosts.length})
               </span>
             </div>
@@ -281,12 +517,16 @@ function SinglePostPage() {
       </div>
 
       {/* Related Posts */}
-      <RelatedArticles
-        relatedPosts={relatedPosts}
-        currentPostCategory={article.category}
-      />
+      <div className="w-full px-2 lg:px-4 md:px-4 mt-10">
+        <RelatedArticles
+          relatedPosts={relatedPosts}
+          currentPostCategory={article.category}
+        />
+      </div>
 
-      <CommentSection />
+      <div className="w-full px-2 lg:px-4 md:px-4 mt-10">
+        <CommentSection />
+      </div>
     </div>
   );
 }

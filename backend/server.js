@@ -13,6 +13,7 @@ import usersRoutes from "./routes/users.route.js";
 import authorsRoutes from "./routes/authors.route.js";
 import blogsRoutes from "./routes/blogs.route.js";
 import adminsRoutes from "./routes/admins.route.js";
+import pdfRoutes from "./routes/pdf.route.js";
 
 dotenv.config();
 const app = express();
@@ -56,7 +57,23 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-app.use('/uploads', express.static('uploads'));
+
+// Serve static files (images only - PDFs are protected via /api/pdf route)
+// Block direct PDF access through /uploads
+app.use('/uploads', (req, res, next) => {
+  // Block direct access to PDF files
+  if (req.path.endsWith('.pdf')) {
+    return res.status(403).json({
+      success: false,
+      message: "Forbidden: PDF access requires authorization. Please use the application."
+    });
+  }
+  // Allow images and other files
+  next();
+}, express.static('uploads'));
+
+// Protected PDF route - requires authentication
+app.use('/api/pdf', pdfRoutes);
 app.use("/api/auth", authRoutes);
 
 // test

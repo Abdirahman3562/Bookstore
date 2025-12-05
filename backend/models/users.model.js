@@ -28,28 +28,44 @@ const userSchema = new mongoose.Schema({
   },
   statusManuallySet: {
     type: Boolean,
-    default: false
+    default: undefined // No default - only set for admin users
   },
   role: {
     type: String,
     enum: ['regular', 'premium'],
-    default: 'regular'
+    default: undefined // No default - only set for admin users
   },
   adminRole: {
     type: String,
     enum: ['admin', 'author', null],
-    default: null
+    default: undefined // No default - only set for admin users
   },
   permissions: {
-    dashboard: { type: Boolean, default: false },
-    books: { type: Boolean, default: false },
-    downloads: { type: Boolean, default: false },
-    purchased: { type: Boolean, default: false },
-    testimonials: { type: Boolean, default: false },
-    users: { type: Boolean, default: false },
-    authors: { type: Boolean, default: false },
-    blogs: { type: Boolean, default: false },
-    addAdminUser: { type: Boolean, default: false }
+    dashboard: { type: Boolean, default: undefined },
+    books: { type: Boolean, default: undefined },
+    downloads: { type: Boolean, default: undefined },
+    purchased: { type: Boolean, default: undefined },
+    testimonials: { type: Boolean, default: undefined },
+    users: { type: Boolean, default: undefined },
+    authors: { type: Boolean, default: undefined },
+    blogs: { type: Boolean, default: undefined },
+    addAdminUser: { type: Boolean, default: undefined }
+  },
+  verificationToken: {
+    type: String,
+    default: null
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationTokenExpires: {
+    type: Date,
+    default: null
+  },
+  twoStepVerification: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

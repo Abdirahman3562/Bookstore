@@ -10,12 +10,12 @@ export default function OrderDetails() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await fetch("http://localhost:5001/purchased");
-        const data = await res.json();
-        const arr = data.purchased || data;
+        const res = await fetch("http://localhost:3000/api/purchased");
+        const responseData = await res.json();
+        const data = responseData.data || [];
 
         if (id) {
-          const found = arr.find((o) => o.id == id);
+          const found = data.find((o) => (o._id || o.id) == id || (o._id || o.id)?.toString() === id);
           setOrder(found || null);
         }
 
@@ -110,9 +110,12 @@ export default function OrderDetails() {
         <div className="flex flex-col md:flex-row gap-5">
 
           <img
-            src={order.cover}
+            src={order.cover ? `http://localhost:3000${order.cover}` : 'https://via.placeholder.com/200x300?text=No+Image'}
             className="lg:w-32 md:w-32 w-full lg:h-44 md:h-32 h-auto object-cover rounded-md shadow"
             alt={order.title}
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/200x300?text=No+Image';
+            }}
           />
 
           <div className="flex-1">
@@ -149,7 +152,7 @@ export default function OrderDetails() {
         <div className="flex flex-col gap-2 lg:flex-row md:flex-row justify-between mt-5">
           <div className="flex gap-1 border border-gray-300 px-2 py-1 rounded-md shadow-md mt-2">
             <span>Order ID:</span>
-            <span>#{order.id}</span>
+            <span>#{order._id || order.id}</span>
           </div>
 
           <button

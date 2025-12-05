@@ -11,7 +11,6 @@ import Contact from "./pages/Contact";
 import BookDetails from "./pages/BookDetails";
 import AuthPage from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import Reader from "./pages/Reader";
 import Books from "./pages/Books";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -27,6 +26,7 @@ import BlogPage from "./pages/BlogPage";
 import SinglePostPage from "./pages/SinglePostPage";
 import ScrollToTop from "./pages/ScrollToTop";
 import HerroSlider from "./components/Home/HerroSlider";
+import VerifyEmail from "./pages/VerifyEmail";
 
 // admin
 import AdminLogin from "./admin/pages/AdminLogin";
@@ -62,7 +62,7 @@ function App() {
       {/* Wrapper size (public only) */}
       <div className={`${!isAdminRoute && "w-full max-w-[64rem] mx-auto"}`}>
         <ScrollToTop />
-        <AdPopup />
+        {!isAdminRoute && <AdPopup />}
         <Toaster position="top-right" />
 
         <Routes>
@@ -82,6 +82,7 @@ function App() {
 
           {/* Auth Page */}
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
 
           {/* ================= Admin Pages ================= */}
           <Route path="/admin" element={<AdminLogin />} />
@@ -237,15 +238,6 @@ function App() {
             <Route path="account" element={<AccountDetails />} />
           </Route>
 
-          {/* Protected Reader */}
-          <Route
-            path="/reader/:id"
-            element={
-              <ProtectedRoute>
-                <Reader />
-              </ProtectedRoute>
-            }
-          />
         </Routes>
       </div>
 

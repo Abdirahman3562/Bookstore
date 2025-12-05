@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 export default function AdminUsersAdmin() {
   const navigate = useNavigate();
   const [admins, setAdmins] = useState([]);
+  const [authors, setAuthors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -16,6 +17,7 @@ export default function AdminUsersAdmin() {
     email: "",
     password: "",
     adminRole: "author",
+    authorId: "", // Link to author
     permissions: {
       dashboard: false,
       books: false,
@@ -56,12 +58,24 @@ export default function AdminUsersAdmin() {
     }
   };
 
+  // Fetch authors data
+  const fetchAuthors = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/authors");
+      const data = response.data.data || [];
+      setAuthors(data);
+    } catch (error) {
+      console.error("Error fetching authors:", error);
+    }
+  };
+
   // Handle role change in edit form
   const handleRoleChange = (role) => {
     if (role === "admin") {
       setEditFormData((prev) => ({
         ...prev,
         adminRole: role,
+        authorId: "", // Clear authorId for admin
         permissions: {
           dashboard: true,
           books: true,
@@ -75,6 +89,7 @@ export default function AdminUsersAdmin() {
         }
       }));
     } else {
+      // For author role, automatically check "authors" and "blogs" permissions
       setEditFormData((prev) => ({
         ...prev,
         adminRole: role,
@@ -85,7 +100,7 @@ export default function AdminUsersAdmin() {
           purchased: false,
           testimonials: false,
           users: false,
-          authors: false,
+          authors: true, // Auto-check authors permission for author role
           blogs: true,
           addAdminUser: false
         }
@@ -118,6 +133,7 @@ export default function AdminUsersAdmin() {
         email: fullAdmin.email || admin.email || "",
         password: fullAdmin.password || "", // Show current password
         adminRole: fullAdmin.adminRole || admin.adminRole || "author",
+        authorId: fullAdmin.authorId || admin.authorId || "", // Get authorId
         permissions: fullAdmin.permissions || admin.permissions || {
           dashboard: false,
           books: false,
@@ -139,6 +155,7 @@ export default function AdminUsersAdmin() {
         email: admin.email || "",
         password: "", // Empty if can't fetch
         adminRole: admin.adminRole || "author",
+        authorId: admin.authorId || "", // Get authorId
         permissions: admin.permissions || {
           dashboard: false,
           books: false,
@@ -163,6 +180,7 @@ export default function AdminUsersAdmin() {
       email: "",
       password: "",
       adminRole: "author",
+      authorId: "",
       permissions: {
         dashboard: false,
         books: false,
@@ -188,6 +206,7 @@ export default function AdminUsersAdmin() {
         name: editFormData.name,
         email: editFormData.email,
         adminRole: editFormData.adminRole,
+        authorId: editFormData.authorId || null, // Include authorId
         permissions: editFormData.permissions
       };
 
@@ -231,6 +250,7 @@ export default function AdminUsersAdmin() {
   // Load data on component mount
   useEffect(() => {
     fetchAdmins();
+    fetchAuthors();
   }, []);
 
   const permissionLabels = {
@@ -506,6 +526,79 @@ export default function AdminUsersAdmin() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Author Selection - Only show when role is "author" */}
+                  {editFormData.adminRole === "author" && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <UserPlus className="w-5 h-5" />
+                        Link to Author Profile
+                      </h3>
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          Select which author profile this admin user should be linked to:
+                        </p>
+                        {authors.length === 0 ? (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            No authors found. Please create an author first.
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                            {authors.map((author) => (
+                              <label
+                                key={author._id}
+                                className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                                  editFormData.authorId === author._id
+                                    ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 dark:border-blue-600"
+                                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="authorId"
+                                  value={author._id}
+                                  checked={editFormData.authorId === author._id}
+                                  onChange={(e) => setEditFormData({ ...editFormData, authorId: e.target.value })}
+                                  className="w-4 h-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                                />
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  {author.avatar ? (
+                                    <img
+                                      src={author.avatar}
+                                      alt={author.name}
+                                      className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-700 flex-shrink-0"
+                                      onError={(e) => {
+                                        e.target.style.display = "none";
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                                      {author.name
+                                        ? author.name
+                                            .split(" ")
+                                            .map((n) => n[0])
+                                            .join("")
+                                            .toUpperCase()
+                                            .slice(0, 2)
+                                        : "A"}
+                                    </div>
+                                  )}
+                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                                    {author.name}
+                                  </span>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                          This will link the admin user to the selected author profile. When this author logs in, they will see comments on their blogs.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                 
                 </div>
 
                 {/* Permissions */}

@@ -40,15 +40,23 @@ export default function CommentList({
       c.id === editingId ? { ...c, comment: editText, edited: true } : c
     );
 
-    await fetch(`http://localhost:5006/blogs/${postId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comments: updated }),
-    });
+    try {
+      const response = await fetch(`http://localhost:3000/api/blogs/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comments: updated }),
+      });
 
-    setEditingId(null);
-    setEditText("");
-    setRefresh(!refresh);
+      if (!response.ok) throw new Error("Failed to update comment");
+      
+      setEditingId(null);
+      setEditText("");
+      setRefresh(!refresh);
+      toast.success("Comment updated");
+    } catch (err) {
+      console.error("Error updating comment:", err);
+      toast.error("Failed to update comment");
+    }
   };
 
   const handleShare = () => {
@@ -79,13 +87,20 @@ export default function CommentList({
       replies: update(c.replies),
     }));
 
-    await fetch(`http://localhost:5006/blogs/${postId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ comments: updatedComments }),
-    });
+    try {
+      const response = await fetch(`http://localhost:3000/api/blogs/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comments: updatedComments }),
+      });
 
-    setRefresh((prev) => !prev);
+      if (!response.ok) throw new Error("Failed to update reply");
+      setRefresh((prev) => !prev);
+      toast.success("Reply updated");
+    } catch (err) {
+      console.error("Error updating reply:", err);
+      toast.error("Failed to update reply");
+    }
   };
 
   // Count all nested replies recursively
@@ -194,7 +209,7 @@ export default function CommentList({
 
               {/* Action buttons */}
               <div className="flex gap-4 text-sm mt-2 text-blue-600">
-                {user && user.id !== c.userId && (
+                {user && (user._id || user.id)?.toString() !== c.userId?.toString() && (
                   <button
                     className="flex items-center gap-1 text-blue-600"
                     onClick={() =>
@@ -206,7 +221,7 @@ export default function CommentList({
                   </button>
                 )}
 
-                {user && user.id === c.userId && (
+                {user && (user._id || user.id)?.toString() === c.userId?.toString() && (
                   <button
                     className=" flex items-center gap-1 text-blue-600"
                     onClick={() => startEditing(c)}

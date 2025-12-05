@@ -20,17 +20,29 @@ export default function OrdersTab() {
       }
 
       const user = JSON.parse(storedUser);
+      const userId = (user._id || user.id)?.toString(); // Convert to string for comparison
+      const userEmail = user.email?.toLowerCase(); // Normalize email to lowercase
 
-      const res = await fetch("http://localhost:5001/purchased");
-      const data = await res.json();
+      const res = await fetch("http://localhost:3000/api/purchased");
+      const responseData = await res.json();
 
-      let ordersArray = Array.isArray(data.purchased)
-        ? data.purchased
-        : data;
-
-      const userOrders = ordersArray.filter(
-        (order) => order.email === user.email
-      );
+      const data = responseData.data || [];
+      
+      // More robust filtering - check both userId and email (case-insensitive)
+      const userOrders = data.filter((order) => {
+        const orderUserId = order.userId?.toString();
+        const orderEmail = order.email?.toLowerCase();
+        
+        return (
+          orderUserId === userId ||
+          orderEmail === userEmail ||
+          (order.userId && order.userId.toString() === userId) ||
+          (order.email && order.email.toLowerCase() === userEmail)
+        );
+      });
+      
+      console.log("User ID:", userId, "User Email:", userEmail);
+      console.log("All orders:", data.length, "User orders:", userOrders.length);
 
       setOrders(userOrders);
 
@@ -155,14 +167,17 @@ export default function OrdersTab() {
       <div className="space-y-4">
         {orders.map((order) => (
           <div
-            key={order.id}
+            key={order._id || order.id}
             className="border rounded-lg p-4 shadow-sm hover:shadow-md transition flex flex-col md:flex-row gap-4"
           >
             {/* IMAGE */}
             <img
-              src={order.cover}
+              src={order.cover ? `http://localhost:3000${order.cover}` : 'https://via.placeholder.com/200x300?text=No+Image'}
               className="lg:w-28 md:w-24 w-full lg:h-36 md:h-32 h-auto object-cover rounded mx-auto md:mx-0"
               alt={order.title}
+              onError={(e) => {
+                e.target.src = 'https://via.placeholder.com/200x300?text=No+Image';
+              }}
             />
 
             {/* TEXT */}
@@ -193,7 +208,7 @@ export default function OrdersTab() {
 
               <button
                 onClick={() =>
-                  navigate(`/dashboard/orderdetails/${order.id}`)
+                  navigate(`/dashboard/orderdetails/${order._id || order.id}`)
                 }
                 className="px-2 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 w-[100px] md:w-auto lg:mt-20"
               >

@@ -31,6 +31,16 @@ export default function UsersAdmin() {
       // Filter out admin users (users with adminRole)
       const data = allData.filter(u => !u.adminRole || u.adminRole === null);
       console.log(`✅ Fetched ${data.length} users from database (excluding admins)`);
+      
+      // Debug: Log avatar info for first user
+      if (data.length > 0) {
+        console.log('Sample user avatar data:', {
+          name: data[0].name,
+          avatar: data[0].avatar,
+          avatarType: typeof data[0].avatar,
+          hasAvatar: data[0].avatar && data[0].avatar.trim() !== ''
+        });
+      }
 
       // Calculate stats (only for regular users)
       const totalUsers = data.length;
@@ -207,19 +217,57 @@ export default function UsersAdmin() {
                     <tr key={user._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={user.avatar 
-                              ? (user.avatar.startsWith('http') 
-                                  ? user.avatar 
-                                  : `http://localhost:3000${user.avatar}`)
-                              : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3B82F6&color=fff&size=128`
+                          {(() => {
+                            // Get user initials
+                            const initials = user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                            
+                            // Check if avatar exists and is not empty
+                            const hasAvatar = user.avatar && 
+                                            typeof user.avatar === 'string' && 
+                                            user.avatar.trim() !== '' && 
+                                            user.avatar !== 'null' && 
+                                            user.avatar !== 'undefined';
+                            
+                            if (hasAvatar) {
+                              // Construct avatar URL
+                              let avatarUrl = user.avatar.trim();
+                              
+                              // If it's a base64 data URL, use it directly
+                              if (avatarUrl.startsWith('data:')) {
+                                // Use base64 data URL as is
+                              } else if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+                                // Use full URL as is
+                              } else {
+                                // Add base URL for relative paths
+                                avatarUrl = avatarUrl.startsWith('/') 
+                                  ? `http://localhost:3000${avatarUrl}`
+                                  : `http://localhost:3000/${avatarUrl}`;
+                              }
+                              
+                              return (
+                                <img
+                                  src={avatarUrl}
+                                  alt={user.name}
+                                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
+                                  onError={(e) => {
+                                    // If image fails to load, replace with initials
+                                    console.log('Avatar failed to load:', avatarUrl);
+                                    e.target.outerHTML = `<div class="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold border-2 border-gray-200 dark:border-gray-700 flex-shrink-0">${initials}</div>`;
+                                  }}
+                                  onLoad={() => {
+                                    console.log('Avatar loaded successfully:', avatarUrl);
+                                  }}
+                                />
+                              );
+                            } else {
+                              // Show initials if no avatar
+                              return (
+                                <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold border-2 border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                  {initials}
+                                </div>
+                              );
                             }
-                            alt={user.name}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
-                            onError={(e) => {
-                              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3B82F6&color=fff&size=128`;
-                            }}
-                          />
+                          })()}
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white text-sm">{user.name}</p>
                             <p className="text-gray-600 dark:text-gray-400 text-xs flex items-center gap-1">
@@ -235,7 +283,7 @@ export default function UsersAdmin() {
                             ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                         }`}>
-                          {user.role}
+                          {user.role || 'regular'}
                         </span>
                       </td>
                       <td className="py-3 px-4">

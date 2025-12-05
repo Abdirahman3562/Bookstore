@@ -16,14 +16,18 @@ export default function BookCarousel() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:5100/books")
+    fetch("http://localhost:3000/api/books")
       .then((res) => res.json())
-      .then((data) => {
+      .then((responseData) => {
+        const data = responseData.data || [];
         setBooksData(data.slice(0, 10));
         setAllBooksData(data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((error) => {
+        console.error("Error fetching books:", error);
+        setLoading(false);
+      });
   }, []);
 
   const visibleBooks = 5;
@@ -140,15 +144,18 @@ export default function BookCarousel() {
           >
             {booksData.map((book) => (
               <div
-                key={book.id}
+                key={book._id || book.id}
                 className="flex-shrink-0 bg-white mb-4 rounded-xl shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden"
                 style={{ width: bookWidth }}
               >
                 <Link to={`/book/${slugify(book.title)}`}>
                   <img
-                    src={book.cover}
+                    src={book.cover ? `http://localhost:3000${book.cover}` : 'https://via.placeholder.com/180x240?text=No+Image'}
                     alt={book.title}
                     className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/180x240?text=No+Image';
+                    }}
                   />
                   <div className="p-3">
                     <h3 className="font-semibold text-sm line-clamp-2">

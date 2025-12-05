@@ -7,25 +7,20 @@ export default function Testimonials() {
   const [error, setError] = useState(false);
 
  useEffect(() => {
-  fetch("http://localhost:5004/Testimonials")
+  fetch("http://localhost:3000/api/testimonials")
     .then((res) => res.json())
-    .then((data) => {
-      // Haddii ay array tahay
-      if (Array.isArray(data)) {
-        setTestimonials(data);
-      }
-      // Haddii ay object tahay oo ay leedahay key-ga Testimonials
-      else if (data.Testimonials) {
-        setTestimonials(data.Testimonials);
-      } 
-      // fallback empty
-      else {
-        setTestimonials([]);
-      }
-
+    .then((responseData) => {
+      // Handle backend response structure
+      const data = responseData.data || [];
+      
+      // Filter only approved testimonials
+      const approvedTestimonials = data.filter(t => t.status === 'approved');
+      
+      setTestimonials(approvedTestimonials);
       setLoading(false);
     })
-    .catch(() => {
+    .catch((err) => {
+      console.error("Error fetching testimonials:", err);
       setError(true);
       setLoading(false);
     });
@@ -49,43 +44,53 @@ export default function Testimonials() {
 
         {/* Testimonials Grid */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((t) => (
-            <div
-              key={t.id}
-              className="bg-[#edf4f5] border border-gray-200 hover:border-blue-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition relative"
-            >
-              {/* Stars */}
-              <div className="flex gap-1 text-blue-600 mb-3">
-                {[...Array(5)].map((_, idx) => (
-                  <FaStar key={idx} />
-                ))}
-              </div>
+          {testimonials.map((t) => {
+            // Construct image URL
+            const imageUrl = t.img && !t.img.startsWith('http') 
+              ? `http://localhost:3000${t.img.startsWith('/') ? t.img : `/${t.img}`}`
+              : t.img;
+            
+            return (
+              <div
+                key={t._id || t.id}
+                className="bg-[#edf4f5] border border-gray-200 hover:border-blue-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition relative"
+              >
+                {/* Stars */}
+                <div className="flex gap-1 text-blue-600 mb-3">
+                  {[...Array(5)].map((_, idx) => (
+                    <FaStar key={idx} />
+                  ))}
+                </div>
 
-              {/* Tag */}
-              <span className="inline-block text-xs font-semibold text-blue-600 bg-emerald-50 px-3 py-1 rounded-full mb-4">
-                {t.tag}
-              </span>
+                {/* Tag */}
+                <span className="inline-block text-xs font-semibold text-blue-600 bg-emerald-50 px-3 py-1 rounded-full mb-4">
+                  {t.tag}
+                </span>
 
-              {/* Quote */}
-              <p className="text-gray-700 italic leading-relaxed relative">
-                “{t.quote}”
-              </p>
-              <FaQuoteRight className="absolute text-5xl text-gray-200 top-4 right-4" />
+                {/* Quote */}
+                <p className="text-gray-700 italic leading-relaxed relative">
+                  "{t.quote}"
+                </p>
+                <FaQuoteRight className="absolute text-5xl text-gray-200 top-4 right-4" />
 
-              {/* Author */}
-              <div className="flex items-center gap-4 mt-6">
-                <img
-                  src={t.img}
-                  alt={t.name}
-                  className="w-12 h-12 rounded-full object-cover "
-                />
-                <div>
-                  <h4 className="font-bold text-gray-900">{t.name}</h4>
-                  <p className="text-sm text-gray-500">{t.role}</p>
+                {/* Author */}
+                <div className="flex items-center gap-4 mt-6">
+                  <img
+                    src={imageUrl}
+                    alt={t.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/48';
+                    }}
+                  />
+                  <div>
+                    <h4 className="font-bold text-gray-900">{t.name}</h4>
+                    <p className="text-sm text-gray-500">{t.role}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
       </div>

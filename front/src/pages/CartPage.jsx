@@ -23,7 +23,7 @@ export default function CartPage() {
 
   // Handle item removal from the cart
   const removeFromCart = (id) => {
-    const updatedCartItems = cartItems.filter((item) => item.id !== id);
+    const updatedCartItems = cartItems.filter((item) => (item._id || item.id) !== id);
     setCartItems(updatedCartItems);
     localStorage.setItem("cart", JSON.stringify(updatedCartItems));
 
@@ -62,13 +62,16 @@ export default function CartPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {cartItems.map((item) => (
           <div
-            key={item.id}
+            key={item._id || item.id}
             className="flex items-center justify-between p-4 border rounded-lg shadow-lg bg-white"
           >
             <img
-              src={item.cover}
+              src={item.cover ? `http://localhost:3000${item.cover}` : 'https://via.placeholder.com/80x112?text=No+Image'}
               alt={item.title}
               className="w-20 h-28 object-cover rounded-md"
+              onError={(e) => {
+                e.target.src = 'https://via.placeholder.com/80x112?text=No+Image';
+              }}
             />
             <div className="ml-4 flex-grow">
               <h3 className="text-xl font-semibold text-gray-800">
@@ -80,7 +83,7 @@ export default function CartPage() {
               </p>
             </div>
             <button
-              onClick={() => removeFromCart(item.id)}
+              onClick={() => removeFromCart(item._id || item.id)}
               className="text-red-600 hover:text-red-800"
             >
               <FiTrash size={20} />
