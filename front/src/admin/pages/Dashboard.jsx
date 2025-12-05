@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 import {
   BookOpen,
   Users,
@@ -168,8 +169,8 @@ export default function Dashboard() {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -181,19 +182,19 @@ export default function Dashboard() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 sm:gap-0">
           <div className="flex items-center gap-3">
-            <BarChart3 className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard Overview</h1>
+            <BarChart3 className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Dashboard Overview</h1>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
-              <span className="text-sm text-gray-500 text-center sm:text-left">
+              <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
                 Last updated: {lastUpdated}
               </span>
             )}
             <button
               onClick={() => fetchDashboardData(true)}
               disabled={refreshing}
-              className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:cursor-not-allowed rounded-lg transition-colors w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:cursor-not-allowed rounded-lg transition-colors w-full sm:w-auto text-gray-700 dark:text-gray-300"
               title="Refresh dashboard data"
             >
               <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -201,55 +202,55 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-        <p className="text-gray-600 text-sm sm:text-base">Welcome back! Here's what's happening with your bookstore.</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Welcome back! Here's what's happening with your bookstore.</p>
       </div>
 
       {/* Main Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         {/* Total Books */}
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 dark:from-cyan-600 dark:to-cyan-800 p-6 rounded-xl text-white shadow-lg dark:shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <BookOpen className="w-8 h-8 opacity-80" />
             <TrendingUp className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-blue-100 text-sm font-medium">Total Books</p>
+            <p className="text-blue-100 dark:text-cyan-200 text-sm font-medium">Total Books</p>
             <p className="text-3xl font-bold">{stats.totalBooks}</p>
           </div>
         </div>
 
         {/* Total Users */}
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 dark:from-teal-600 dark:to-teal-800 p-6 rounded-xl text-white shadow-lg dark:shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <Users className="w-8 h-8 opacity-80" />
             <Activity className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-green-100 text-sm font-medium">Total Users</p>
+            <p className="text-green-100 dark:text-teal-200 text-sm font-medium">Total Users</p>
             <p className="text-3xl font-bold">{stats.totalUsers}</p>
           </div>
         </div>
 
         {/* Total Revenue */}
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 dark:from-pink-600 dark:to-pink-800 p-6 rounded-xl text-white shadow-lg dark:shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <DollarSign className="w-8 h-8 opacity-80" />
             <CreditCard className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-purple-100 text-sm font-medium">Total Revenue</p>
+            <p className="text-purple-100 dark:text-pink-200 text-sm font-medium">Total Revenue</p>
             <p className="text-3xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
           </div>
         </div>
 
         {/* Total Downloads */}
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 dark:from-yellow-600 dark:to-yellow-800 p-6 rounded-xl text-white shadow-lg dark:shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <Download className="w-8 h-8 opacity-80" />
             <FileText className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-orange-100 text-sm font-medium">Total Downloads</p>
+            <p className="text-orange-100 dark:text-yellow-200 text-sm font-medium">Total Downloads</p>
             <p className="text-3xl font-bold">{stats.totalDownloads}</p>
           </div>
         </div>
@@ -258,10 +259,10 @@ export default function Dashboard() {
       {/* Beautiful Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Revenue Breakdown Custom Pie Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3 mb-6">
-            <PieChart className="w-6 h-6 text-purple-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Revenue Breakdown</h3>
+            <PieChart className="w-6 h-6 text-purple-600 dark:text-purple-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Revenue Breakdown</h3>
           </div>
           <div className="flex items-center justify-center h-64">
             <div className="relative">
@@ -295,10 +296,10 @@ export default function Dashboard() {
                 </svg>
                 {/* Center Circle */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-white rounded-full w-16 h-16 shadow-inner flex items-center justify-center">
+                  <div className="bg-white dark:bg-gray-800 rounded-full w-16 h-16 shadow-inner flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">{stats.totalDownloads}</div>
-                      <div className="text-xs text-gray-500">Total</div>
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalDownloads}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
                     </div>
                   </div>
                 </div>
@@ -307,11 +308,11 @@ export default function Dashboard() {
               <div className="flex justify-center gap-6 mt-4">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Free ({chartData.revenueBreakdown[0]?.value || 0})</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Free ({chartData.revenueBreakdown[0]?.value || 0})</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Paid ({chartData.revenueBreakdown[1]?.value || 0})</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Paid ({chartData.revenueBreakdown[1]?.value || 0})</span>
                 </div>
               </div>
             </div>
@@ -319,19 +320,19 @@ export default function Dashboard() {
         </div>
 
         {/* User Statistics Custom Bar Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3 mb-6">
-            <BarChart className="w-6 h-6 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900">User Statistics</h3>
+            <BarChart className="w-6 h-6 text-green-600 dark:text-green-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">User Statistics</h3>
           </div>
           <div className="h-64">
             <div className="space-y-4">
               {chartData.userStats.map((item, index) => (
                 <div key={index} className="flex items-center gap-4">
-                  <div className="w-20 text-sm text-gray-600 truncate">{item.name}</div>
+                  <div className="w-20 text-sm text-gray-600 dark:text-gray-400 truncate">{item.name}</div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden">
+                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
                         <div
                           className="h-full transition-all duration-500 ease-out rounded-full"
                           style={{
@@ -340,14 +341,14 @@ export default function Dashboard() {
                           }}
                         ></div>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900 w-8 text-right">{item.value}</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white w-8 text-right">{item.value}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <div className="text-center text-sm text-gray-500">
+            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="text-center text-sm text-gray-500 dark:text-gray-400">
                 Total Users: {stats.totalUsers}
               </div>
             </div>
@@ -355,10 +356,10 @@ export default function Dashboard() {
         </div>
 
         {/* Revenue Trend Custom Area Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3 mb-6">
-            <ActivityIcon className="w-6 h-6 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Revenue Trend (7 Days)</h3>
+            <ActivityIcon className="w-6 h-6 text-blue-600 dark:text-blue-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Revenue Trend (7 Days)</h3>
           </div>
           <div className="h-64">
             <div className="flex items-end justify-between h-48 px-2">
@@ -371,21 +372,21 @@ export default function Dashboard() {
                     <div className="relative w-full mb-2">
                       {/* Area fill effect */}
                       <div
-                        className="bg-blue-100 rounded-t transition-all duration-500 ease-out"
+                        className="bg-blue-100 dark:bg-blue-900/30 rounded-t transition-all duration-500 ease-out"
                         style={{ height: `${height}%` }}
                       ></div>
                       {/* Line effect */}
                       <div
-                        className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0.5 bg-blue-500 rounded-t"
+                        className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0.5 bg-blue-500 dark:bg-blue-400 rounded-t"
                         style={{ height: `${height}%` }}
                       ></div>
                       {/* Data point */}
                       <div
-                        className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-blue-600 rounded-full border-2 border-white shadow-sm"
+                        className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-blue-600 dark:bg-blue-500 rounded-full border-2 border-white dark:border-gray-800 shadow-sm"
                         style={{ bottom: `${height}%`, marginBottom: '-6px' }}
                       ></div>
                     </div>
-                    <div className="text-xs text-gray-500 text-center">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
                       <div>${day.revenue}</div>
                       <div className="font-medium">{day.day}</div>
                     </div>
@@ -397,10 +398,10 @@ export default function Dashboard() {
         </div>
 
         {/* Downloads Trend Custom Bar Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3 mb-6">
-            <TrendingUp className="w-6 h-6 text-orange-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Downloads Trend (7 Days)</h3>
+            <TrendingUp className="w-6 h-6 text-orange-600 dark:text-orange-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Downloads Trend (7 Days)</h3>
           </div>
           <div className="h-64">
             <div className="flex items-end justify-between h-48 px-2">
@@ -417,21 +418,21 @@ export default function Dashboard() {
                       ></div>
                       {/* Value label on top */}
                       <div
-                        className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-gray-700"
+                        className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-gray-700 dark:text-gray-300"
                         style={{ bottom: `${height}%`, marginBottom: '8px' }}
                       >
                         {day.downloads}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 text-center font-medium">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center font-medium">
                       {day.day}
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="text-center text-sm text-gray-500">
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="text-center text-sm text-gray-500 dark:text-gray-400">
                 Total Downloads: {stats.totalDownloads}
               </div>
             </div>
@@ -442,47 +443,47 @@ export default function Dashboard() {
       {/* Additional Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
         {/* Purchases Overview */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3 mb-4">
-            <ShoppingCart className="w-6 h-6 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Purchases Overview</h3>
+            <ShoppingCart className="w-6 h-6 text-blue-600 dark:text-blue-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Purchases Overview</h3>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Purchases</span>
-              <span className="font-semibold text-gray-900">{stats.totalPurchases}</span>
+              <span className="text-gray-600 dark:text-gray-400">Total Purchases</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{stats.totalPurchases}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Free Downloads</span>
-              <span className="font-semibold text-green-600">{stats.freeDownloads}</span>
+              <span className="text-gray-600 dark:text-gray-400">Free Downloads</span>
+              <span className="font-semibold text-green-600 dark:text-green-400">{stats.freeDownloads}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Paid Downloads</span>
-              <span className="font-semibold text-blue-600">{stats.paidDownloads}</span>
+              <span className="text-gray-600 dark:text-gray-400">Paid Downloads</span>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">{stats.paidDownloads}</span>
             </div>
           </div>
         </div>
 
         {/* Revenue Breakdown */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3 mb-4">
-            <DollarSign className="w-6 h-6 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Revenue Breakdown</h3>
+            <DollarSign className="w-6 h-6 text-green-600 dark:text-green-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Revenue Breakdown</h3>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Revenue</span>
-              <span className="font-semibold text-green-600">${stats.totalRevenue.toFixed(2)}</span>
+              <span className="text-gray-600 dark:text-gray-400">Total Revenue</span>
+              <span className="font-semibold text-green-600 dark:text-green-400">${stats.totalRevenue.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Avg per Purchase</span>
-              <span className="font-semibold text-blue-600">
+              <span className="text-gray-600 dark:text-gray-400">Avg per Purchase</span>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">
                 ${stats.totalPurchases > 0 ? (stats.totalRevenue / stats.totalPurchases).toFixed(2) : '0.00'}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Free Ratio</span>
-              <span className="font-semibold text-orange-600">
+              <span className="text-gray-600 dark:text-gray-400">Free Ratio</span>
+              <span className="font-semibold text-orange-600 dark:text-orange-400">
                 {stats.totalDownloads > 0 ? Math.round((stats.freeDownloads / stats.totalDownloads) * 100) : 0}%
               </span>
             </div>
@@ -490,40 +491,40 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3 mb-4">
-            <Activity className="w-6 h-6 text-purple-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+            <Activity className="w-6 h-6 text-purple-600 dark:text-purple-500" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Quick Actions</h3>
           </div>
           <div className="space-y-2">
             <button
               onClick={handleAddNewBook}
-              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors flex items-center gap-3 group"
+              className="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-600 transition-colors flex items-center gap-3 group"
             >
-              <BookOpen className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-medium text-gray-700">Add New Book</span>
+              <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Add New Book</span>
             </button>
             <button
               onClick={handleManageUsers}
-              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition-colors flex items-center gap-3 group"
+              className="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-600 transition-colors flex items-center gap-3 group"
             >
-              <Users className="w-4 h-4 text-green-600 group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-medium text-gray-700">Manage Users</span>
+              <Users className="w-4 h-4 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Manage Users</span>
             </button>
             <button
               onClick={handleViewDownloads}
-              className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-300 transition-colors flex items-center gap-3 group"
+              className="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:border-orange-300 dark:hover:border-orange-600 transition-colors flex items-center gap-3 group"
             >
-              <Download className="w-4 h-4 text-orange-600 group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-medium text-gray-700">View Downloads</span>
+              <Download className="w-4 h-4 text-orange-600 dark:text-orange-400 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">View Downloads</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Recent Activity Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 p-6">
           <div className="flex items-center gap-3">
             <Calendar className="w-6 h-6 text-white" />
             <h2 className="text-xl font-semibold text-white">Recent Purchases</h2>
@@ -533,31 +534,31 @@ export default function Dashboard() {
         <div className="p-6">
           {stats.recentPurchases.length === 0 ? (
             <div className="text-center py-8">
-              <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No recent purchases</p>
+              <ShoppingCart className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-gray-400">No recent purchases</p>
             </div>
           ) : (
             <div className="space-y-4">
               {stats.recentPurchases.map((purchase, index) => (
-                <div key={purchase._id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div key={purchase._id || index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                   <div className="flex items-center gap-4">
                     <img
                       src={`http://localhost:3000${purchase.cover}`}
                       alt={purchase.title}
-                      className="w-12 h-16 object-cover rounded border"
+                      className="w-12 h-16 object-cover rounded border border-gray-200 dark:border-gray-700"
                       onError={(e) => {
                         e.target.src = 'https://via.placeholder.com/48x64?text=No+Image';
                       }}
                     />
                     <div>
-                      <h4 className="font-medium text-gray-900">{purchase.title}</h4>
-                      <p className="text-sm text-gray-600">by {purchase.author}</p>
-                      <p className="text-sm text-gray-500">{purchase.userName}</p>
+                      <h4 className="font-medium text-gray-900 dark:text-white">{purchase.title}</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">by {purchase.author}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500">{purchase.userName}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-green-600">${purchase.price}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-semibold text-green-600 dark:text-green-400">${purchase.price}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {new Date(purchase.timestamp).toLocaleDateString()}
                     </p>
                   </div>
@@ -570,31 +571,31 @@ export default function Dashboard() {
 
       {/* Footer Stats Summary */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
-          <Eye className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-gray-900">{stats.totalBooks + stats.totalDownloads}</p>
-          <p className="text-sm text-gray-600">Total Interactions</p>
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+          <Eye className="w-6 h-6 text-gray-600 dark:text-gray-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalBooks + stats.totalDownloads}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Total Interactions</p>
         </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
-          <TrendingUp className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-gray-900">
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+          <TrendingUp className="w-6 h-6 text-gray-600 dark:text-gray-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {stats.totalDownloads > 0 ? Math.round((stats.paidDownloads / stats.totalDownloads) * 100) : 0}%
           </p>
-          <p className="text-sm text-gray-600">Conversion Rate</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Conversion Rate</p>
         </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
-          <Calendar className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-gray-900">
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+          <Calendar className="w-6 h-6 text-gray-600 dark:text-gray-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {stats.totalPurchases > 0 ? Math.round(stats.totalRevenue / stats.totalPurchases) : 0}
           </p>
-          <p className="text-sm text-gray-600">Avg Order Value</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Avg Order Value</p>
         </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
-          <BarChart3 className="w-6 h-6 text-gray-600 mx-auto mb-2" />
-          <p className="text-2xl font-bold text-gray-900">
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+          <BarChart3 className="w-6 h-6 text-gray-600 dark:text-gray-400 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">
             {stats.totalUsers > 0 ? Math.round(stats.totalDownloads / stats.totalUsers) : 0}
           </p>
-          <p className="text-sm text-gray-600">Downloads per User</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Downloads per User</p>
         </div>
       </div>
     </div>

@@ -263,8 +263,8 @@ export default function AuthorsAdmin() {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading authors...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading authors...</p>
         </div>
       </div>
     );
@@ -276,12 +276,12 @@ export default function AuthorsAdmin() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 sm:gap-0">
           <div className="flex items-center gap-3">
-            <UserPen className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Authors Management</h1>
+            <UserPen className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Authors Management</h1>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
-              <span className="text-sm text-gray-500 text-center sm:text-left">
+              <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
                 Last updated: {lastUpdated}
               </span>
             )}
@@ -289,7 +289,7 @@ export default function AuthorsAdmin() {
               <button
                 onClick={() => fetchAuthors(true)}
                 disabled={refreshing}
-                className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:cursor-not-allowed rounded-lg transition-colors"
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:cursor-not-allowed rounded-lg transition-colors text-gray-700 dark:text-gray-300"
                 title="Refresh authors data"
               >
                 <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -297,7 +297,7 @@ export default function AuthorsAdmin() {
               </button>
               <button
                 onClick={handleCreate}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Author</span>
@@ -305,71 +305,71 @@ export default function AuthorsAdmin() {
             </div>
           </div>
         </div>
-        <p className="text-gray-600 text-sm sm:text-base">Manage author profiles, biographies, and their published works</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Manage author profiles, biographies, and their published works</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 dark:from-blue-600 dark:to-blue-800 p-6 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <UserPen className="w-8 h-8 opacity-80" />
             <FileText className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-indigo-100 text-sm font-medium">Total Authors</p>
+            <p className="text-indigo-100 dark:text-blue-200 text-sm font-medium">Total Authors</p>
             <p className="text-3xl font-bold">{stats.totalAuthors}</p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 dark:from-emerald-600 dark:to-emerald-800 p-6 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <CheckCircle className="w-8 h-8 opacity-80" />
             <UserPen className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-green-100 text-sm font-medium">Active Authors</p>
+            <p className="text-green-100 dark:text-emerald-200 text-sm font-medium">Active Authors</p>
             <p className="text-3xl font-bold">{stats.activeAuthors}</p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 dark:from-violet-600 dark:to-violet-800 p-6 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <CheckCircle className="w-8 h-8 opacity-80" />
             <CheckCircle className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-purple-100 text-sm font-medium">Verified Authors</p>
+            <p className="text-purple-100 dark:text-violet-200 text-sm font-medium">Verified Authors</p>
             <p className="text-3xl font-bold">{stats.verifiedAuthors}</p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-teal-500 to-teal-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-teal-500 to-teal-600 dark:from-cyan-600 dark:to-cyan-800 p-6 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <Calendar className="w-8 h-8 opacity-80" />
             <Plus className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-teal-100 text-sm font-medium">New This Month</p>
+            <p className="text-teal-100 dark:text-cyan-200 text-sm font-medium">New This Month</p>
             <p className="text-3xl font-bold">{stats.newThisMonth}</p>
           </div>
         </div>
       </div>
 
       {/* Authors Table */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-700 dark:to-purple-700 p-6">
           <h2 className="text-xl font-semibold text-white">Author Profiles</h2>
         </div>
 
         <div className="p-6">
           {authors.length === 0 ? (
             <div className="text-center py-12">
-              <UserPen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No authors found</h3>
-              <p className="text-gray-600 mb-4">Author profiles will appear here when created.</p>
+              <UserPen className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No authors found</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">Author profiles will appear here when created.</p>
               <button
                 onClick={handleCreate}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Add First Author
@@ -379,33 +379,33 @@ export default function AuthorsAdmin() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1000px]">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Author</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Username</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Verified</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Location</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Created</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Actions</th>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Author</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Username</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Verified</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Location</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Created</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {authors.map((author) => (
-                    <tr key={author._id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={author._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <img
                             src={author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=6366F1&color=fff&size=128`}
                             alt={author.name}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
                             onError={(e) => {
                               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(author.name)}&background=6366F1&color=fff&size=128`;
                             }}
                           />
                           <div>
-                            <p className="font-medium text-gray-900 text-sm">{author.name}</p>
+                            <p className="font-medium text-gray-900 dark:text-white text-sm">{author.name}</p>
                             {author.email && (
-                              <p className="text-gray-600 text-xs flex items-center gap-1">
+                              <p className="text-gray-600 dark:text-gray-400 text-xs flex items-center gap-1">
                                 <Mail className="w-3 h-3" />
                                 {author.email}
                               </p>
@@ -414,13 +414,13 @@ export default function AuthorsAdmin() {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="text-sm text-gray-700 font-mono">@{author.username}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">@{author.username}</span>
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                           author.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
                         }`}>
                           {author.status === 'active' ? (
                             <CheckCircle size={12} />
@@ -432,25 +432,25 @@ export default function AuthorsAdmin() {
                       </td>
                       <td className="py-3 px-4">
                         {author.verified ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                             <CheckCircle size={12} />
                             Verified
                           </span>
                         ) : (
-                          <span className="text-gray-400 text-xs">Not verified</span>
+                          <span className="text-gray-400 dark:text-gray-500 text-xs">Not verified</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">
+                      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                         {author.location ? (
                           <div className="flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             {author.location}
                           </div>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-gray-400 dark:text-gray-500">—</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-gray-600 text-sm">
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">
                         {author.createdAt ? (
                           <div className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
@@ -461,14 +461,14 @@ export default function AuthorsAdmin() {
                             })}
                           </div>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-gray-400 dark:text-gray-500">—</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(author)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                             title="Edit author"
                           >
                             <Edit className="w-4 h-4" />
@@ -477,8 +477,8 @@ export default function AuthorsAdmin() {
                             onClick={() => toggleStatus(author)}
                             className={`p-1.5 rounded transition-colors ${
                               author.status === 'active'
-                                ? 'text-orange-600 hover:bg-orange-50'
-                                : 'text-green-600 hover:bg-green-50'
+                                ? 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                                : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
                             }`}
                             title={author.status === 'active' ? 'Deactivate' : 'Activate'}
                           >
@@ -490,7 +490,7 @@ export default function AuthorsAdmin() {
                           </button>
                           <button
                             onClick={() => openDeleteModal(author)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                             title="Delete author"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -508,9 +508,9 @@ export default function AuthorsAdmin() {
 
       {/* Modal for Create/Edit */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl lg:ml-40 md:ml-40 ml-0  w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-6 flex items-center justify-between">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl lg:ml-40 md:ml-40 ml-0  w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-700 dark:to-purple-700 p-6 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-white">
                 {editingAuthor ? 'Edit Author' : 'Create New Author'}
               </h2>
@@ -529,11 +529,11 @@ export default function AuthorsAdmin() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Basic Info */}
                 <div className="md:col-span-2">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h3>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Username *
                   </label>
                   <input
@@ -541,13 +541,13 @@ export default function AuthorsAdmin() {
                     required
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="sharafdin"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Full Name *
                   </label>
                   <input
@@ -555,13 +555,13 @@ export default function AuthorsAdmin() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="Mr Sharafdin"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email *
                   </label>
                   <input
@@ -569,45 +569,45 @@ export default function AuthorsAdmin() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="hello@dugsiiye.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Location
                   </label>
                   <input
                     type="text"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="Hargeisa, Somaliland"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Website
                   </label>
                   <input
                     type="url"
                     value={formData.website}
                     onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="https://dugsiiye.com/u/sharafdin"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Status
                   </label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
@@ -615,34 +615,34 @@ export default function AuthorsAdmin() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Bio
                   </label>
                   <textarea
                     value={formData.bio}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="Full-Stack Developer & Educator..."
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Avatar (Base64 or URL)
                   </label>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50"
                   />
                   {formData.avatar && (
                     <div className="mt-2">
                       <img
                         src={formData.avatar}
                         alt="Preview"
-                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
                       />
                     </div>
                   )}
@@ -654,20 +654,20 @@ export default function AuthorsAdmin() {
                     id="verified"
                     checked={formData.verified}
                     onChange={(e) => setFormData({ ...formData, verified: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:bg-gray-700"
                   />
-                  <label htmlFor="verified" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="verified" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Verified Author
                   </label>
                 </div>
 
                 {/* Social Media */}
                 <div className="md:col-span-2 mt-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Media Links</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Social Media Links</h3>
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <Github className="w-4 h-4" />
                     GitHub
                   </label>
@@ -678,13 +678,13 @@ export default function AuthorsAdmin() {
                       ...formData,
                       social: { ...formData.social, github: e.target.value }
                     })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="https://github.com/sharafdin"
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <Linkedin className="w-4 h-4" />
                     LinkedIn
                   </label>
@@ -695,13 +695,13 @@ export default function AuthorsAdmin() {
                       ...formData,
                       social: { ...formData.social, linkedin: e.target.value }
                     })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="https://linkedin.com/in/sharafdin"
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <Twitter className="w-4 h-4" />
                     Twitter
                   </label>
@@ -712,13 +712,13 @@ export default function AuthorsAdmin() {
                       ...formData,
                       social: { ...formData.social, twitter: e.target.value }
                     })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="https://twitter.com/sharafdin"
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <Youtube className="w-4 h-4" />
                     YouTube
                   </label>
@@ -729,13 +729,13 @@ export default function AuthorsAdmin() {
                       ...formData,
                       social: { ...formData.social, youtube: e.target.value }
                     })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="https://youtube.com/@sharafdin"
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <Facebook className="w-4 h-4" />
                     Facebook
                   </label>
@@ -746,13 +746,13 @@ export default function AuthorsAdmin() {
                       ...formData,
                       social: { ...formData.social, facebook: e.target.value }
                     })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="https://facebook.com/sharafdin"
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <Instagram className="w-4 h-4" />
                     Instagram
                   </label>
@@ -763,7 +763,7 @@ export default function AuthorsAdmin() {
                       ...formData,
                       social: { ...formData.social, instagram: e.target.value }
                     })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                     placeholder="https://instagram.com/sharafdin"
                   />
                 </div>
@@ -776,13 +776,13 @@ export default function AuthorsAdmin() {
                     setShowModal(false);
                     resetForm();
                   }}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  className="px-6 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
                 >
                   {editingAuthor ? 'Update Author' : 'Create Author'}
                 </button>
@@ -794,24 +794,24 @@ export default function AuthorsAdmin() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && authorToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full">
             <div className="p-6">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                  <Trash2 className="w-6 h-6 text-red-600" />
+                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Delete Author</h3>
-                  <p className="text-sm text-gray-600">This action cannot be undone</p>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Delete Author</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">This action cannot be undone</p>
                 </div>
               </div>
               
               <div className="mb-6">
-                <p className="text-gray-700 mb-2">
+                <p className="text-gray-700 dark:text-gray-300 mb-2">
                   Are you sure you want to delete <span className="font-semibold">{authorToDelete.name}</span>?
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   All associated data will be permanently removed.
                 </p>
               </div>
@@ -822,13 +822,13 @@ export default function AuthorsAdmin() {
                     setShowDeleteModal(false);
                     setAuthorToDelete(null);
                   }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete Author

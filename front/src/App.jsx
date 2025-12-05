@@ -89,7 +89,7 @@ function App() {
           <Route
             path="/admin/dashboard"
             element={
-              <AdminProtectedRoute>
+              <AdminProtectedRoute requiredPermission="dashboard">
                 <AdminLayout>
                   <ADminDashboard />
                 </AdminLayout>
@@ -100,70 +100,84 @@ function App() {
           <Route
             path="/admin/books"
             element={
-              <AdminLayout>
-                <BooksAdmin />
-              </AdminLayout>
+              <AdminProtectedRoute requiredPermission="books">
+                <AdminLayout>
+                  <BooksAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
             }
           />
 
           <Route
             path="/admin/downloads"
             element={
-              <AdminLayout>
-                <DownloadsAdmin />
-              </AdminLayout>
+              <AdminProtectedRoute requiredPermission="downloads">
+                <AdminLayout>
+                  <DownloadsAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
             }
           />
 
           <Route
             path="/admin/purchased"
             element={
-              <AdminLayout>
-                <PurchasedAdmin />
-              </AdminLayout>
+              <AdminProtectedRoute requiredPermission="purchased">
+                <AdminLayout>
+                  <PurchasedAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
             }
           />
 
           <Route
             path="/admin/testimonials"
             element={
-              <AdminLayout>
-                <TestimonialsAdmin />
-              </AdminLayout>
+              <AdminProtectedRoute requiredPermission="testimonials">
+                <AdminLayout>
+                  <TestimonialsAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
             }
           />
 
           <Route
             path="/admin/users"
             element={
-              <AdminLayout>
-                <UsersAdmin />
-              </AdminLayout>
+              <AdminProtectedRoute requiredPermission="users">
+                <AdminLayout>
+                  <UsersAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
             }
           />
 
           <Route
             path="/admin/authors"
             element={
-              <AdminLayout>
-                <AuthorsAdmin />
-              </AdminLayout>
+              <AdminProtectedRoute requiredPermission="authors">
+                <AdminLayout>
+                  <AuthorsAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
             }
           />
 
           <Route
             path="/admin/blogs"
             element={
-              <AdminLayout>
-                <BlogsAdmin />
-              </AdminLayout>
+              <AdminProtectedRoute requiredPermission="blogs">
+                <AdminLayout>
+                  <BlogsAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
             }
           />
 
           <Route
             path="/admin/add-admin-user"
             element={
-              <AdminProtectedRoute>
+              <AdminProtectedRoute requiredPermission="addAdminUser">
                 <AdminLayout>
                   <AddAdminUser />
                 </AdminLayout>
@@ -174,7 +188,7 @@ function App() {
           <Route
             path="/admin/admin-users"
             element={
-              <AdminProtectedRoute>
+              <AdminProtectedRoute requiredPermission="addAdminUser">
                 <AdminLayout>
                   <AdminUsersAdmin />
                 </AdminLayout>

@@ -186,12 +186,12 @@ export default function BooksAdmin() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 sm:gap-0">
           <div className="flex items-center gap-3">
-            <BookOpen className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Books Management</h1>
+            <BookOpen className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Books Management</h1>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
-              <span className="text-sm text-gray-500 text-center sm:text-left">
+              <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
                 Last updated: {lastUpdated}
               </span>
             )}
@@ -199,7 +199,7 @@ export default function BooksAdmin() {
               <button
                 onClick={() => fetchBooks(true)}
                 disabled={refreshing}
-                className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:cursor-not-allowed rounded-lg transition-colors"
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:cursor-not-allowed rounded-lg transition-colors text-gray-700 dark:text-gray-300"
                 title="Refresh data from database"
               >
                 <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -213,7 +213,7 @@ export default function BooksAdmin() {
                     resetForm();
                   }
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto justify-center"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors w-full sm:w-auto justify-center"
               >
                 <Plus className="w-4 h-4" />
                 {showForm ? 'Cancel' : 'Add Book'}
@@ -221,7 +221,7 @@ export default function BooksAdmin() {
             </div>
           </div>
         </div>
-        <p className="text-gray-600 text-sm sm:text-base">
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
           {showForm
             ? (editingBook ? 'Edit book details' : 'Add new books to your bookstore collection')
             : `Manage your book collection (${books.length} books)`
@@ -231,8 +231,8 @@ export default function BooksAdmin() {
 
       {/* Show Form or Books List */}
       {showForm ? (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 p-6">
             <div className="flex items-center gap-3">
               {editingBook ? <Edit className="w-6 h-6 text-white" /> : <Plus className="w-6 h-6 text-white" />}
               <h2 className="text-xl font-semibold text-white">
@@ -245,7 +245,7 @@ export default function BooksAdmin() {
           {/* Title and Author Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Book Title *
               </label>
               <input
@@ -254,13 +254,13 @@ export default function BooksAdmin() {
                 value={formData.title}
                 onChange={handleChange}
                 required
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-colors"
                 placeholder="Enter book title"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Author *
               </label>
               <input
@@ -269,7 +269,7 @@ export default function BooksAdmin() {
                 value={formData.author}
                 onChange={handleChange}
                 required
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-colors"
                 placeholder="Enter author name"
               />
             </div>
@@ -278,7 +278,7 @@ export default function BooksAdmin() {
           {/* Price and Publisher Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Price ($) *
               </label>
               <input
@@ -289,13 +289,13 @@ export default function BooksAdmin() {
                 required
                 step="0.01"
                 min="0"
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-colors"
                 placeholder="0.00"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Publisher
               </label>
               <input
@@ -303,7 +303,7 @@ export default function BooksAdmin() {
                 name="publisher"
                 value={formData.publisher}
                 onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-colors"
                 placeholder="Enter publisher name"
               />
             </div>
@@ -312,7 +312,7 @@ export default function BooksAdmin() {
           {/* Cover Image and PDF File Upload Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Cover Image {editingBook ? '(Upload new to replace)' : '*'}
               </label>
               <div className="relative">
@@ -322,24 +322,24 @@ export default function BooksAdmin() {
                   onChange={handleChange}
                   accept="image/*"
                   required={!editingBook}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 pl-10 sm:pl-12 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors file:mr-2 sm:file:mr-4 file:py-1 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-md file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 pl-10 sm:pl-12 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-colors file:mr-2 sm:file:mr-4 file:py-1 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-md file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50"
                 />
-                <Upload className="absolute left-3 top-3 sm:top-5 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                <Upload className="absolute left-3 top-3 sm:top-5 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500" />
               </div>
               {editingBook && !formData.coverFile && (
-                <p className="mt-2 text-sm text-blue-600">
+                <p className="mt-2 text-sm text-blue-600 dark:text-blue-400">
                   Current file: {editingBook.cover?.split('/').pop() || 'No file'}
                 </p>
               )}
               {formData.coverFile && (
-                <p className="mt-2 text-sm text-green-600">
+                <p className="mt-2 text-sm text-green-600 dark:text-green-400">
                   New file selected: {formData.coverFile.name}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 PDF File {editingBook ? '(Upload new to replace)' : '*'}
               </label>
               <div className="relative">
@@ -349,17 +349,17 @@ export default function BooksAdmin() {
                   onChange={handleChange}
                   accept=".pdf"
                   required={!editingBook}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 pl-10 sm:pl-12 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors file:mr-2 sm:file:mr-4 file:py-1 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-md file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 pl-10 sm:pl-12 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-colors file:mr-2 sm:file:mr-4 file:py-1 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-md file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-red-50 dark:file:bg-red-900/30 file:text-red-700 dark:file:text-red-300 hover:file:bg-red-100 dark:hover:file:bg-red-900/50"
                 />
-                <Upload className="absolute left-3 top-3 sm:top-5 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                <Upload className="absolute left-3 top-3 sm:top-5 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500" />
               </div>
               {editingBook && !formData.pdfFile && (
-                <p className="mt-2 text-sm text-blue-600">
+                <p className="mt-2 text-sm text-blue-600 dark:text-blue-400">
                   Current file: {editingBook.pdfUrl?.split('/').pop() || 'No file'}
                 </p>
               )}
               {formData.pdfFile && (
-                <p className="mt-2 text-sm text-green-600">
+                <p className="mt-2 text-sm text-green-600 dark:text-green-400">
                   New file selected: {formData.pdfFile.name}
                 </p>
               )}
@@ -368,7 +368,7 @@ export default function BooksAdmin() {
 
           {/* Published Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-white mb-2">
               Published Date *
             </label>
             <input
@@ -377,13 +377,13 @@ export default function BooksAdmin() {
               value={formData.publishedDate}
               onChange={handleChange}
               required
-              className="w-full sm:w-1/2 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="w-full sm:w-1/2 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-colors"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-white mb-2">
               Description *
             </label>
             <textarea
@@ -392,7 +392,7 @@ export default function BooksAdmin() {
               onChange={handleChange}
               required
               rows={4}
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-vertical"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-colors resize-vertical"
               placeholder="Enter book description..."
             />
           </div>
@@ -402,7 +402,7 @@ export default function BooksAdmin() {
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:ring-blue-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+              className="flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 dark:hover:from-blue-600 dark:hover:to-purple-600 focus:ring-4 focus:ring-blue-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             >
               {loading ? (
                 <>
@@ -421,8 +421,8 @@ export default function BooksAdmin() {
         </div>
       ) : (
         /* Books List */
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 p-6">
             <div className="flex items-center gap-3">
               <BookOpen className="w-6 h-6 text-white" />
               <h2 className="text-xl font-semibold text-white">Books Collection</h2>
@@ -432,12 +432,12 @@ export default function BooksAdmin() {
           <div className="p-6">
             {books.length === 0 ? (
               <div className="text-center py-12">
-                <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No books yet</h3>
-                <p className="text-gray-600 mb-4">Start by adding your first book to the collection.</p>
+                <BookOpen className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No books yet</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">Start by adding your first book to the collection.</p>
                 <button
                   onClick={() => setShowForm(true)}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                 >
                   Add First Book
                 </button>
@@ -446,42 +446,42 @@ export default function BooksAdmin() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[600px]">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm">Cover</th>
-                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm">Title</th>
-                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm">Author</th>
-                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm">Price</th>
-                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 text-sm">Actions</th>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 dark:text-white text-sm">Cover</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 dark:text-white text-sm">Title</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 dark:text-white text-sm">Author</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 dark:text-white text-sm">Price</th>
+                      <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-gray-900 dark:text-white text-sm">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {books.map((book) => (
-                      <tr key={book._id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <tr key={book._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                         <td className="py-2 sm:py-3 px-2 sm:px-4">
                           <img
                             src={`http://localhost:3000${book.cover}`}
                             alt={book.title}
-                            className="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded border"
+                            className="w-10 h-14 sm:w-12 sm:h-16 object-cover rounded border border-gray-200 dark:border-gray-700"
                             onError={(e) => {
                               e.target.src = 'https://via.placeholder.com/48x64?text=No+Image';
                             }}
                           />
                         </td>
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-900 text-sm">{book.title}</td>
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-gray-600 text-sm">{book.author}</td>
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 font-semibold text-green-600 text-sm">${book.price}</td>
+                        <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-900 dark:text-white text-sm">{book.title}</td>
+                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-gray-600 dark:text-gray-400 text-sm">{book.author}</td>
+                        <td className="py-2 sm:py-3 px-2 sm:px-4 font-semibold text-green-600 dark:text-green-400 text-sm">${book.price}</td>
                         <td className="py-2 sm:py-3 px-2 sm:px-4">
                           <div className="flex gap-1 sm:gap-2">
                             <button
                               onClick={() => handleEdit(book)}
-                              className="p-1.5 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-1.5 sm:p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                               title="Edit"
                             >
                               <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                             <button
                               onClick={() => showDeleteModal(book)}
-                              className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                               title="Delete"
                             >
                               <Trash2 className="w-3 h-3 sm:w-3 sm:h-3" />
@@ -500,9 +500,9 @@ export default function BooksAdmin() {
 
       {/* Info Card - Show when form is visible */}
       {showForm && (
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-semibold text-blue-900 mb-2">💡 Tips:</h3>
-        <ul className="text-sm text-blue-800 space-y-1">
+        <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2">💡 Tips:</h3>
+        <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
           <li>• All fields marked with * are required</li>
           <li>• When editing, only upload new files if you want to replace current ones</li>
           <li>• Upload cover images in JPG, PNG format (recommended: 300x450px)</li>
@@ -515,10 +515,10 @@ export default function BooksAdmin() {
 
       {/* Delete Confirmation Modal */}
       {deleteModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
             {/* Header */}
-            <div className="bg-red-600 p-4 sm:p-6">
+            <div className="bg-red-600 dark:bg-red-700 p-4 sm:p-6">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                   <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -533,15 +533,15 @@ export default function BooksAdmin() {
                 <img
                   src={`http://localhost:3000${deleteModal.book?.cover}`}
                   alt={deleteModal.book?.title}
-                  className="w-16 h-20 object-cover rounded border flex-shrink-0 mx-auto sm:mx-0"
+                  className="w-16 h-20 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0 mx-auto sm:mx-0"
                   onError={(e) => {
                     e.target.src = 'https://via.placeholder.com/64x80?text=No+Image';
                   }}
                 />
                 <div className="flex-1 text-center sm:text-left">
-                  <h4 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{deleteModal.book?.title}</h4>
-                  <p className="text-gray-600 text-sm mb-2">by {deleteModal.book?.author}</p>
-                  <p className="text-red-600 font-medium text-sm sm:text-base">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm sm:text-base">{deleteModal.book?.title}</h4>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">by {deleteModal.book?.author}</p>
+                  <p className="text-red-600 dark:text-red-400 font-medium text-sm sm:text-base">
                     Are you sure you want to delete this book? This action cannot be undone.
                   </p>
                 </div>
@@ -549,16 +549,16 @@ export default function BooksAdmin() {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 p-4 sm:p-6 bg-gray-50">
+            <div className="flex flex-col sm:flex-row gap-3 p-4 sm:p-6 bg-gray-50 dark:bg-gray-900/50">
               <button
                 onClick={hideDeleteModal}
-                className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm sm:text-base"
+                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm sm:text-base"
+                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors font-medium text-sm sm:text-base"
               >
                 Delete Book
               </button>

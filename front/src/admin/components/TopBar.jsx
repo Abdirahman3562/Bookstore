@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, User, Key, Bell, LogOut } from "lucide-react";
+import { ChevronDown, User, Key, Bell, LogOut, Moon, Sun } from "lucide-react";
 import axios from "axios";
 
 export default function TopBar() {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [darkMode, setDarkMode] = useState(() => {
+    // Default to false (light mode) - only enable if explicitly set to 'true'
+    const saved = localStorage.getItem('admin_dark_mode');
+    // Only return true if explicitly saved as 'true', otherwise default to light mode
+    return saved === 'true';
+  });
 
   const fetchCurrentUser = async () => {
     try {
@@ -86,6 +92,61 @@ export default function TopBar() {
     };
   }, []);
 
+  // Initialize on mount - start with light mode by default
+  useEffect(() => {
+    // Always start by removing dark class to ensure light mode
+    document.documentElement.classList.remove('dark');
+    
+    // Check if user has explicitly enabled dark mode
+    const saved = localStorage.getItem('admin_dark_mode');
+    const isDark = saved === 'true';
+    
+    // Only apply dark mode if explicitly enabled
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      setDarkMode(true);
+    } else {
+      // Ensure light mode (dark class removed)
+      document.documentElement.classList.remove('dark');
+      setDarkMode(false);
+      // Set localStorage to 'false' if not set
+      if (saved === null) {
+        localStorage.setItem('admin_dark_mode', 'false');
+      }
+    }
+  }, []);
+
+  // Apply dark mode changes when state changes
+  useEffect(() => {
+    if (darkMode) {
+      // Only apply dark mode if explicitly ON
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('admin_dark_mode', 'true');
+    } else {
+      // Remove dark mode and ensure light mode
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('admin_dark_mode', 'false');
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    
+    // Update state
+    setDarkMode(newDarkMode);
+    
+    // Immediately apply changes
+    if (newDarkMode) {
+      // Turn ON dark mode
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('admin_dark_mode', 'true');
+    } else {
+      // Turn OFF dark mode - ensure light mode
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('admin_dark_mode', 'false');
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_email");
@@ -93,18 +154,48 @@ export default function TopBar() {
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center justify-between">
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 lg:px-6 py-3 flex items-center justify-between">
       <div className="flex-1">
-        <h1 className="text-lg font-semibold text-gray-900 hidden lg:block">
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-white hidden lg:block">
           Admin Dashboard
         </h1>
+      </div>
+
+      {/* Dark Mode Toggle - ON/OFF Switch */}
+      <div className="flex items-center gap-3 mr-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">
+            {darkMode ? 'ON' : 'OFF'}
+          </span>
+          <button
+            onClick={toggleDarkMode}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              darkMode ? 'bg-blue-600' : 'bg-gray-300'
+            }`}
+            title={darkMode ? "Turn dark mode OFF" : "Turn dark mode ON"}
+            aria-label={darkMode ? "Turn dark mode OFF" : "Turn dark mode ON"}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                darkMode ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+          <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
+            {darkMode ? (
+              <Sun className="w-4 h-4 text-yellow-500" />
+            ) : (
+              <Moon className="w-4 h-4" />
+            )}
+          </span>
+        </div>
       </div>
 
       {/* User Menu */}
       <div className="relative">
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           {currentUser?.avatar ? (
             <img
@@ -124,12 +215,12 @@ export default function TopBar() {
                 : "A"}
             </div>
           )}
-          <span className="hidden sm:block text-sm font-medium text-gray-700">
+          <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-300">
             {currentUser?.name || "Admin"}
           </span>
           <ChevronDown 
             size={16} 
-            className={`text-gray-500 transition-transform ${showMenu ? 'rotate-180' : ''}`}
+            className={`text-gray-500 dark:text-gray-400 transition-transform ${showMenu ? 'rotate-180' : ''}`}
           />
         </button>
 
@@ -140,12 +231,12 @@ export default function TopBar() {
               className="fixed inset-0 z-10"
               onClick={() => setShowMenu(false)}
             />
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
-              <div className="p-3 border-b border-gray-200">
-                <p className="text-sm font-semibold text-gray-900">
+            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
                   {currentUser?.name || "Admin"}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {currentUser?.email || "admin@example.com"}
                 </p>
               </div>
@@ -156,7 +247,7 @@ export default function TopBar() {
                     setShowMenu(false);
                     navigate("/admin/my-profile");
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <User size={16} />
                   My Profile
@@ -169,17 +260,17 @@ export default function TopBar() {
                     setShowMenu(false);
                     navigate("/admin/notifications");
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <Bell size={16} />
                   Notifications
                 </button>
               </div>
 
-              <div className="border-t border-gray-200 py-1">
+              <div className="border-t border-gray-200 dark:border-gray-700 py-1">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >
                   <LogOut size={16} />
                   Logout

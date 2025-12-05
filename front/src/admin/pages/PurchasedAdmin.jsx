@@ -131,10 +131,10 @@ export default function PurchasedAdmin() {
   // Get status badge
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      approved: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      active: { color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
-      cancelled: { color: 'bg-red-100 text-red-800', icon: XCircle }
+      pending: { color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300', icon: Clock },
+      approved: { color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300', icon: CheckCircle },
+      active: { color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300', icon: CheckCircle },
+      cancelled: { color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300', icon: XCircle }
     };
 
     const config = statusConfig[status] || statusConfig.pending;
@@ -157,8 +157,8 @@ export default function PurchasedAdmin() {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading purchased items...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading purchased items...</p>
         </div>
       </div>
     );
@@ -170,19 +170,19 @@ export default function PurchasedAdmin() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <ShoppingCart className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Purchase Management</h1>
+            <ShoppingCart className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Purchase Management</h1>
           </div>
           <div className="flex items-center gap-3">
             {lastUpdated && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 Last updated: {lastUpdated}
               </span>
             )}
             <button
               onClick={() => fetchPurchased(true)}
               disabled={refreshing}
-              className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:cursor-not-allowed rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:cursor-not-allowed rounded-lg transition-colors text-gray-700 dark:text-gray-300"
               title="Refresh data from database"
             >
               <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -190,78 +190,78 @@ export default function PurchasedAdmin() {
             </button>
           </div>
         </div>
-        <p className="text-gray-600 text-sm sm:text-base">Monitor book purchases and manage order fulfillment</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Monitor book purchases and manage order fulfillment</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
-            <h4 className="font-semibold text-green-900 text-sm">Total Sales</h4>
+            <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <h4 className="font-semibold text-green-900 dark:text-green-200 text-sm">Total Sales</h4>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-green-600">${stats.totalSales.toFixed(2)}</p>
+          <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">${stats.totalSales.toFixed(2)}</p>
         </div>
 
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
           <div className="flex items-center gap-2 mb-2">
-            <ShoppingCart className="w-5 h-5 text-blue-600" />
-            <h4 className="font-semibold text-blue-900 text-sm">Total Orders</h4>
+            <ShoppingCart className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h4 className="font-semibold text-blue-900 dark:text-blue-200 text-sm">Total Orders</h4>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-blue-600">{stats.totalOrders}</p>
+          <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalOrders}</p>
         </div>
 
-        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-5 h-5 text-yellow-600" />
-            <h4 className="font-semibold text-yellow-900 text-sm">Pending</h4>
+            <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-200 text-sm">Pending</h4>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.pendingOrders}</p>
+          <p className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pendingOrders}</p>
         </div>
 
-        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
           <div className="flex items-center gap-2 mb-2">
-            <CheckCircle className="w-5 h-5 text-purple-600" />
-            <h4 className="font-semibold text-purple-900 text-sm">Approved</h4>
+            <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <h4 className="font-semibold text-purple-900 dark:text-purple-200 text-sm">Approved</h4>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-purple-600">{stats.approvedOrders}</p>
+          <p className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.approvedOrders}</p>
         </div>
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl font-semibold text-white">Order Management</h2>
         </div>
 
         <div className="p-4 sm:p-6">
           {purchased.length === 0 ? (
             <div className="text-center py-12">
-              <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No orders yet</h3>
-              <p className="text-gray-600">Orders will appear here when customers make purchases.</p>
+              <ShoppingCart className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No orders yet</h3>
+              <p className="text-gray-600 dark:text-gray-400">Orders will appear here when customers make purchases.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[800px]">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Customer</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Book</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Price</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Payment</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Actions</th>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Customer</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Book</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Price</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Payment</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {purchased.map((order) => (
-                    <tr key={order._id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={order._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                       <td className="py-3 px-4">
                         <div>
-                          <p className="font-medium text-gray-900 text-sm">{order.userName}</p>
-                          <p className="text-gray-600 text-xs">{order.email}</p>
+                          <p className="font-medium text-gray-900 dark:text-white text-sm">{order.userName}</p>
+                          <p className="text-gray-600 dark:text-gray-400 text-xs">{order.email}</p>
                         </div>
                       </td>
                       <td className="py-3 px-4">
@@ -269,21 +269,21 @@ export default function PurchasedAdmin() {
                           <img
                             src={`http://localhost:3000${order.cover}`}
                             alt={order.title}
-                            className="w-10 h-14 object-cover rounded border flex-shrink-0"
+                            className="w-10 h-14 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0"
                             onError={(e) => {
                               e.target.src = 'https://via.placeholder.com/40x56?text=No+Image';
                             }}
                           />
                           <div>
-                            <p className="font-medium text-gray-900 text-sm">{order.title}</p>
-                            <p className="text-gray-600 text-xs">by {order.author}</p>
+                            <p className="font-medium text-gray-900 dark:text-white text-sm">{order.title}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs">by {order.author}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-green-600 text-sm">${order.price}</td>
-                      <td className="py-3 px-4 text-gray-600 text-sm">{order.paymentmethod}</td>
+                      <td className="py-3 px-4 font-semibold text-green-600 dark:text-green-400 text-sm">${order.price}</td>
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">{order.paymentmethod}</td>
                       <td className="py-3 px-4">{getStatusBadge(order.status)}</td>
-                      <td className="py-3 px-4 text-gray-600 text-sm">
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">
                         {new Date(order.timestamp).toLocaleDateString()}
                       </td>
                       <td className="py-3 px-4">
@@ -292,14 +292,14 @@ export default function PurchasedAdmin() {
                             <>
                               <button
                                 onClick={() => updateOrderStatus(order._id, 'approved')}
-                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
                                 title="Approve Order"
                               >
                                 <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                               </button>
                               <button
                                 onClick={() => updateOrderStatus(order._id, 'cancelled')}
-                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                 title="Cancel Order"
                               >
                                 <XCircle className="w-3 h-3 sm:w-3 sm:h-3" />
@@ -309,7 +309,7 @@ export default function PurchasedAdmin() {
                           {order.status === 'approved' && (
                             <button
                               onClick={() => updateOrderStatus(order._id, 'active')}
-                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                               title="Mark as Active"
                             >
                               <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -318,7 +318,7 @@ export default function PurchasedAdmin() {
                           {order.status === 'active' && (
                             <button
                               onClick={() => updateOrderStatus(order._id, 'pending')}
-                              className="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
+                              className="p-1.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors"
                               title="Change to Pending"
                             >
                               <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -327,7 +327,7 @@ export default function PurchasedAdmin() {
                           {order.status === 'cancelled' && (
                             <button
                               onClick={() => updateOrderStatus(order._id, 'pending')}
-                              className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                              className="p-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
                               title="Restore Order"
                             >
                               <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -335,7 +335,7 @@ export default function PurchasedAdmin() {
                           )}
                           <button
                             onClick={() => showDeleteModal(order)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             title="Delete Order"
                           >
                             <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -353,10 +353,10 @@ export default function PurchasedAdmin() {
 
       {/* Delete Confirmation Modal */}
       {deleteModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
             {/* Header */}
-            <div className="bg-red-600 p-4 sm:p-6">
+            <div className="bg-red-600 dark:bg-red-700 p-4 sm:p-6">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                   <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
@@ -371,16 +371,16 @@ export default function PurchasedAdmin() {
                 <img
                   src={`http://localhost:3000${deleteModal.order?.cover}`}
                   alt={deleteModal.order?.title}
-                  className="w-16 h-20 object-cover rounded border flex-shrink-0 mx-auto sm:mx-0"
+                  className="w-16 h-20 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0 mx-auto sm:mx-0"
                   onError={(e) => {
                     e.target.src = 'https://via.placeholder.com/64x80?text=No+Image';
                   }}
                 />
                 <div className="flex-1 text-center sm:text-left">
-                  <h4 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{deleteModal.order?.title}</h4>
-                  <p className="text-gray-600 text-sm mb-2">by {deleteModal.order?.author}</p>
-                  <p className="text-gray-600 text-sm mb-2">Customer: {deleteModal.order?.userName}</p>
-                  <p className="text-red-600 font-medium text-sm sm:text-base">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm sm:text-base">{deleteModal.order?.title}</h4>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">by {deleteModal.order?.author}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Customer: {deleteModal.order?.userName}</p>
+                  <p className="text-red-600 dark:text-red-400 font-medium text-sm sm:text-base">
                     Are you sure you want to delete this order? This action cannot be undone and will permanently remove the order from the system.
                   </p>
                 </div>
@@ -388,16 +388,16 @@ export default function PurchasedAdmin() {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 p-4 sm:p-6 bg-gray-50">
+            <div className="flex flex-col sm:flex-row gap-3 p-4 sm:p-6 bg-gray-50 dark:bg-gray-900/50">
               <button
                 onClick={hideDeleteModal}
-                className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm sm:text-base"
+                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm sm:text-base"
+                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors font-medium text-sm sm:text-base"
               >
                 Delete Order
               </button>

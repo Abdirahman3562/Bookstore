@@ -1,4 +1,5 @@
 import Admin from "../models/admin.model.js";
+import bcrypt from "bcryptjs";
 
 // GET ALL ADMINS
 export const getAllAdmins = async (req, res) => {
@@ -49,11 +50,26 @@ export const updateAdmin = async (req, res) => {
     // If password is being changed and currentPassword is provided, verify it
     // If currentPassword is not provided, allow password change (admin editing another admin)
     if (password && currentPassword) {
-      if (currentPassword !== admin.password) {
-        return res.status(400).json({
-          success: false,
-          message: "Current password is incorrect"
-        });
+      // Check if stored password is hashed (starts with $2a$ or $2b$) or plain text (for legacy)
+      const isHashed = admin.password && (admin.password.startsWith('$2a$') || admin.password.startsWith('$2b$'));
+      
+      if (isHashed) {
+        // Compare hashed password
+        const isMatch = await bcrypt.compare(currentPassword, admin.password);
+        if (!isMatch) {
+          return res.status(400).json({
+            success: false,
+            message: "Current password is incorrect"
+          });
+        }
+      } else {
+        // Legacy plain text comparison (for backward compatibility)
+        if (currentPassword !== admin.password) {
+          return res.status(400).json({
+            success: false,
+            message: "Current password is incorrect"
+          });
+        }
       }
     }
 
@@ -71,10 +87,15 @@ export const updateAdmin = async (req, res) => {
     const updateData = {};
     if (name) updateData.name = name;
     if (email) updateData.email = email;
-    if (password) updateData.password = password;
+    if (password) {
+      // Hash password with bcrypt before saving
+      const hashed = await bcrypt.hash(password, 10);
+      updateData.password = hashed;
+    }
     if (avatar !== undefined) updateData.avatar = avatar;
     if (adminRole) updateData.adminRole = adminRole;
     if (permissions) updateData.permissions = permissions;
+    if (req.body.twoStepVerification !== undefined) updateData.twoStepVerification = req.body.twoStepVerification;
 
     const updated = await Admin.findByIdAndUpdate(
       req.params.id,
@@ -114,10 +135,13 @@ export const createAdmin = async (req, res) => {
       });
     }
 
+    // Hash password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newAdmin = new Admin({
       name,
       email,
-      password,
+      password: hashedPassword,
       adminRole: adminRole || 'author',
       permissions: permissions || {
         dashboard: false,

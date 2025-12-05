@@ -93,8 +93,8 @@ export default function UsersAdmin() {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading users...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading users...</p>
         </div>
       </div>
     );
@@ -106,19 +106,19 @@ export default function UsersAdmin() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 sm:gap-0">
           <div className="flex items-center gap-3">
-            <Users className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Users Management</h1>
+            <Users className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Users Management</h1>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
-              <span className="text-sm text-gray-500 text-center sm:text-left">
+              <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
                 Last updated: {lastUpdated}
               </span>
             )}
             <button
               onClick={() => fetchUsers(true)}
               disabled={refreshing}
-              className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:cursor-not-allowed rounded-lg transition-colors w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:cursor-not-allowed rounded-lg transition-colors text-gray-700 dark:text-gray-300 w-full sm:w-auto"
               title="Refresh users data"
             >
               <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -126,85 +126,85 @@ export default function UsersAdmin() {
             </button>
           </div>
         </div>
-        <p className="text-gray-600 text-sm sm:text-base">Manage user accounts, permissions, and activity</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Manage user accounts, permissions, and activity</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 dark:from-indigo-600 dark:to-indigo-800 p-6 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <Users className="w-8 h-8 opacity-80" />
             <UserCheck className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-blue-100 text-sm font-medium">Total Users</p>
+            <p className="text-blue-100 dark:text-indigo-200 text-sm font-medium">Total Users</p>
             <p className="text-3xl font-bold">{stats.totalUsers}</p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 dark:from-emerald-600 dark:to-emerald-800 p-6 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <UserCheck className="w-8 h-8 opacity-80" />
             <Shield className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-green-100 text-sm font-medium">Active Users</p>
+            <p className="text-green-100 dark:text-emerald-200 text-sm font-medium">Active Users</p>
             <p className="text-3xl font-bold">{stats.activeUsers}</p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-red-500 to-red-600 dark:from-rose-600 dark:to-rose-800 p-6 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <UserX className="w-8 h-8 opacity-80" />
             <Calendar className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-red-100 text-sm font-medium">Inactive Users</p>
+            <p className="text-red-100 dark:text-rose-200 text-sm font-medium">Inactive Users</p>
             <p className="text-3xl font-bold">{stats.inactiveUsers}</p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 dark:from-violet-600 dark:to-violet-800 p-6 rounded-xl text-white shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <Shield className="w-8 h-8 opacity-80" />
             <UserCheck className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-purple-100 text-sm font-medium">Premium Users</p>
+            <p className="text-purple-100 dark:text-violet-200 text-sm font-medium">Premium Users</p>
             <p className="text-3xl font-bold">{stats.premiumUsers}</p>
           </div>
         </div>
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 p-6">
           <h2 className="text-xl font-semibold text-white">User Accounts</h2>
         </div>
 
         <div className="p-6">
           {users.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No users found</h3>
-              <p className="text-gray-600">User accounts will appear here when registered.</p>
+              <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No users found</h3>
+              <p className="text-gray-600 dark:text-gray-400">User accounts will appear here when registered.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px]">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">User</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Role</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Activity</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Join Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Actions</th>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">User</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Role</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Activity</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Join Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user) => (
-                    <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={user._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <img
@@ -215,14 +215,14 @@ export default function UsersAdmin() {
                               : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3B82F6&color=fff&size=128`
                             }
                             alt={user.name}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
+                            className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
                             onError={(e) => {
                               e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=3B82F6&color=fff&size=128`;
                             }}
                           />
                           <div>
-                            <p className="font-medium text-gray-900 text-sm">{user.name}</p>
-                            <p className="text-gray-600 text-xs flex items-center gap-1">
+                            <p className="font-medium text-gray-900 dark:text-white text-sm">{user.name}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs flex items-center gap-1">
                               <Mail className="w-3 h-3" />
                               {user.email}
                             </p>
@@ -232,8 +232,8 @@ export default function UsersAdmin() {
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           user.role === 'premium'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                         }`}>
                           {user.role}
                         </span>
@@ -241,8 +241,8 @@ export default function UsersAdmin() {
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                           user.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
                         }`}>
                           {user.status === 'active' ? (
                             <UserCheck size={12} />
@@ -252,13 +252,13 @@ export default function UsersAdmin() {
                           {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">
+                      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                         <div>
                           <p>Downloads: {user.downloadsCount}</p>
                           <p>Purchases: {user.purchasesCount}</p>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-600 text-sm">
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {user.createdAt 
@@ -276,8 +276,8 @@ export default function UsersAdmin() {
                           onClick={() => toggleUserStatus(user._id)}
                           className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium ${
                             user.status === 'active'
-                              ? 'text-red-600 hover:bg-red-50 border-red-200'
-                              : 'text-green-600 hover:bg-green-50 border-green-200'
+                              ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800'
+                              : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800'
                           }`}
                           title={user.status === 'active' ? 'Deactivate user' : 'Activate user'}
                         >

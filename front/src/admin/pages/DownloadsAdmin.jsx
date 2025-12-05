@@ -106,8 +106,8 @@ export default function DownloadsAdmin() {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading downloads...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading downloads...</p>
         </div>
       </div>
     );
@@ -119,19 +119,19 @@ export default function DownloadsAdmin() {
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 sm:gap-0">
           <div className="flex items-center gap-3">
-            <Download className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Downloads Management</h1>
+            <Download className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Downloads Management</h1>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
-              <span className="text-sm text-gray-500 text-center sm:text-left">
+              <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
                 Last updated: {lastUpdated}
               </span>
             )}
             <button
               onClick={() => fetchDownloads(true)}
               disabled={refreshing}
-              className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-200 disabled:cursor-not-allowed rounded-lg transition-colors w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:cursor-not-allowed rounded-lg transition-colors w-full sm:w-auto text-gray-700 dark:text-gray-300"
               title="Refresh data from database"
             >
               <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -139,95 +139,95 @@ export default function DownloadsAdmin() {
             </button>
           </div>
         </div>
-        <p className="text-gray-600 text-sm sm:text-base">Monitor user downloads and manage file access history</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Monitor user downloads and manage file access history</p>
      
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
           <div className="flex items-center gap-2 mb-2">
-            <Download className="w-5 h-5 text-blue-600" />
-            <h4 className="font-semibold text-blue-900 text-sm">Total Downloads</h4>
+            <Download className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h4 className="font-semibold text-blue-900 dark:text-blue-200 text-sm">Total Downloads</h4>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-blue-600">{stats.totalDownloads}</p>
+          <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalDownloads}</p>
         </div>
 
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+        <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
           <div className="flex items-center gap-2 mb-2">
-            <User className="w-5 h-5 text-green-600" />
-            <h4 className="font-semibold text-green-900 text-sm">Total Users</h4>
+            <User className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <h4 className="font-semibold text-green-900 dark:text-green-200 text-sm">Total Users</h4>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.totalUsers}</p>
+          <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{stats.totalUsers}</p>
         </div>
 
-        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-5 h-5 text-purple-600" />
-            <h4 className="font-semibold text-purple-900 text-sm">Total Revenue</h4>
+            <DollarSign className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <h4 className="font-semibold text-purple-900 dark:text-purple-200 text-sm">Total Revenue</h4>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-purple-600">${stats.totalRevenue.toFixed(2)}</p>
+          <p className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">${stats.totalRevenue.toFixed(2)}</p>
         </div>
 
-        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
           <div className="flex items-center gap-2 mb-2">
-            <FileText className="w-5 h-5 text-yellow-600" />
-            <h4 className="font-semibold text-yellow-900 text-sm">Free Downloads</h4>
+            <FileText className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <h4 className="font-semibold text-yellow-900 dark:text-yellow-200 text-sm">Free Downloads</h4>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-yellow-600">{stats.freeDownloads}</p>
+          <p className="text-xl sm:text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.freeDownloads}</p>
         </div>
 
-        <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+        <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
           <div className="flex items-center gap-2 mb-2">
-            <ShieldX className="w-5 h-5 text-red-600" />
-            <h4 className="font-semibold text-red-900 text-sm">Revoked Access</h4>
+            <ShieldX className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <h4 className="font-semibold text-red-900 dark:text-red-200 text-sm">Revoked Access</h4>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-red-600">{stats.revokedDownloads}</p>
+          <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">{stats.revokedDownloads}</p>
         </div>
       </div>
 
 
       {/* Downloads Table */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl font-semibold text-white">Download History</h2>
         </div>
 
         <div className="p-4 sm:p-6">
           {downloads.length === 0 ? (
             <div className="text-center py-12">
-              <Download className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No downloads yet</h3>
-              <p className="text-gray-600">Downloads will appear here when users download books.</p>
+              <Download className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No downloads yet</h3>
+              <p className="text-gray-600 dark:text-gray-400">Downloads will appear here when users download books.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1000px]">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">User</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Downloads</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Book</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Price</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Type</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Access Control</th>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">User</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Downloads</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Book</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Price</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Type</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Access Control</th>
                   </tr>
                 </thead>
                 <tbody>
                   {downloads.map((download) => {
                     const userDownloadCount = userDownloadCounts[download.userId] || 0;
                     return (
-                      <tr key={download._id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <tr key={download._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                         <td className="py-3 px-4">
                           <div>
-                            <p className="font-medium text-gray-900 text-sm">{download.userName}</p>
-                            <p className="text-gray-600 text-xs">{download.email}</p>
+                            <p className="font-medium text-gray-900 dark:text-white text-sm">{download.userName}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs">{download.email}</p>
                           </div>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center justify-center">
-                            <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
+                            <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-semibold">
                               {userDownloadCount}
                             </span>
                           </div>
@@ -237,28 +237,28 @@ export default function DownloadsAdmin() {
                           <img
                             src={`http://localhost:3000${download.cover}`}
                             alt={download.title}
-                            className="w-10 h-14 object-cover rounded border flex-shrink-0"
+                            className="w-10 h-14 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0"
                             onError={(e) => {
                               e.target.src = 'https://via.placeholder.com/40x56?text=No+Image';
                             }}
                           />
                           <div>
-                            <p className="font-medium text-gray-900 text-sm">{download.title}</p>
-                            <p className="text-gray-600 text-xs">by {download.author}</p>
+                            <p className="font-medium text-gray-900 dark:text-white text-sm">{download.title}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs">by {download.author}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-green-600 text-sm">${download.price}</td>
+                      <td className="py-3 px-4 font-semibold text-green-600 dark:text-green-400 text-sm">${download.price}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           download.price === 0
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-blue-100 text-blue-800'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
                         }`}>
                           {download.price === 0 ? 'Free' : 'Paid'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-600 text-sm">
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {new Date(download.timestamp).toLocaleDateString()}
@@ -269,7 +269,7 @@ export default function DownloadsAdmin() {
                           {/* Access Status Indicator */}
                           <div className="flex items-center gap-1">
                             <div className={`w-2 h-2 rounded-full ${download.notDownloaded ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                            <span className={`text-xs font-medium ${download.notDownloaded ? 'text-red-600' : 'text-green-600'}`}>
+                            <span className={`text-xs font-medium ${download.notDownloaded ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                               {download.notDownloaded ? 'Revoked' : 'Allowed'}
                             </span>
                           </div>
@@ -279,8 +279,8 @@ export default function DownloadsAdmin() {
                             onClick={() => showRevokeModal(download)}
                             className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium ${
                               download.notDownloaded
-                                ? 'text-green-600 hover:bg-green-50 border-green-200'
-                                : 'text-red-600 hover:bg-red-50 border-red-200'
+                                ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800'
+                                : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800'
                             }`}
                             title={download.notDownloaded ? "Allow user's access to this book" : "Revoke user's access to this book"}
                           >
@@ -310,10 +310,10 @@ export default function DownloadsAdmin() {
 
       {/* Revoke Access Confirmation Modal */}
       {revokeModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
             {/* Header */}
-            <div className={`${revokeModal.download?.notDownloaded ? 'bg-green-600' : 'bg-red-600'} p-4 sm:p-6`}>
+            <div className={`${revokeModal.download?.notDownloaded ? 'bg-green-600 dark:bg-green-700' : 'bg-red-600 dark:bg-red-700'} p-4 sm:p-6`}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                   {revokeModal.download?.notDownloaded ? (
@@ -334,17 +334,17 @@ export default function DownloadsAdmin() {
                 <img
                   src={`http://localhost:3000${revokeModal.download?.cover}`}
                   alt={revokeModal.download?.title}
-                  className="w-16 h-20 object-cover rounded border flex-shrink-0 mx-auto sm:mx-0"
+                  className="w-16 h-20 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0 mx-auto sm:mx-0"
                   onError={(e) => {
                     e.target.src = 'https://via.placeholder.com/64x80?text=No+Image';
                   }}
                 />
                 <div className="flex-1 text-center sm:text-left">
-                  <h4 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">{revokeModal.download?.title}</h4>
-                  <p className="text-gray-600 text-sm mb-2">by {revokeModal.download?.author}</p>
-                  <p className="text-gray-600 text-sm mb-2">User: {revokeModal.download?.userName}</p>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-1 text-sm sm:text-base">{revokeModal.download?.title}</h4>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">by {revokeModal.download?.author}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">User: {revokeModal.download?.userName}</p>
                   <p className={`font-medium text-sm sm:text-base ${
-                    revokeModal.download?.notDownloaded ? 'text-green-600' : 'text-red-600'
+                    revokeModal.download?.notDownloaded ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   }`}>
                     {revokeModal.download?.notDownloaded
                       ? `Are you sure you want to allow ${revokeModal.download?.userName} to download this book again?`
@@ -356,10 +356,10 @@ export default function DownloadsAdmin() {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 p-4 sm:p-6 bg-gray-50">
+            <div className="flex flex-col sm:flex-row gap-3 p-4 sm:p-6 bg-gray-50 dark:bg-gray-900/50">
               <button
                 onClick={hideRevokeModal}
-                className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm sm:text-base"
+                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium text-sm sm:text-base"
               >
                 Cancel
               </button>
@@ -367,8 +367,8 @@ export default function DownloadsAdmin() {
                 onClick={confirmToggleAccess}
                 className={`flex-1 px-4 py-3 rounded-lg hover:opacity-90 transition-colors font-medium text-sm sm:text-base ${
                   revokeModal.download?.notDownloaded
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-red-600 text-white hover:bg-red-700'
+                    ? 'bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600'
+                    : 'bg-red-600 dark:bg-red-700 text-white hover:bg-red-700 dark:hover:bg-red-600'
                 }`}
               >
                 {revokeModal.download?.notDownloaded ? 'Allow Download' : 'Revoke Access'}

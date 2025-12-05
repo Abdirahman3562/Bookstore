@@ -36,6 +36,10 @@ const adminSchema = new mongoose.Schema({
     authors: { type: Boolean, default: true },
     blogs: { type: Boolean, default: true },
     addAdminUser: { type: Boolean, default: true }
+  },
+  twoStepVerification: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

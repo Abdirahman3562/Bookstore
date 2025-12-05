@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { User, Mail, Key, Camera, Save, Shield, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Key, Camera, Save, Shield, Eye, EyeOff, Lock, LockOpen } from "lucide-react";
 
 export default function MyProfile() {
   const [loading, setLoading] = useState(false);
@@ -17,7 +17,8 @@ export default function MyProfile() {
     currentPassword: "",
     password: "",
     confirmPassword: "",
-    avatar: ""
+    avatar: "",
+    twoStepVerification: false
   });
   const [avatarPreview, setAvatarPreview] = useState("");
 
@@ -41,7 +42,8 @@ export default function MyProfile() {
               email: admin.email || "",
               password: "",
               confirmPassword: "",
-              avatar: admin.avatar || ""
+              avatar: admin.avatar || "",
+              twoStepVerification: admin.twoStepVerification || false
             });
             setAvatarPreview(admin.avatar || "");
             return;
@@ -61,7 +63,8 @@ export default function MyProfile() {
             email: user.email || "",
             password: "",
             confirmPassword: "",
-            avatar: user.avatar || ""
+            avatar: user.avatar || "",
+            twoStepVerification: user.twoStepVerification || false
           });
           setAvatarPreview(user.avatar || "");
         }
@@ -205,7 +208,8 @@ export default function MyProfile() {
 
       const updateData = {
         name: formData.name,
-        email: formData.email
+        email: formData.email,
+        twoStepVerification: formData.twoStepVerification
       };
 
       if (formData.password) {
@@ -286,18 +290,18 @@ export default function MyProfile() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <User className="w-8 h-8 text-blue-600" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <User className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             My Profile
           </h1>
         </div>
-        <p className="text-gray-600 text-sm sm:text-base">
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
           Update your profile information and settings
         </p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="space-y-6">
           {/* Avatar Upload */}
           <div className="flex flex-col items-center mb-6">
@@ -306,10 +310,10 @@ export default function MyProfile() {
                 <img
                   src={avatarPreview}
                   alt="Profile"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-gray-200 dark:border-gray-700"
                 />
               ) : (
-                <div className="w-32 h-32 rounded-full bg-blue-600 flex items-center justify-center text-white text-4xl font-bold">
+                <div className="w-32 h-32 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white text-4xl font-bold">
                   {formData.name
                     ? formData.name
                         .split(" ")
@@ -320,7 +324,7 @@ export default function MyProfile() {
                     : "A"}
                 </div>
               )}
-              <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
+              <label className="absolute bottom-0 right-0 bg-blue-600 dark:bg-blue-700 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
                 <Camera className="w-4 h-4" />
                 <input
                   type="file"
@@ -330,12 +334,12 @@ export default function MyProfile() {
                 />
               </label>
             </div>
-            <p className="text-sm text-gray-500 mt-2">Click camera icon to upload</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Click camera icon to upload</p>
           </div>
 
           {/* Name */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               <User className="w-4 h-4" />
               Name *
             </label>
@@ -344,14 +348,14 @@ export default function MyProfile() {
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
               placeholder="Your Name"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               <Mail className="w-4 h-4" />
               Email *
             </label>
@@ -360,14 +364,14 @@ export default function MyProfile() {
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
               placeholder="your@email.com"
             />
           </div>
 
           {/* Password Section */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Key className="w-5 h-5" />
               Change Password
             </h3>
@@ -375,7 +379,7 @@ export default function MyProfile() {
             {/* New Password - Only show initial field if not verified and password is empty */}
             {!currentPasswordVerified && !formData.password && (
               <div className="mb-4">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Key className="w-4 h-4" />
                   New Password (leave blank to keep current)
                 </label>
@@ -389,7 +393,7 @@ export default function MyProfile() {
                       setFormData(prev => ({ ...prev, currentPassword: "" }));
                     }
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
                   placeholder="Enter new password to change"
                   minLength={8}
                 />
@@ -398,8 +402,8 @@ export default function MyProfile() {
 
             {/* Current Password - Show when password is entered but not verified */}
             {formData.password && !currentPasswordVerified && (
-              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
+              <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   <Shield className="w-4 h-4" />
                   Current Password *
                 </label>
@@ -443,19 +447,19 @@ export default function MyProfile() {
                           }
                         }
                       }}
-                      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
                       placeholder="Enter current password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     >
                       {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                   {currentPasswordVerified && (
-                    <p className="text-xs text-green-600 flex items-center gap-1">
+                    <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                       <Shield className="w-3 h-3" />
                       Current password verified ✓
                     </p>
@@ -468,7 +472,7 @@ export default function MyProfile() {
             {currentPasswordVerified && (
               <>
                 <div className="mb-4">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <Key className="w-4 h-4" />
                     New Password *
                   </label>
@@ -478,14 +482,14 @@ export default function MyProfile() {
                       required
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
                       placeholder="Enter new password (min 8 chars, uppercase, lowercase, number, special char)"
                       minLength={8}
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     >
                       {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -493,35 +497,35 @@ export default function MyProfile() {
                   {formData.password && (
                     <div className="mt-2">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                           <div
                             className={`h-full transition-all ${
                               passwordStrength.score <= 1
-                                ? "bg-red-500"
+                                ? "bg-red-500 dark:bg-red-600"
                                 : passwordStrength.score === 2
-                                ? "bg-orange-500"
+                                ? "bg-orange-500 dark:bg-orange-600"
                                 : passwordStrength.score === 3
-                                ? "bg-yellow-500"
+                                ? "bg-yellow-500 dark:bg-yellow-600"
                                 : passwordStrength.score === 4
-                                ? "bg-blue-500"
-                                : "bg-green-500"
+                                ? "bg-blue-500 dark:bg-blue-600"
+                                : "bg-green-500 dark:bg-green-600"
                             }`}
                             style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
                           />
                         </div>
-                        <span className="text-xs font-medium text-gray-600">
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
                           {passwordStrength.label || "Very Weak"}
                         </span>
                       </div>
                       {passwordStrength.feedback && passwordStrength.score < 5 && (
-                        <p className="text-xs text-gray-500 mt-1">{passwordStrength.feedback}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{passwordStrength.feedback}</p>
                       )}
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Confirm New Password *
                   </label>
                   <div className="relative">
@@ -530,12 +534,12 @@ export default function MyProfile() {
                       required
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      className={`w-full px-4 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-2 pr-10 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none ${
                         formData.confirmPassword && formData.password !== formData.confirmPassword
-                          ? "border-red-300"
+                          ? "border-red-300 dark:border-red-600"
                           : formData.confirmPassword && formData.password === formData.confirmPassword
-                          ? "border-green-300"
-                          : "border-gray-300"
+                          ? "border-green-300 dark:border-green-600"
+                          : "border-gray-300 dark:border-gray-600"
                       }`}
                       placeholder="Confirm new password"
                       minLength={8}
@@ -543,7 +547,7 @@ export default function MyProfile() {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -551,12 +555,12 @@ export default function MyProfile() {
                   {formData.confirmPassword && (
                     <div className="mt-2">
                       {formData.password === formData.confirmPassword ? (
-                        <p className="text-xs text-green-600 flex items-center gap-1">
+                        <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                           <Shield className="w-3 h-3" />
                           Passwords match ✓
                         </p>
                       ) : (
-                        <p className="text-xs text-red-600 flex items-center gap-1">
+                        <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
                           <Shield className="w-3 h-3" />
                           Passwords do not match
                         </p>
@@ -568,8 +572,42 @@ export default function MyProfile() {
             )}
           </div>
 
+          {/* 2-Step Verification Section */}
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              {formData.twoStepVerification ? (
+                <Lock className="w-5 h-5 text-green-600 dark:text-green-400" />
+              ) : (
+                <LockOpen className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              )}
+              Two-Step Verification
+            </h3>
+            
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                  {formData.twoStepVerification ? "Enabled" : "Disabled"}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {formData.twoStepVerification
+                    ? "You'll receive a verification code via email when logging in"
+                    : "Add an extra layer of security to your account"}
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.twoStepVerification}
+                  onChange={(e) => setFormData({ ...formData, twoStepVerification: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:after:bg-gray-300 after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 dark:peer-checked:bg-blue-700"></div>
+              </label>
+            </div>
+          </div>
+
           {/* Submit Button */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="submit"
               disabled={
@@ -579,7 +617,7 @@ export default function MyProfile() {
                     passwordStrength.score < 5 ||
                     !currentPasswordVerified))
               }
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading ? (
                 <>

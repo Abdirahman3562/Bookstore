@@ -157,17 +157,17 @@ export default function Sidebar({ isOpen, onClose }) {
       {/* Sidebar */}
       <div className={`
         fixed lg:static top-0 left-0 z-50
-        w-64 bg-gray-900 text-white h-screen flex flex-col border-r border-gray-800
+        w-64 bg-gray-900 dark:bg-gray-800 text-white h-screen flex flex-col border-r border-gray-800 dark:border-gray-700
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
 
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-800 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-blue-400">Admin Panel</h2>
+        <div className="px-6 py-5 border-b border-gray-800 dark:border-gray-700 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-blue-400 dark:text-blue-500">Admin Panel</h2>
           <button
             onClick={onClose}
-            className="lg:hidden p-1 rounded-md hover:bg-gray-800 transition-colors"
+            className="lg:hidden p-1 rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
           >
             <X size={20} />
           </button>
@@ -185,8 +185,8 @@ export default function Sidebar({ isOpen, onClose }) {
               onClick={onClose}
               className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition
                 ${isActive
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  ? "bg-blue-600 dark:bg-blue-700 text-white"
+                  : "text-gray-300 dark:text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-700 hover:text-white"
                 }`}
             >
               <item.icon size={18} />
@@ -205,8 +205,8 @@ export default function Sidebar({ isOpen, onClose }) {
               onClick={onClose}
               className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition mt-2
                 ${location.pathname === "/admin/admin-users"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  ? "bg-blue-600 dark:bg-blue-700 text-white"
+                  : "text-gray-300 dark:text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-700 hover:text-white"
                 }`}
             >
               <Shield size={18} />
@@ -217,8 +217,8 @@ export default function Sidebar({ isOpen, onClose }) {
               onClick={onClose}
               className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition
                 ${location.pathname === "/admin/add-admin-user"
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  ? "bg-blue-600 dark:bg-blue-700 text-white"
+                  : "text-gray-300 dark:text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-700 hover:text-white"
                 }`}
             >
               <UserPlus size={18} />

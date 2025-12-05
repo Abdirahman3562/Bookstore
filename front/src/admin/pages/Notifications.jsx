@@ -168,8 +168,8 @@ export default function Notifications() {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading notifications...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading notifications...</p>
         </div>
       </div>
     );
@@ -180,43 +180,43 @@ export default function Notifications() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <Bell className="w-8 h-8 text-blue-600" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <Bell className="w-8 h-8 text-blue-600 dark:text-blue-500" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             Notifications
           </h1>
         </div>
-        <p className="text-gray-600 text-sm sm:text-base">
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
           Stay updated with your activities and system events
         </p>
       </div>
 
       {/* Notifications List */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         {notifications.length === 0 ? (
           <div className="text-center py-12">
-            <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <Bell className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               No notifications
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               You're all caught up! No new notifications.
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {notifications.map((notification) => {
               const Icon = notification.icon;
               const colorClasses = {
-                blue: "bg-blue-100 text-blue-600",
-                green: "bg-green-100 text-green-600",
-                red: "bg-red-100 text-red-600",
-                yellow: "bg-yellow-100 text-yellow-600"
+                blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+                green: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
+                red: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
+                yellow: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400"
               };
 
               return (
                 <div
                   key={notification.id}
-                  className="p-4 hover:bg-gray-50 transition-colors"
+                  className="p-4 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
                 >
                   <div className="flex items-start gap-4">
                     <div className={`p-3 rounded-lg ${colorClasses[notification.color] || colorClasses.blue}`}>
@@ -224,21 +224,21 @@ export default function Notifications() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-sm font-semibold text-gray-900">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                           {notification.title}
                         </h3>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {new Date(notification.date).toLocaleString()}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {notification.message}
                       </p>
                       {notification.status && (
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium mt-2 ${
                           notification.status === "pending"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-green-100 text-green-800"
+                            ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300"
+                            : "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
                         }`}>
                           {notification.status === "pending" ? (
                             <>
