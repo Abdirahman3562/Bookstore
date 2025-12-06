@@ -6,6 +6,7 @@ import {
   Mail, Globe, Github, Linkedin, Twitter, Youtube, Facebook, Instagram,
   Calendar, MapPin, FileText, X
 } from "lucide-react";
+import { getCurrentAdminUser, canAdd, canEdit, canDelete } from "../utils/permissions";
 
 export default function AuthorsAdmin() {
   const [authors, setAuthors] = useState([]);
@@ -37,6 +38,7 @@ export default function AuthorsAdmin() {
     status: "active"
   });
 
+  const [currentUser, setCurrentUser] = useState(null);
   const [stats, setStats] = useState({
     totalAuthors: 0,
     activeAuthors: 0,
@@ -291,8 +293,13 @@ export default function AuthorsAdmin() {
     }
   };
 
-  // Load data on component mount
+  // Load current user and data on component mount
   useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentAdminUser();
+      setCurrentUser(user);
+    };
+    loadUser();
     fetchAuthors();
   }, []);
 
@@ -332,13 +339,16 @@ export default function AuthorsAdmin() {
                 <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 <span className="inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
               </button>
-              <button
-                onClick={handleCreate}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Author</span>
-              </button>
+              {canAdd(currentUser, 'authors') && (
+                <button
+                  onClick={handleCreate}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!canAdd(currentUser, 'authors')}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Author</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -404,13 +414,16 @@ export default function AuthorsAdmin() {
               <UserPen className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No authors found</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">Author profiles will appear here when created.</p>
-              <button
-                onClick={handleCreate}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Add First Author
-              </button>
+              {canAdd(currentUser, 'authors') && (
+                <button
+                  onClick={handleCreate}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!canAdd(currentUser, 'authors')}
+                >
+                  <Plus className="w-4 h-4" />
+                  Add First Author
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -503,35 +516,44 @@ export default function AuthorsAdmin() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(author)}
-                            className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                            title="Edit author"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => toggleStatus(author)}
-                            className={`p-1.5 rounded transition-colors ${
-                              author.status === 'active'
-                                ? 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'
-                                : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
-                            }`}
-                            title={author.status === 'active' ? 'Deactivate' : 'Activate'}
-                          >
-                            {author.status === 'active' ? (
-                              <XCircle className="w-4 h-4" />
-                            ) : (
-                              <CheckCircle className="w-4 h-4" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => openDeleteModal(author)}
-                            className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                            title="Delete author"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {canEdit(currentUser, 'authors') && (
+                            <button
+                              onClick={() => handleEdit(author)}
+                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Edit author"
+                              disabled={!canEdit(currentUser, 'authors')}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
+                          {canEdit(currentUser, 'authors') && (
+                            <button
+                              onClick={() => toggleStatus(author)}
+                              className={`p-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                author.status === 'active'
+                                  ? 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                                  : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
+                              }`}
+                              title={author.status === 'active' ? 'Deactivate' : 'Activate'}
+                              disabled={!canEdit(currentUser, 'authors')}
+                            >
+                              {author.status === 'active' ? (
+                                <XCircle className="w-4 h-4" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
+                          {canDelete(currentUser, 'authors') && (
+                            <button
+                              onClick={() => openDeleteModal(author)}
+                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Delete author"
+                              disabled={!canDelete(currentUser, 'authors')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -876,7 +898,8 @@ export default function AuthorsAdmin() {
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="px-4 py-2 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!canDelete(currentUser, 'authors')}
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete Author

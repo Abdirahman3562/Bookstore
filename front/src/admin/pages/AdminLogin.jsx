@@ -492,16 +492,59 @@ export default function AdminLogin() {
                     </div>
                   )}
                 </div>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none text-center text-lg tracking-widest disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
-                  placeholder="000000"
-                  autoFocus
-                  disabled={verificationTimeRemaining === 0}
-                />
+                {/* OTP Input - 6 individual boxes */}
+                <div className="flex justify-center gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={verificationCode[index] || ''}
+                      className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                        if (value) {
+                          const newCode = verificationCode.split('');
+                          newCode[index] = value;
+                          const updatedCode = newCode.join('').slice(0, 6);
+                          setVerificationCode(updatedCode);
+                          
+                          // Auto-focus next input
+                          if (index < 5 && value) {
+                            const nextInput = document.querySelector(`input[data-admin-otp-index="${index + 1}"]`);
+                            if (nextInput) nextInput.focus();
+                          }
+                        } else {
+                          // Handle backspace
+                          const newCode = verificationCode.split('');
+                          newCode[index] = '';
+                          setVerificationCode(newCode.join(''));
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle backspace to go to previous input
+                        if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
+                          const prevInput = document.querySelector(`input[data-admin-otp-index="${index - 1}"]`);
+                          if (prevInput) prevInput.focus();
+                        }
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                        setVerificationCode(pastedData);
+                        // Focus last input if pasted
+                        if (pastedData.length === 6) {
+                          const lastInput = document.querySelector(`input[data-admin-otp-index="5"]`);
+                          if (lastInput) lastInput.focus();
+                        }
+                      }}
+                      data-admin-otp-index={index}
+                      disabled={verificationTimeRemaining === 0}
+                      autoFocus={index === 0}
+                    />
+                  ))}
+                </div>
                 <p className="text-xs text-gray-500 mt-2">
                   Enter the 6-digit code sent to your email
                 </p>
@@ -621,23 +664,67 @@ export default function AdminLogin() {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={otpCode}
-                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                      className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none text-center text-lg tracking-widest"
-                      placeholder="000000"
-                      disabled={otpVerified || timeRemaining === 0}
-                    />
+                  {/* OTP Input - 6 individual boxes */}
+                  <div className="flex justify-center gap-2 mb-4">
+                    {[0, 1, 2, 3, 4, 5].map((index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={otpCode[index] || ''}
+                        className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                          if (value) {
+                            const newCode = otpCode.split('');
+                            newCode[index] = value;
+                            const updatedCode = newCode.join('').slice(0, 6);
+                            setOtpCode(updatedCode);
+                            
+                            // Auto-focus next input
+                            if (index < 5 && value) {
+                              const nextInput = document.querySelector(`input[data-admin-forgot-otp-index="${index + 1}"]`);
+                              if (nextInput) nextInput.focus();
+                            }
+                          } else {
+                            // Handle backspace
+                            const newCode = otpCode.split('');
+                            newCode[index] = '';
+                            setOtpCode(newCode.join(''));
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          // Handle backspace to go to previous input
+                          if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+                            const prevInput = document.querySelector(`input[data-admin-forgot-otp-index="${index - 1}"]`);
+                            if (prevInput) prevInput.focus();
+                          }
+                        }}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                          setOtpCode(pastedData);
+                          // Focus last input if pasted
+                          if (pastedData.length === 6) {
+                            const lastInput = document.querySelector(`input[data-admin-forgot-otp-index="5"]`);
+                            if (lastInput) lastInput.focus();
+                          }
+                        }}
+                        data-admin-forgot-otp-index={index}
+                        disabled={otpVerified || timeRemaining === 0}
+                        autoFocus={index === 0}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-center">
                     <button
                       type="button"
                       onClick={handleVerifyOTP}
                       disabled={verifyingOTP || !otpCode || otpCode.length !== 6 || timeRemaining === 0}
-                      className="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
-                      {verifyingOTP ? "Verifying..." : "Verify"}
+                      {verifyingOTP ? "Verifying..." : "Verify OTP"}
                     </button>
                   </div>
                   {timeRemaining === 0 && (

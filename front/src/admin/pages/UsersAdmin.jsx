@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Users, RotateCcw, UserCheck, UserX, Mail, Calendar, Shield } from "lucide-react";
+import { getCurrentAdminUser, canEdit } from "../utils/permissions";
 
 export default function UsersAdmin() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -94,8 +96,13 @@ export default function UsersAdmin() {
     }
   };
 
-  // Load data on component mount
+  // Load current user and data on component mount
   useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentAdminUser();
+      setCurrentUser(user);
+    };
+    loadUser();
     fetchUsers();
   }, []);
 
@@ -322,25 +329,26 @@ export default function UsersAdmin() {
                       <td className="py-3 px-4">
                         <button
                           onClick={() => toggleUserStatus(user._id)}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium ${
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
                             user.status === 'active'
                               ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800'
                               : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800'
                           }`}
-                          title={user.status === 'active' ? 'Deactivate user' : 'Activate user'}
+                          title={!canEdit(currentUser, 'users') ? "You don't have permission to change user status" : user.status === 'active' ? 'Deactivate user' : 'Activate user'}
+                          disabled={!canEdit(currentUser, 'users')}
                         >
-                          {user.status === 'active' ? (
-                            <>
-                              <UserX className="w-3 h-3" />
-                              Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="w-3 h-3" />
-                              Activate
-                            </>
-                          )}
-                        </button>
+                            {user.status === 'active' ? (
+                              <>
+                                <UserX className="w-3 h-3" />
+                                Deactivate
+                              </>
+                            ) : (
+                              <>
+                                <UserCheck className="w-3 h-3" />
+                                Activate
+                              </>
+                            )}
+                          </button>
                       </td>
                     </tr>
                   ))}

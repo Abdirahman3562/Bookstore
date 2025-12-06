@@ -43,6 +43,8 @@ import AddAdminUser from "./admin/pages/AddAdminUser";
 import AdminUsersAdmin from "./admin/pages/AdminUsersAdmin";
 import MyProfile from "./admin/pages/MyProfile";
 import Notifications from "./admin/pages/Notifications";
+import WebsiteSettings from "./admin/pages/WebsiteSettings";
+import ContactsAdmin from "./admin/pages/ContactsAdmin";
 import AdminProtectedRoute from "./admin/components/AdminProtectedRoute";
 
 function App() {
@@ -51,18 +53,19 @@ function App() {
   // check routes
   const isHomePage = location.pathname === "/";
   const isAdminRoute = location.pathname.startsWith("/admin");
+  const isAuthRoute = location.pathname === "/auth" || location.pathname === "/verify-email";
 
   return (
     <div>
       {/* PUBLIC UI ONLY */}
-      {!isAdminRoute && <DiscountAlert />}
-      {!isAdminRoute && <Navbar />}
-      {!isAdminRoute && isHomePage && <HerroSlider />}
+      {!isAdminRoute && !isAuthRoute && <DiscountAlert />}
+      {!isAdminRoute && !isAuthRoute && <Navbar />}
+      {!isAdminRoute && !isAuthRoute && isHomePage && <HerroSlider />}
 
       {/* Wrapper size (public only) */}
-      <div className={`${!isAdminRoute && "w-full max-w-[64rem] mx-auto"}`}>
+      <div className={`${!isAdminRoute && !isAuthRoute ? "w-full max-w-[64rem] mx-auto" : isAuthRoute ? "w-full" : ""}`}>
         <ScrollToTop />
-        {!isAdminRoute && <AdPopup />}
+        {!isAdminRoute && !isAuthRoute && <AdPopup />}
         <Toaster position="top-right" />
 
         <Routes>
@@ -219,6 +222,28 @@ function App() {
             }
           />
 
+          <Route
+            path="/admin/website-settings"
+            element={
+              <AdminProtectedRoute requiredPermission="dashboard">
+                <AdminLayout>
+                  <WebsiteSettings />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/contacts"
+            element={
+              <AdminProtectedRoute requiredPermission="dashboard">
+                <AdminLayout>
+                  <ContactsAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            }
+          />
+
           {/* ================= User Dashboard ================= */}
           <Route
             path="/dashboard"
@@ -242,7 +267,7 @@ function App() {
       </div>
 
       {/* PUBLIC FOOTER ONLY */}
-      {!isAdminRoute && <Footer />}
+      {!isAdminRoute && !isAuthRoute && <Footer />}
     </div>
   );
 }

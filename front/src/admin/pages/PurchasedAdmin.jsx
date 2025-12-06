@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { ShoppingCart, Edit, Trash2, CheckCircle, XCircle, Clock, DollarSign, RefreshCw, RotateCcw } from "lucide-react";
+import { getCurrentAdminUser, canEdit, canDelete } from "../utils/permissions";
 
 export default function PurchasedAdmin() {
   const [purchased, setPurchased] = useState([]);
@@ -9,6 +10,7 @@ export default function PurchasedAdmin() {
   const [refreshing, setRefreshing] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ show: false, order: null });
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [stats, setStats] = useState({
     totalSales: 0,
     totalOrders: 0,
@@ -148,8 +150,13 @@ export default function PurchasedAdmin() {
     );
   };
 
-  // Load data on component mount
+  // Load current user and data on component mount
   useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentAdminUser();
+      setCurrentUser(user);
+    };
+    loadUser();
     fetchPurchased();
   }, []);
 
@@ -292,15 +299,17 @@ export default function PurchasedAdmin() {
                             <>
                               <button
                                 onClick={() => updateOrderStatus(order._id, 'approved')}
-                                className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                                title="Approve Order"
+                                className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                title={!canEdit(currentUser, 'purchased') ? "You don't have permission to approve orders" : "Approve Order"}
+                                disabled={!canEdit(currentUser, 'purchased')}
                               >
                                 <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                               </button>
                               <button
                                 onClick={() => updateOrderStatus(order._id, 'cancelled')}
-                                className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                title="Cancel Order"
+                                className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                title={!canEdit(currentUser, 'purchased') ? "You don't have permission to cancel orders" : "Cancel Order"}
+                                disabled={!canEdit(currentUser, 'purchased')}
                               >
                                 <XCircle className="w-3 h-3 sm:w-3 sm:h-3" />
                               </button>
@@ -309,8 +318,9 @@ export default function PurchasedAdmin() {
                           {order.status === 'approved' && (
                             <button
                               onClick={() => updateOrderStatus(order._id, 'active')}
-                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                              title="Mark as Active"
+                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                              title={!canEdit(currentUser, 'purchased') ? "You don't have permission to change order status" : "Mark as Active"}
+                              disabled={!canEdit(currentUser, 'purchased')}
                             >
                               <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
@@ -318,8 +328,9 @@ export default function PurchasedAdmin() {
                           {order.status === 'active' && (
                             <button
                               onClick={() => updateOrderStatus(order._id, 'pending')}
-                              className="p-1.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors"
-                              title="Change to Pending"
+                              className="p-1.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                              title={!canEdit(currentUser, 'purchased') ? "You don't have permission to change order status" : "Change to Pending"}
+                              disabled={!canEdit(currentUser, 'purchased')}
                             >
                               <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
@@ -327,16 +338,18 @@ export default function PurchasedAdmin() {
                           {order.status === 'cancelled' && (
                             <button
                               onClick={() => updateOrderStatus(order._id, 'pending')}
-                              className="p-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
-                              title="Restore Order"
+                              className="p-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                              title={!canEdit(currentUser, 'purchased') ? "You don't have permission to restore orders" : "Restore Order"}
+                              disabled={!canEdit(currentUser, 'purchased')}
                             >
                               <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                           )}
                           <button
                             onClick={() => showDeleteModal(order)}
-                            className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                            title="Delete Order"
+                            className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            title={!canDelete(currentUser, 'purchased') ? "You don't have permission to delete orders" : "Delete Order"}
+                            disabled={!canDelete(currentUser, 'purchased')}
                           >
                             <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
@@ -397,7 +410,8 @@ export default function PurchasedAdmin() {
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors font-medium text-sm sm:text-base"
+                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors font-medium text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!canDelete(currentUser, 'purchased')}
               >
                 Delete Order
               </button>

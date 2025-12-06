@@ -35,6 +35,7 @@ import {
   MessageSquare,
   Send,
 } from "lucide-react";
+import { getCurrentAdminUser, canAdd, canEdit, canDelete, canViewComments, canReplyToComments, canDeleteComments } from "../utils/permissions";
 
 export default function BlogsAdmin() {
   const [blogs, setBlogs] = useState([]);
@@ -390,6 +391,10 @@ export default function BlogsAdmin() {
 
   // Delete comment or reply
   const handleDeleteComment = async () => {
+    if (!canDeleteComments(currentUser)) {
+      toast.error("You don't have permission to delete comments");
+      return;
+    }
     if (!blogForComments || !commentToDelete.commentId) return;
 
     try {
@@ -424,6 +429,10 @@ export default function BlogsAdmin() {
 
   // Handle reply to comment or reply
   const handleReply = async (commentId, replyId = null) => {
+    if (!canReplyToComments(currentUser)) {
+      toast.error("You don't have permission to reply to comments");
+      return;
+    }
     if (!blogForComments || !replyText.trim()) {
       toast.error("Please enter a reply");
       return;
@@ -869,7 +878,9 @@ export default function BlogsAdmin() {
               </button>
               <button
                 onClick={handleCreate}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
+                disabled={!canAdd(currentUser, 'blogs')}
+                title={!canAdd(currentUser, 'blogs') ? "You don't have permission to add blogs" : "Add Blog"}
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Blog</span>
@@ -1073,11 +1084,18 @@ export default function BlogsAdmin() {
                       <div className="flex items-center justify-between">
                         <button
                           onClick={() => {
+                            if (!canViewComments(currentUser)) {
+                              toast.error("You don't have permission to view comments");
+                              return;
+                            }
                             setBlogForComments(blog);
                             setShowCommentsModal(true);
                           }}
-                          className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors cursor-pointer"
-                          title="View comments"
+                          className={`text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors ${
+                            !canViewComments(currentUser) ? 'opacity-50 cursor-not-allowed hover:no-underline' : 'cursor-pointer'
+                          }`}
+                          title={!canViewComments(currentUser) ? "You don't have permission to view comments" : "View comments"}
+                          disabled={!canViewComments(currentUser)}
                         >
                           {commentsCount}{" "}
                           {commentsCount === 1 ? "comment" : "comments"}
@@ -1085,23 +1103,25 @@ export default function BlogsAdmin() {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleEdit(blog)}
-                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                            title="Edit blog"
+                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            title={!canEdit(currentUser, 'blogs') ? "You don't have permission to edit blogs" : "Edit blog"}
+                            disabled={!canEdit(currentUser, 'blogs')}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => toggleStatus(blog)}
-                            className={`p-2 rounded-lg transition-colors ${
+                            className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
                               blog.status === "published"
                                 ? "text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
                                 : "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
                             }`}
-                            title={
-                              blog.status === "published"
+                            title={!canEdit(currentUser, 'blogs') 
+                              ? "You don't have permission to change blog status" 
+                              : blog.status === "published"
                                 ? "Move to draft"
-                                : "Publish"
-                            }
+                                : "Publish"}
+                            disabled={!canEdit(currentUser, 'blogs')}
                           >
                             {blog.status === "published" ? (
                               <EyeOff className="w-4 h-4" />
@@ -1111,8 +1131,9 @@ export default function BlogsAdmin() {
                           </button>
                           <button
                             onClick={() => openDeleteModal(blog)}
-                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                            title="Delete blog"
+                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            title={!canDelete(currentUser, 'blogs') ? "You don't have permission to delete blogs" : "Delete blog"}
+                            disabled={!canDelete(currentUser, 'blogs')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1587,8 +1608,8 @@ export default function BlogsAdmin() {
         </div>
       )}
 
-      {/* Comments Modal */}
-      {showCommentsModal && blogForComments && (
+      {/* Comments Modal - only show if user has view permission */}
+      {showCommentsModal && blogForComments && canViewComments(currentUser) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full h-[90vh] sm:h-[85vh] flex flex-col overflow-hidden">
             <div className="sticky z-[10000] top-0 bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-700 dark:to-blue-700 p-4 sm:p-6 flex items-center justify-between flex-shrink-0">
@@ -1756,12 +1777,19 @@ export default function BlogsAdmin() {
                                       </p>
                                       {/* Action buttons */}
                                       <div className="flex items-center gap-2 mt-2">
-                                        {/* Reply button - hide if this is current user's reply */}
+                                        {/* Reply button - always visible but disabled if this is current user's reply or user doesn't have reply permission */}
                                         {currentUser && String(reply.userId || "") !== String(currentUser._id || currentUser.id || "") && (
                                           <button
-                                            onClick={() => setReplyBox({ commentId: currentParentId, replyId: reply.id || reply._id })}
-                                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                                            title="Reply to this reply"
+                                            onClick={() => {
+                                              if (!canReplyToComments(currentUser)) {
+                                                toast.error("You don't have permission to reply to comments");
+                                                return;
+                                              }
+                                              setReplyBox({ commentId: currentParentId, replyId: reply.id || reply._id });
+                                            }}
+                                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:no-underline"
+                                            title={!canReplyToComments(currentUser) ? "You don't have permission to reply to comments" : "Reply to this reply"}
+                                            disabled={!canReplyToComments(currentUser)}
                                           >
                                             <MessageSquare className="w-3 h-3" />
                                             Reply
@@ -1782,8 +1810,8 @@ export default function BlogsAdmin() {
                                           </button>
                                         )}
                                       </div>
-                                      {/* Reply box */}
-                                      {replyBox.commentId === currentParentId && replyBox.replyId === (reply.id || reply._id) && (
+                                      {/* Reply box - only show if user has reply permission */}
+                                      {replyBox.commentId === currentParentId && replyBox.replyId === (reply.id || reply._id) && canReplyToComments(currentUser) && (
                                         <div className="mt-2 space-y-2">
                                           <textarea
                                             rows="2"
@@ -1795,7 +1823,9 @@ export default function BlogsAdmin() {
                                           <div className="flex gap-2">
                                             <button
                                               onClick={() => handleReply(currentParentId, reply.id || reply._id)}
-                                              className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1"
+                                              className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+                                              disabled={!canReplyToComments(currentUser)}
+                                              title={!canReplyToComments(currentUser) ? "You don't have permission to reply to comments" : "Reply"}
                                             >
                                               <Send className="w-3 h-3" />
                                               Reply
@@ -1816,7 +1846,7 @@ export default function BlogsAdmin() {
                                   )}
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                  {/* Delete button - for reply author, blog author, all authors, or admin */}
+                                  {/* Delete button - always visible but disabled if user doesn't have permission */}
                                   {(() => {
                                     // Check if current user is the reply author
                                     const isReplyAuthor = currentUser && (
@@ -1825,13 +1855,15 @@ export default function BlogsAdmin() {
                                       (reply.username && currentUser.name && reply.username.toLowerCase() === currentUser.name.toLowerCase())
                                     );
                                     
-                                    // All authors can delete all replies
-                                    return isReplyAuthor || isBlogAuthorParam || userRole === "author" || userRole === "admin";
+                                    // Show button if user is author/blog author/admin, but disable if no permission
+                                    const canSeeButton = isReplyAuthor || isBlogAuthorParam || userRole === "author" || userRole === "admin";
+                                    return canSeeButton;
                                   })() ? (
                                     <button
                                       onClick={() => openDeleteCommentModal(currentParentId, reply.id || reply._id)}
-                                      className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0 mt-0.5"
-                                      title="Delete reply"
+                                      className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0 mt-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                      title={!canDeleteComments(currentUser) ? "You don't have permission to delete comments" : "Delete reply"}
+                                      disabled={!canDeleteComments(currentUser)}
                                     >
                                       <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
@@ -1972,12 +2004,19 @@ export default function BlogsAdmin() {
                                   </p>
                                   {/* Action buttons */}
                                   <div className="flex items-center gap-2 mt-2">
-                                    {/* Reply button - hide if this is current user's comment */}
+                                    {/* Reply button - always visible but disabled if this is current user's comment or user doesn't have reply permission */}
                                     {currentUser && String(comment.userId || "") !== String(currentUser._id || currentUser.id || "") && (
                                       <button
-                                        onClick={() => setReplyBox({ commentId: comment.id || comment._id, replyId: null })}
-                                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                                        title="Reply to this comment"
+                                        onClick={() => {
+                                          if (!canReplyToComments(currentUser)) {
+                                            toast.error("You don't have permission to reply to comments");
+                                            return;
+                                          }
+                                          setReplyBox({ commentId: comment.id || comment._id, replyId: null });
+                                        }}
+                                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:no-underline"
+                                        title={!canReplyToComments(currentUser) ? "You don't have permission to reply to comments" : "Reply to this comment"}
+                                        disabled={!canReplyToComments(currentUser)}
                                       >
                                         <MessageSquare className="w-4 h-4" />
                                         Reply
@@ -2011,7 +2050,9 @@ export default function BlogsAdmin() {
                                       <div className="flex gap-2">
                                         <button
                                           onClick={() => handleReply(comment.id || comment._id)}
-                                          className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                                          className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+                                          disabled={!canReplyToComments(currentUser)}
+                                          title={!canReplyToComments(currentUser) ? "You don't have permission to reply to comments" : "Reply"}
                                         >
                                           <Send className="w-4 h-4" />
                                           Reply
@@ -2036,7 +2077,7 @@ export default function BlogsAdmin() {
                               )}
                             </div>
                             <div className="flex flex-col gap-1">
-                              {/* Delete button - for comment author, blog author, all authors, or admin */}
+                              {/* Delete button - always visible but disabled if user doesn't have permission */}
                               {(() => {
                                 // Check if current user is the comment author
                                 const isCommentAuthor = currentUser && (
@@ -2045,13 +2086,15 @@ export default function BlogsAdmin() {
                                   (comment.username && currentUser.name && comment.username.toLowerCase() === currentUser.name.toLowerCase())
                                 );
                                 
-                                // All authors can delete all comments
-                                return isCommentAuthor || isBlogAuthor || userRole === "author" || userRole === "admin";
+                                // Show button if user is author/blog author/admin, but disable if no permission
+                                const canSeeButton = isCommentAuthor || isBlogAuthor || userRole === "author" || userRole === "admin";
+                                return canSeeButton;
                               })() ? (
                                 <button
                                   onClick={() => openDeleteCommentModal(comment.id || comment._id)}
-                                  className="p-1.5 sm:p-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0 mt-0.5"
-                                  title="Delete comment"
+                                  className="p-1.5 sm:p-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0 mt-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                  title={!canDeleteComments(currentUser) ? "You don't have permission to delete comments" : "Delete comment"}
+                                  disabled={!canDeleteComments(currentUser)}
                                 >
                                   <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </button>
@@ -2109,7 +2152,9 @@ export default function BlogsAdmin() {
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="px-4 py-2 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600 dark:disabled:hover:bg-red-700"
+                  disabled={!canDelete(currentUser, 'blogs')}
+                  title={!canDelete(currentUser, 'blogs') ? "You don't have permission to delete blogs" : "Delete Blog"}
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete Blog

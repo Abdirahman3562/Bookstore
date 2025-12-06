@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { MessageSquare, RotateCcw, Edit, Trash2, Plus, CheckCircle, XCircle, Clock, User, Tag, Upload } from "lucide-react";
+import { getCurrentAdminUser, canAdd, canEdit, canDelete } from "../utils/permissions";
 
 export default function TestimonialsAdmin() {
   const [testimonials, setTestimonials] = useState([]);
@@ -27,6 +28,7 @@ export default function TestimonialsAdmin() {
     status: "pending"
   });
   const [deleteModal, setDeleteModal] = useState({ show: false, testimonial: null });
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Fetch all testimonials
   const fetchTestimonials = async (showRefreshIndicator = false) => {
@@ -223,8 +225,13 @@ export default function TestimonialsAdmin() {
     );
   };
 
-  // Load data on component mount
+  // Load current user and data on component mount
   useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentAdminUser();
+      setCurrentUser(user);
+    };
+    loadUser();
     fetchTestimonials();
   }, []);
 
@@ -449,21 +456,24 @@ export default function TestimonialsAdmin() {
       )}
 
       {/* Action Buttons */}
-      <div className="mb-6">
-        <button
-          onClick={() => {
-            setShowForm(!showForm);
-            if (showForm) {
-              setEditingTestimonial(null);
-              resetForm();
-            }
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          {showForm ? 'Cancel' : 'Add Testimonial'}
-        </button>
-      </div>
+      {canAdd(currentUser, 'testimonials') && (
+        <div className="mb-6">
+          <button
+            onClick={() => {
+              setShowForm(!showForm);
+              if (showForm) {
+                setEditingTestimonial(null);
+                resetForm();
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!canAdd(currentUser, 'testimonials')}
+          >
+            <Plus className="w-4 h-4" />
+            {showForm ? 'Cancel' : 'Add Testimonial'}
+          </button>
+        </div>
+      )}
 
       {/* Testimonials List */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -534,20 +544,22 @@ export default function TestimonialsAdmin() {
                         </div>
 
                         <div className="flex gap-2">
-                          {testimonial.status === 'pending' && (
+                          {canEdit(currentUser, 'testimonials') && testimonial.status === 'pending' && (
                             <>
                               <button
                                 onClick={() => updateTestimonialStatus(testimonial._id, 'approved')}
-                                className="flex items-center gap-1 px-3 py-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors border border-green-200 dark:border-green-800 text-xs font-medium"
+                                className="flex items-center gap-1 px-3 py-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors border border-green-200 dark:border-green-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Approve testimonial"
+                                disabled={!canEdit(currentUser, 'testimonials')}
                               >
                                 <CheckCircle className="w-3 h-3" />
                                 Approve
                               </button>
                               <button
                                 onClick={() => updateTestimonialStatus(testimonial._id, 'rejected')}
-                                className="flex items-center gap-1 px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-800 text-xs font-medium"
+                                className="flex items-center gap-1 px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Reject testimonial"
+                                disabled={!canEdit(currentUser, 'testimonials')}
                               >
                                 <XCircle className="w-3 h-3" />
                                 Reject
@@ -555,43 +567,51 @@ export default function TestimonialsAdmin() {
                             </>
                           )}
 
-                          {testimonial.status === 'approved' && (
+                          {canEdit(currentUser, 'testimonials') && testimonial.status === 'approved' && (
                             <button
                               onClick={() => updateTestimonialStatus(testimonial._id, 'pending')}
-                              className="flex items-center gap-1 px-3 py-1.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors border border-yellow-200 dark:border-yellow-800 text-xs font-medium"
+                              className="flex items-center gap-1 px-3 py-1.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors border border-yellow-200 dark:border-yellow-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Move to pending"
+                              disabled={!canEdit(currentUser, 'testimonials')}
                             >
                               <Clock className="w-3 h-3" />
                               Pending
                             </button>
                           )}
 
-                          {testimonial.status === 'rejected' && (
+                          {canEdit(currentUser, 'testimonials') && testimonial.status === 'rejected' && (
                             <button
                               onClick={() => updateTestimonialStatus(testimonial._id, 'pending')}
-                              className="flex items-center gap-1 px-3 py-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors border border-orange-200 dark:border-orange-800 text-xs font-medium"
+                              className="flex items-center gap-1 px-3 py-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors border border-orange-200 dark:border-orange-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Move to pending"
+                              disabled={!canEdit(currentUser, 'testimonials')}
                             >
                               <Clock className="w-3 h-3" />
                               Review
                             </button>
                           )}
 
-                          <button
-                            onClick={() => handleEdit(testimonial)}
-                            className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                            title="Edit testimonial"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
+                          {canEdit(currentUser, 'testimonials') && (
+                            <button
+                              onClick={() => handleEdit(testimonial)}
+                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Edit testimonial"
+                              disabled={!canEdit(currentUser, 'testimonials')}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
 
-                          <button
-                            onClick={() => showDeleteModal(testimonial)}
-                            className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                            title="Delete testimonial"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {canDelete(currentUser, 'testimonials') && (
+                            <button
+                              onClick={() => showDeleteModal(testimonial)}
+                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Delete testimonial"
+                              disabled={!canDelete(currentUser, 'testimonials')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -651,7 +671,8 @@ export default function TestimonialsAdmin() {
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors font-medium text-sm sm:text-base"
+                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors font-medium text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!canDelete(currentUser, 'testimonials')}
               >
                 Delete Testimonial
               </button>

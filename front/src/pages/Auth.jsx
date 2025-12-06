@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiArrowLeft } from "react-icons/fi";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -77,6 +77,26 @@ export default function AuthPage() {
       if (interval) clearInterval(interval);
     };
   }, [showForgotPassword, forgotPasswordStep, forgotPasswordTimer]);
+
+  // Auto-focus first OTP input when OTP section appears
+  useEffect(() => {
+    if (requiresOTP) {
+      setTimeout(() => {
+        const firstInput = document.querySelector('input[data-otp-index="0"]');
+        if (firstInput) firstInput.focus();
+      }, 100);
+    }
+  }, [requiresOTP]);
+
+  // Auto-focus first OTP input for forgot password
+  useEffect(() => {
+    if (showForgotPassword && forgotPasswordStep === 2) {
+      setTimeout(() => {
+        const firstInput = document.querySelector('input[data-forgot-otp-index="0"]');
+        if (firstInput) firstInput.focus();
+      }, 100);
+    }
+  }, [showForgotPassword, forgotPasswordStep]);
 
   // Format timer as MM:SS
   const formatTimer = (seconds) => {
@@ -417,7 +437,18 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="bg-[#ffffff] min-h-screen mt-10 shadow-xl rounded-lg p-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+    <div className="w-full min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="bg-[#ffffff] w-full max-w-6xl shadow-xl rounded-lg p-10 relative">
+        {/* Back to Home Button */}
+        <Link
+          to="/"
+          className="absolute top-4 left-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+        >
+          <FiArrowLeft size={20} />
+          <span>Back to Home</span>
+        </Link>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-8">
       {/* SIGNUP FORM */}
       <div>
         <h2 className="text-2xl font-bold mb-4 text-blue-600">Create Account</h2>
@@ -566,17 +597,58 @@ export default function AuthPage() {
               )}
             </div>
 
-            <input
-              type="text"
-              placeholder="Enter 6-digit code"
-              value={otpCode}
-              maxLength={6}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4 text-center text-2xl tracking-widest"
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, ''); // Only numbers
-                setOtpCode(value);
-              }}
-            />
+            {/* OTP Input - 6 individual boxes */}
+            <div className="flex justify-center gap-2 mb-4">
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <input
+                  key={index}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={otpCode[index] || ''}
+                  className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                    if (value) {
+                      const newOtp = otpCode.split('');
+                      newOtp[index] = value;
+                      const updatedOtp = newOtp.join('').slice(0, 6);
+                      setOtpCode(updatedOtp);
+                      
+                      // Auto-focus next input
+                      if (index < 5 && value) {
+                        const nextInput = document.querySelector(`input[data-otp-index="${index + 1}"]`);
+                        if (nextInput) nextInput.focus();
+                      }
+                    } else {
+                      // Handle backspace
+                      const newOtp = otpCode.split('');
+                      newOtp[index] = '';
+                      setOtpCode(newOtp.join(''));
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    // Handle backspace to go to previous input
+                    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+                      const prevInput = document.querySelector(`input[data-otp-index="${index - 1}"]`);
+                      if (prevInput) prevInput.focus();
+                    }
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                    setOtpCode(pastedData);
+                    // Focus last input if pasted
+                    if (pastedData.length === 6) {
+                      const lastInput = document.querySelector(`input[data-otp-index="5"]`);
+                      if (lastInput) lastInput.focus();
+                    }
+                  }}
+                  data-otp-index={index}
+                  disabled={timer === 0}
+                />
+              ))}
+            </div>
 
             <button
               onClick={handleVerifyOTP}
@@ -671,17 +743,58 @@ export default function AuthPage() {
                   )}
                 </div>
 
-                <input
-                  type="text"
-                  placeholder="Enter 6-digit code"
-                  value={forgotPasswordOTP}
-                  maxLength={6}
-                  className="w-full rounded-lg border border-gray-300 py-2 pl-5 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4 text-center text-2xl tracking-widest"
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
-                    setForgotPasswordOTP(value);
-                  }}
-                />
+                {/* OTP Input - 6 individual boxes */}
+                <div className="flex justify-center gap-2 mb-4">
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={forgotPasswordOTP[index] || ''}
+                      className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                        if (value) {
+                          const newOtp = forgotPasswordOTP.split('');
+                          newOtp[index] = value;
+                          const updatedOtp = newOtp.join('').slice(0, 6);
+                          setForgotPasswordOTP(updatedOtp);
+                          
+                          // Auto-focus next input
+                          if (index < 5 && value) {
+                            const nextInput = document.querySelector(`input[data-forgot-otp-index="${index + 1}"]`);
+                            if (nextInput) nextInput.focus();
+                          }
+                        } else {
+                          // Handle backspace
+                          const newOtp = forgotPasswordOTP.split('');
+                          newOtp[index] = '';
+                          setForgotPasswordOTP(newOtp.join(''));
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle backspace to go to previous input
+                        if (e.key === 'Backspace' && !forgotPasswordOTP[index] && index > 0) {
+                          const prevInput = document.querySelector(`input[data-forgot-otp-index="${index - 1}"]`);
+                          if (prevInput) prevInput.focus();
+                        }
+                      }}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                        setForgotPasswordOTP(pastedData);
+                        // Focus last input if pasted
+                        if (pastedData.length === 6) {
+                          const lastInput = document.querySelector(`input[data-forgot-otp-index="5"]`);
+                          if (lastInput) lastInput.focus();
+                        }
+                      }}
+                      data-forgot-otp-index={index}
+                      disabled={forgotPasswordTimer === 0}
+                    />
+                  ))}
+                </div>
 
                 <button
                   onClick={handleVerifyForgotPasswordOTP}
@@ -776,6 +889,8 @@ export default function AuthPage() {
             )}
           </>
         )}
+      </div>
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,11 @@
 import User from "../models/users.model.js";
 import Purchased from "../models/purchased.model.js";
 import Download from "../models/downloads.model.js";
+import WebsiteSettings from "../models/websiteSettings.model.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import fs from "fs";
+import path from "path";
 import { transporter, sendVerificationCode, sendOTPEmail } from "../utils/email.js";
 import { createOTP, verifyOTP as verifyOTPCode, clearOTP, isVerified } from "../utils/otpStore.js";
 
@@ -498,29 +501,29 @@ export const createUser = async (req, res) => {
         emailError = "Email service not configured. Please contact administrator.";
       } else {
         try {
+          // Get website settings
+          const websiteSettings = await WebsiteSettings.getSettings();
+          
+          // Format from field with website name
+          // Note: Some email clients use the sender name to generate avatars
+          // Using the website name directly might help with avatar generation
+          const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+          const fromName = websiteSettings.websiteName || "Bookstore";
+          // Try to use just the website name without "Support" to get better avatar
+          const fromField = `${fromName} <${fromEmail}>`;
+          
+          // Logo removed - not showing in emails
+          const logoHtml = '';
+          
           const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
           
+          // Compact HTML to prevent Gmail clipping (keep under 102KB)
           const mailOptions = {
-            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+            from: fromField,
             to: email,
-            subject: "Verify Your Email - Bookstore",
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #333;">Welcome to Bookstore!</h2>
-                <p>Hello ${name},</p>
-                <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${verificationUrl}" style="background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
-                    Verify Email Address
-                  </a>
-                </div>
-                <p>Or copy and paste this link into your browser:</p>
-                <p style="color: #666; font-size: 12px; word-break: break-all;">${verificationUrl}</p>
-                <p style="color: #666; font-size: 12px; margin-top: 20px;">This link will expire in 24 hours.</p>
-                <p style="color: #666; font-size: 12px;">If you didn't create an account, please ignore this email.</p>
-              </div>
-            `,
-            text: `Welcome to Bookstore! Please verify your email by clicking this link: ${verificationUrl}`
+            subject: `Verify Your Email - ${websiteSettings.websiteName}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">${logoHtml}<h2 style="color:#333;margin-top:0">Welcome to ${websiteSettings.websiteName}!</h2><p style="font-size:16px">Hello ${name},</p><p style="font-size:16px;margin:20px 0">Thank you for signing up! Please verify your email address by clicking the button below:</p><div style="text-align:center;margin:30px 0"><a href="${verificationUrl}" style="background-color:#2563eb;color:white;padding:15px 40px;text-decoration:none;border-radius:8px;display:inline-block;font-weight:bold;font-size:16px">Verify Email Address</a></div><p style="font-size:14px;margin:20px 0">Or copy and paste this link into your browser:</p><p style="color:#2563eb;font-size:12px;word-break:break-all;background:#f0f0f0;padding:10px;border-radius:5px">${verificationUrl}</p><p style="color:#666;font-size:12px;margin-top:20px">This link will expire in 24 hours.</p><p style="color:#666;font-size:12px">If you didn't create an account, please ignore this email.</p><p style="color:#666;font-size:12px;margin-top:10px">Best regards,<br>${websiteSettings.websiteName} Team</p></div>`,
+            text: `Welcome to ${websiteSettings.websiteName}!\n\nHello ${name},\n\nThank you for signing up! Please verify your email address by clicking this link:\n\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nIf you didn't create an account, please ignore this email.\n\nBest regards,\n${websiteSettings.websiteName} Team`
           };
 
           await transporter.sendMail(mailOptions);

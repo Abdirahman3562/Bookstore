@@ -182,8 +182,14 @@ export default function MyProfile() {
     setLoading(true);
 
     try {
+      console.log("Form submission started", { 
+        twoStepVerification: formData.twoStepVerification,
+        hasPassword: !!formData.password,
+        passwordLength: formData.password?.length || 0
+      });
+
       // If password is being changed, require current password verification
-      if (formData.password) {
+      if (formData.password && formData.password.trim() !== "") {
         if (formData.password !== formData.confirmPassword) {
           toast.error("Passwords do not match");
           setLoading(false);
@@ -212,14 +218,16 @@ export default function MyProfile() {
         twoStepVerification: formData.twoStepVerification
       };
 
-      if (formData.password) {
+      if (formData.password && formData.password.trim() !== "") {
         updateData.password = formData.password;
         updateData.currentPassword = formData.currentPassword;
       }
 
-      if (formData.avatar) {
+      if (formData.avatar && formData.avatar.trim() !== "") {
         updateData.avatar = formData.avatar;
       }
+
+      console.log("Update data being sent:", { ...updateData, password: updateData.password ? "***" : undefined, currentPassword: updateData.currentPassword ? "***" : undefined });
 
       // Determine if user is from admins or users collection
       const adminEmail = localStorage.getItem("admin_email");
@@ -233,26 +241,32 @@ export default function MyProfile() {
         
         if (admin) {
           // Update in admins collection
+          console.log("Updating admin:", admin._id);
           response = await axios.put(`http://localhost:3000/api/admins/${admin._id}`, updateData);
+          console.log("Admin update response:", response.data);
           localStorage.setItem("admin_email", formData.email); // Update stored email
         } else {
           throw new Error("Not in admins");
         }
       } catch (error) {
         // Fallback to users API
+        console.log("Trying users API...");
         const usersResponse = await axios.get("http://localhost:3000/api/users");
         const users = usersResponse.data.data || [];
         const user = users.find(u => u.email === adminEmail);
         
         if (user) {
+          console.log("Updating user:", user._id);
           response = await axios.put(`http://localhost:3000/api/users/${user._id}`, updateData);
+          console.log("User update response:", response.data);
           localStorage.setItem("admin_email", formData.email);
         } else {
           throw new Error("User not found");
         }
       }
 
-      if (response.data.success) {
+      // Check if update was successful (handle both success field and status)
+      if (response.data.success !== false && response.status >= 200 && response.status < 300) {
         toast.success("Profile updated successfully!");
         // Reset password fields
         setFormData(prev => ({
@@ -276,10 +290,14 @@ export default function MyProfile() {
             avatar: updatedAvatar
           }
         }));
+      } else {
+        toast.error(response.data?.message || "Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      console.error("Error details:", error.response?.data);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || "Failed to update profile";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -612,7 +630,7 @@ export default function MyProfile() {
               type="submit"
               disabled={
                 loading ||
-                (formData.password &&
+                (formData.password && formData.password.trim() !== "" &&
                   (formData.password !== formData.confirmPassword ||
                     passwordStrength.score < 5 ||
                     !currentPasswordVerified))

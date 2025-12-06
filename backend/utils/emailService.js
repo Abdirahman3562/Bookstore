@@ -1,7 +1,27 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import WebsiteSettings from "../models/websiteSettings.model.js";
 
 dotenv.config();
+
+// Helper function to get website settings
+const getWebsiteSettings = async () => {
+  try {
+    const settings = await WebsiteSettings.getSettings();
+    return {
+      name: settings.websiteName || "Bookstore",
+      logo: settings.websiteLogo || "",
+    };
+  } catch (error) {
+    console.error("Error fetching website settings:", error);
+    return {
+      name: "Bookstore",
+      logo: "",
+    };
+  }
+};
 
 // Create transporter for sending emails
 const createTransport = () => {
@@ -63,86 +83,25 @@ export const sendOTPEmail = async (email, otp, name = "User") => {
   try {
     const transporter = createTransport();
     const expirationMinutes = parseInt(process.env.OTP_EXPIRATION_MINUTES) || 10;
+    const websiteSettings = await getWebsiteSettings();
 
+    // Format from field with website name
+    // Note: Some email clients use the sender name to generate avatars
+    // Using the website name directly might help with avatar generation
+    const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || "noreply@bookstore.com";
+    const fromName = websiteSettings.name || "Bookstore";
+    // Try to use just the website name without "Support" to get better avatar
+    const fromField = `${fromName} <${fromEmail}>`;
+
+    // Logo removed - not showing in emails
+    const logoHtml = '';
+
+    // Compact HTML to prevent Gmail clipping (keep under 102KB)
     const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER || "noreply@bookstore.com",
+      from: fromField,
       to: email,
-      subject: "Your OTP Code for Password Reset",
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              line-height: 1.6;
-              color: #333;
-            }
-            .container {
-              max-width: 600px;
-              margin: 0 auto;
-              padding: 20px;
-              background-color: #f9f9f9;
-            }
-            .header {
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-              padding: 30px;
-              text-align: center;
-              border-radius: 10px 10px 0 0;
-            }
-            .content {
-              background: white;
-              padding: 30px;
-              border-radius: 0 0 10px 10px;
-            }
-            .otp-box {
-              background: #f0f0f0;
-              border: 2px dashed #667eea;
-              padding: 20px;
-              text-align: center;
-              margin: 20px 0;
-              border-radius: 5px;
-            }
-            .otp-code {
-              font-size: 32px;
-              font-weight: bold;
-              color: #667eea;
-              letter-spacing: 5px;
-            }
-            .footer {
-              text-align: center;
-              margin-top: 20px;
-              color: #666;
-              font-size: 12px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>Password Reset OTP</h1>
-            </div>
-            <div class="content">
-              <p>Hello ${name},</p>
-              <p>You have requested to reset your password. Please use the following OTP code to verify your identity:</p>
-              
-              <div class="otp-box">
-                <div class="otp-code">${otp}</div>
-              </div>
-              
-              <p>This code will expire in <strong>${expirationMinutes} minutes</strong>.</p>
-              <p>If you didn't request this code, please ignore this email.</p>
-              
-              <p>Best regards,<br>Bookstore Admin Team</p>
-            </div>
-            <div class="footer">
-              <p>This is an automated email. Please do not reply.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      subject: `Your OTP Code for Password Reset - ${websiteSettings.name}`,
+      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f9f9f9"><div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:30px;text-align:center;border-radius:10px 10px 0 0">${logoHtml}<h1 style="margin:10px 0">Password Reset OTP</h1></div><div style="background:white;padding:30px;border-radius:0 0 10px 10px"><p style="font-size:16px">Hello ${name},</p><p style="font-size:16px;margin:20px 0">You have requested to reset your password. Please use the following OTP code to verify your identity:</p><div style="background:#f0f0f0;border:2px dashed #667eea;padding:30px;text-align:center;margin:30px 0;border-radius:8px"><div style="font-size:48px;font-weight:bold;color:#667eea;letter-spacing:8px;font-family:monospace;margin:0">${otp}</div></div><p style="font-size:14px;margin:20px 0">This code will expire in <strong>${expirationMinutes} minutes</strong>.</p><p style="font-size:12px;color:#666">If you didn't request this code, please ignore this email.</p><p style="font-size:12px;color:#666;margin-top:20px">Best regards,<br>${websiteSettings.name} Admin Team</p></div><div style="text-align:center;margin-top:20px;color:#666;font-size:12px"><p>This is an automated email. Please do not reply.</p></div></div>`,
       text: `
         Hello ${name},
         

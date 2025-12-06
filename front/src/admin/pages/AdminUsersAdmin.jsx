@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Shield, RotateCcw, Edit, X, Save, UserPlus, Check, Eye, EyeOff, Key } from "lucide-react";
+import { Shield, RotateCcw, Edit, X, Save, UserPlus, Check, Eye, EyeOff, Key, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getCurrentAdminUser, canView, canAdd, canEdit, canDelete } from "../utils/permissions";
 
 export default function AdminUsersAdmin() {
   const navigate = useNavigate();
@@ -19,19 +20,25 @@ export default function AdminUsersAdmin() {
     adminRole: "author",
     authorId: "", // Link to author
     permissions: {
-      dashboard: false,
-      books: false,
-      downloads: false,
-      purchased: false,
-      testimonials: false,
-      users: false,
-      authors: false,
-      blogs: false,
+      dashboard: { view: false, add: false, edit: false, delete: false },
+      books: { view: false, add: false, edit: false, delete: false },
+      downloads: { view: false, add: false, edit: false, delete: false, revoke: false },
+      purchased: { view: false, add: false, edit: false, delete: false },
+      testimonials: { view: false, add: false, edit: false, delete: false },
+      users: { view: false, add: false, edit: false, delete: false },
+        authors: { view: false, add: false, edit: false, delete: false },
+        blogs: { view: false, add: false, edit: false, delete: false },
+        contacts: { view: false, add: false, edit: false, delete: false },
+        blogComments: { view: false, reply: false, delete: false },
+      websiteSettings: { view: false, add: false, edit: false, delete: false },
       addAdminUser: false
     }
   });
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ show: false, admin: null });
+  const [deleting, setDeleting] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // Fetch admins data
   const fetchAdmins = async (showRefreshIndicator = false) => {
@@ -69,54 +76,144 @@ export default function AdminUsersAdmin() {
     }
   };
 
-  // Handle role change in edit form
+  // Handle role change in edit form - don't auto-set permissions, let user select manually
   const handleRoleChange = (role) => {
     if (role === "admin") {
       setEditFormData((prev) => ({
         ...prev,
         adminRole: role,
-        authorId: "", // Clear authorId for admin
-        permissions: {
-          dashboard: true,
-          books: true,
-          downloads: true,
-          purchased: true,
-          testimonials: true,
-          users: true,
-          authors: true,
-          blogs: true,
-          addAdminUser: true
-        }
+        authorId: "" // Clear authorId for admin
+        // Keep existing permissions - don't auto-set
       }));
     } else {
-      // For author role, automatically check "authors" and "blogs" permissions
       setEditFormData((prev) => ({
         ...prev,
-        adminRole: role,
-        permissions: {
-          dashboard: false,
-          books: false,
-          downloads: false,
-          purchased: false,
-          testimonials: false,
-          users: false,
-          authors: true, // Auto-check authors permission for author role
-          blogs: true,
-          addAdminUser: false
-        }
+        adminRole: role
+        // Keep existing permissions - don't auto-set
       }));
     }
   };
 
   // Handle permission change in edit form
-  const handlePermissionChange = (permission) => {
+  const handlePermissionChange = (section, action) => {
     setEditFormData((prev) => ({
       ...prev,
       permissions: {
         ...prev.permissions,
-        [permission]: !prev.permissions[permission]
+        [section]: {
+          ...prev.permissions[section],
+          [action]: !prev.permissions[section][action]
+        }
       }
     }));
+  };
+
+  // Convert old boolean permissions to new granular format
+  const normalizePermissions = (perms) => {
+    if (!perms) {
+      return {
+        dashboard: { view: false, add: false, edit: false, delete: false },
+        books: { view: false, add: false, edit: false, delete: false },
+        downloads: { view: false, add: false, edit: false, delete: false, revoke: false },
+        purchased: { view: false, add: false, edit: false, delete: false },
+        testimonials: { view: false, add: false, edit: false, delete: false },
+        users: { view: false, add: false, edit: false, delete: false },
+        authors: { view: false, add: false, edit: false, delete: false },
+        blogs: { view: false, add: false, edit: false, delete: false },
+        contacts: { view: false, add: false, edit: false, delete: false },
+        websiteSettings: { view: false, add: false, edit: false, delete: false },
+        addAdminUser: { view: false, add: false, edit: false, delete: false }
+      };
+    }
+
+    const normalized = {};
+    const sections = ['dashboard', 'books', 'downloads', 'purchased', 'testimonials', 'users', 'authors', 'blogs', 'blogComments', 'contacts', 'websiteSettings'];
+    
+    sections.forEach(section => {
+      const sectionPerm = perms[section];
+      if (typeof sectionPerm === 'boolean') {
+        // Old format - convert to granular
+        if (section === 'downloads') {
+          normalized[section] = {
+            view: sectionPerm,
+            add: sectionPerm,
+            edit: sectionPerm,
+            delete: sectionPerm,
+            revoke: sectionPerm
+          };
+        } else if (section === 'blogComments') {
+          // Blog Comments has view, reply, delete (no add)
+          normalized[section] = {
+            view: sectionPerm,
+            reply: sectionPerm,
+            delete: sectionPerm
+          };
+        } else {
+          normalized[section] = {
+            view: sectionPerm,
+            add: sectionPerm,
+            edit: sectionPerm,
+            delete: sectionPerm
+          };
+        }
+      } else if (typeof sectionPerm === 'object' && sectionPerm !== null) {
+        // New format - use as is
+        if (section === 'downloads') {
+          normalized[section] = {
+            view: sectionPerm.view || false,
+            add: sectionPerm.add || false,
+            edit: sectionPerm.edit || false,
+            delete: sectionPerm.delete || false,
+            revoke: sectionPerm.revoke || false
+          };
+        } else if (section === 'blogComments') {
+          // Blog Comments has view, reply, delete (no add)
+          normalized[section] = {
+            view: sectionPerm.view || false,
+            reply: sectionPerm.reply || false,
+            delete: sectionPerm.delete || false
+          };
+        } else {
+          normalized[section] = {
+            view: sectionPerm.view || false,
+            add: sectionPerm.add || false,
+            edit: sectionPerm.edit || false,
+            delete: sectionPerm.delete || false
+          };
+        }
+      } else {
+        // For downloads, include revoke field
+        if (section === 'downloads') {
+          normalized[section] = { view: false, add: false, edit: false, delete: false, revoke: false };
+        } else if (section === 'blogComments') {
+          // Blog Comments has view, reply, delete (no add)
+          normalized[section] = { view: false, reply: false, delete: false };
+        } else {
+          normalized[section] = { view: false, add: false, edit: false, delete: false };
+        }
+      }
+    });
+
+    // Handle addAdminUser - convert to granular if needed
+    if (typeof perms.addAdminUser === 'boolean') {
+      normalized.addAdminUser = {
+        view: perms.addAdminUser,
+        add: perms.addAdminUser,
+        edit: perms.addAdminUser,
+        delete: perms.addAdminUser
+      };
+    } else if (typeof perms.addAdminUser === 'object' && perms.addAdminUser !== null) {
+      normalized.addAdminUser = {
+        view: perms.addAdminUser.view || false,
+        add: perms.addAdminUser.add || false,
+        edit: perms.addAdminUser.edit || false,
+        delete: perms.addAdminUser.delete || false
+      };
+    } else {
+      normalized.addAdminUser = { view: false, add: false, edit: false, delete: false };
+    }
+    
+    return normalized;
   };
 
   // Open edit modal
@@ -134,17 +231,7 @@ export default function AdminUsersAdmin() {
         password: fullAdmin.password || "", // Show current password
         adminRole: fullAdmin.adminRole || admin.adminRole || "author",
         authorId: fullAdmin.authorId || admin.authorId || "", // Get authorId
-        permissions: fullAdmin.permissions || admin.permissions || {
-          dashboard: false,
-          books: false,
-          downloads: false,
-          purchased: false,
-          testimonials: false,
-          users: false,
-          authors: false,
-          blogs: false,
-          addAdminUser: false
-        }
+        permissions: normalizePermissions(fullAdmin.permissions || admin.permissions)
       });
       setShowPassword(true); // Show password by default so they can see it
     } catch (error) {
@@ -156,17 +243,7 @@ export default function AdminUsersAdmin() {
         password: "", // Empty if can't fetch
         adminRole: admin.adminRole || "author",
         authorId: admin.authorId || "", // Get authorId
-        permissions: admin.permissions || {
-          dashboard: false,
-          books: false,
-          downloads: false,
-          purchased: false,
-          testimonials: false,
-          users: false,
-          authors: false,
-          blogs: false,
-          addAdminUser: false
-        }
+        permissions: normalizePermissions(admin.permissions)
       });
       setShowPassword(false);
     }
@@ -182,18 +259,50 @@ export default function AdminUsersAdmin() {
       adminRole: "author",
       authorId: "",
       permissions: {
-        dashboard: false,
-        books: false,
-        downloads: false,
-        purchased: false,
-        testimonials: false,
-        users: false,
-        authors: false,
-        blogs: false,
-        addAdminUser: false
+        dashboard: { view: false, add: false, edit: false, delete: false },
+        books: { view: false, add: false, edit: false, delete: false },
+        downloads: { view: false, add: false, edit: false, delete: false, revoke: false },
+        purchased: { view: false, add: false, edit: false, delete: false },
+        testimonials: { view: false, add: false, edit: false, delete: false },
+        users: { view: false, add: false, edit: false, delete: false },
+        authors: { view: false, add: false, edit: false, delete: false },
+        blogs: { view: false, add: false, edit: false, delete: false },
+        blogComments: { view: false, reply: false, delete: false },
+        contacts: { view: false, add: false, edit: false, delete: false },
+        websiteSettings: { view: false, add: false, edit: false, delete: false },
+        addAdminUser: { view: false, add: false, edit: false, delete: false }
       }
     });
     setShowPassword(false);
+  };
+
+  // Open delete modal
+  const openDeleteModal = (admin) => {
+    setDeleteModal({ show: true, admin });
+  };
+
+  // Close delete modal
+  const closeDeleteModal = () => {
+    setDeleteModal({ show: false, admin: null });
+  };
+
+  // Delete admin
+  const handleDelete = async () => {
+    if (!deleteModal.admin) return;
+
+    setDeleting(true);
+    try {
+      await axios.delete(`http://localhost:3000/api/admins/${deleteModal.admin._id}`);
+      toast.success("Admin user deleted successfully!");
+      closeDeleteModal();
+      await fetchAdmins();
+    } catch (error) {
+      console.error("Error deleting admin:", error);
+      const errorMessage = error.response?.data?.message || "Failed to delete admin user";
+      toast.error(errorMessage);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Save admin updates
@@ -251,6 +360,13 @@ export default function AdminUsersAdmin() {
   useEffect(() => {
     fetchAdmins();
     fetchAuthors();
+    
+    // Get current admin user for permission checks
+    const loadCurrentUser = async () => {
+      const user = await getCurrentAdminUser();
+      setCurrentUser(user);
+    };
+    loadCurrentUser();
   }, []);
 
   const permissionLabels = {
@@ -262,7 +378,35 @@ export default function AdminUsersAdmin() {
     users: "Users",
     authors: "Authors",
     blogs: "Blogs",
+    blogComments: "Blog Comments",
+    contacts: "Contacts",
+    websiteSettings: "Website Settings",
     addAdminUser: "Add Admin User"
+  };
+
+  const actionLabels = {
+    view: "View",
+    add: "Add",
+    edit: "Edit",
+    delete: "Delete",
+    revoke: "Revoke", // For downloads - revoke/grant access
+    reply: "Reply" // For blog comments - reply to comments
+  };
+
+  // Define which actions are available for each section based on actual page functionality
+  const sectionActions = {
+    dashboard: ["view"], // Dashboard only has view
+    books: ["view", "add", "edit", "delete"], // Books has all actions
+    downloads: ["view", "revoke"], // Downloads has view and revoke/grant access (revoke is like edit)
+    purchased: ["view", "edit", "delete"], // Purchased has view, edit (status: approve/cancel/activate/restore), delete (no add)
+    testimonials: ["view", "add", "edit", "delete"], // Testimonials has all actions
+    users: ["view", "edit"], // Users has view and edit (status toggle: activate/deactivate, no add/delete)
+    authors: ["view", "add", "edit", "delete"], // Authors has all actions
+    blogs: ["view", "add", "edit", "delete"], // Blogs has all actions
+    blogComments: ["view", "reply", "delete"], // Blog Comments has view, reply, delete (no add)
+    contacts: ["view", "edit", "delete"], // Contacts has view, edit (reply, mark as read), delete (no add)
+    websiteSettings: ["view", "edit"], // Website Settings has view and edit (no add/delete)
+    addAdminUser: ["view", "add", "edit", "delete"] // Add Admin User has all actions
   };
 
   if (loading) {
@@ -293,7 +437,9 @@ export default function AdminUsersAdmin() {
             )}
             <button
               onClick={() => navigate("/admin/add-admin-user")}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors w-full sm:w-auto"
+              disabled={!canAdd(currentUser, 'addAdminUser')}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
+              title={!canAdd(currentUser, 'addAdminUser') ? "You don't have permission to add admin users" : "Add Admin User"}
             >
               <UserPlus className="w-4 h-4" />
               Add Admin User
@@ -326,7 +472,9 @@ export default function AdminUsersAdmin() {
               <p className="text-gray-600 dark:text-gray-400 mb-4">Admin user accounts will appear here when created.</p>
               <button
                 onClick={() => navigate("/admin/add-admin-user")}
-                className="px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors inline-flex items-center gap-2"
+                disabled={!canAdd(currentUser, 'addAdminUser')}
+                className="px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
+                title={!canAdd(currentUser, 'addAdminUser') ? "You don't have permission to add admin users" : "Add Admin User"}
               >
                 <UserPlus className="w-4 h-4" />
                 Add Admin User
@@ -387,28 +535,69 @@ export default function AdminUsersAdmin() {
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1">
                           {Object.entries(permissionLabels).map(([key, label]) => {
-                            if (admin.permissions && admin.permissions[key]) {
-                              return (
-                                <span
-                                  key={key}
-                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
-                                >
-                                  {label}
-                                </span>
-                              );
+                            // Check granular permissions
+                            const sectionPerms = admin.permissions && admin.permissions[key];
+                            if (sectionPerms) {
+                              // Handle old boolean format
+                              if (typeof sectionPerms === 'boolean' && sectionPerms) {
+                                return (
+                                  <span
+                                    key={key}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                                  >
+                                    {label}
+                                  </span>
+                                );
+                              }
+                              // Handle new granular format
+                              if (typeof sectionPerms === 'object') {
+                                const actions = [];
+                                if (sectionPerms.view) actions.push('V');
+                                if (sectionPerms.add) actions.push('A');
+                                if (sectionPerms.edit) actions.push('E');
+                                if (sectionPerms.delete) actions.push('D');
+                                if (sectionPerms.revoke) actions.push('R');
+                                if (sectionPerms.reply) actions.push('Reply');
+                                
+                                // Only show if there are any permissions
+                                if (actions.length > 0) {
+                                  return (
+                                    <span
+                                      key={key}
+                                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                                      title={`${label}: ${actions.join(', ')}`}
+                                    >
+                                      {label} ({actions.join(', ')})
+                                    </span>
+                                  );
+                                }
+                              }
                             }
                             return null;
                           })}
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <button
-                          onClick={() => openEditModal(admin)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
-                        >
-                          <Edit className="w-3 h-3" />
-                          Edit
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openEditModal(admin)}
+                            disabled={!canEdit(currentUser, 'addAdminUser')}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
+                            title={!canEdit(currentUser, 'addAdminUser') ? "You don't have permission to edit admin users" : "Edit"}
+                          >
+                            <Edit className="w-3 h-3" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(admin)}
+                            disabled={!canDelete(currentUser, 'addAdminUser')}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600 dark:disabled:hover:bg-red-700"
+                            title={!canDelete(currentUser, 'addAdminUser') ? "You don't have permission to delete admin users" : "Delete"}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -609,37 +798,80 @@ export default function AdminUsersAdmin() {
                   </h3>
                   <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Select which sections this user can access:
+                      Select which actions this user can perform for each section:
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {Object.entries(permissionLabels).map(([key, label]) => (
-                        <label
-                          key={key}
-                          className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                            editFormData.permissions[key]
-                              ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 dark:border-blue-600"
-                              : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={editFormData.permissions[key]}
-                            onChange={() => handlePermissionChange(key)}
-                            disabled={editFormData.adminRole === "admin"}
-                            className="w-4 h-4 text-blue-600 dark:text-blue-500 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {label}
-                          </span>
-                        </label>
-                      ))}
+                    <div className="space-y-4">
+                      {Object.entries(permissionLabels).map(([sectionKey, sectionLabel]) => {
+                        // Initialize sectionPerms based on section type
+                        let defaultPerms;
+                        if (sectionKey === 'blogComments') {
+                          defaultPerms = { view: false, reply: false, delete: false };
+                        } else if (sectionKey === 'downloads') {
+                          defaultPerms = { view: false, add: false, edit: false, delete: false, revoke: false };
+                        } else {
+                          defaultPerms = { view: false, add: false, edit: false, delete: false };
+                        }
+                        const sectionPerms = editFormData.permissions[sectionKey] || defaultPerms;
+                        const availableActions = sectionActions[sectionKey] || [];
+                        
+                        // Check if all available actions are checked
+                        const allChecked = availableActions.length > 0 && availableActions.every(action => sectionPerms[action] === true);
+
+                        return (
+                          <div key={sectionKey} className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800">
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={allChecked}
+                                  onChange={() => {
+                                    const newValue = !allChecked;
+                                    const updatedPerms = { ...sectionPerms };
+                                    // Only update available actions
+                                    availableActions.forEach(action => {
+                                      updatedPerms[action] = newValue;
+                                    });
+                                    setEditFormData(prev => ({
+                                      ...prev,
+                                      permissions: {
+                                        ...prev.permissions,
+                                        [sectionKey]: updatedPerms
+                                      }
+                                    }));
+                                  }}
+                                  className="w-4 h-4 text-blue-600 dark:text-blue-500 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                                />
+                                <span>{sectionLabel}</span>
+                              </label>
+                            </div>
+                            {availableActions.length > 0 && (
+                              <div className={`grid gap-2 ml-6 ${availableActions.length === 1 ? 'grid-cols-1' : availableActions.length === 2 ? 'grid-cols-2' : availableActions.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
+                                {availableActions.map((actionKey) => (
+                                  <label
+                                    key={actionKey}
+                                    className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
+                                      sectionPerms[actionKey]
+                                        ? "bg-blue-50 dark:bg-blue-900/30"
+                                        : "bg-gray-50 dark:bg-gray-700/50"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={sectionPerms[actionKey] || false}
+                                      onChange={() => handlePermissionChange(sectionKey, actionKey)}
+                                      className="w-3 h-3 text-blue-600 dark:text-blue-500 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                                    />
+                                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                      {actionLabels[actionKey]}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                    {editFormData.adminRole === "admin" && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-3 flex items-center gap-1">
-                        <Shield className="w-4 h-4" />
-                        Admin role has all permissions enabled
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -673,6 +905,58 @@ export default function AdminUsersAdmin() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && deleteModal.admin && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full">
+            <div className="bg-red-600 dark:bg-red-700 p-6 rounded-t-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold text-white">Delete Admin User</h3>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-700 dark:text-gray-300 mb-4">
+                Are you sure you want to delete <span className="font-semibold">{deleteModal.admin.name}</span> ({deleteModal.admin.email})?
+              </p>
+              <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                This action cannot be undone. All permissions and settings for this admin user will be permanently deleted.
+              </p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700 rounded-b-xl">
+              <button
+                onClick={closeDeleteModal}
+                disabled={deleting}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -4,14 +4,50 @@ import toast from "react-hot-toast";
 import { FiMenu, FiX } from "react-icons/fi";
 import { FaShoppingCart } from "react-icons/fa"; // Add shopping cart icon
 import { MdDashboard } from "react-icons/md";
+import axios from "axios";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0); // Track cart items
+  const [websiteSettings, setWebsiteSettings] = useState({
+    websiteName: "BookStore",
+    websiteLogo: "",
+  });
 
   const menuRef = useRef(null);
+
+  // Fetch website settings
+  useEffect(() => {
+    const fetchWebsiteSettings = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/website-settings");
+        if (response.data.success) {
+          setWebsiteSettings({
+            websiteName: response.data.data.websiteName || "BookStore",
+            websiteLogo: response.data.data.websiteLogo || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching website settings:", error);
+        // Keep default "BookStore" if fetch fails
+      }
+    };
+
+    fetchWebsiteSettings();
+
+    // Listen for website settings updates
+    const handleSettingsUpdate = () => {
+      fetchWebsiteSettings();
+    };
+
+    window.addEventListener("websiteSettingsUpdated", handleSettingsUpdate);
+
+    return () => {
+      window.removeEventListener("websiteSettingsUpdated", handleSettingsUpdate);
+    };
+  }, []);
 
   // Update cart count from localStorage when the component mounts
   // Listen for cart updates in real-time
@@ -77,8 +113,17 @@ export default function Navbar() {
 
   return (
     <nav className="w-full max-w-8xl    bg-white shadow p-4 flex justify-between items-center relative">
-      <NavLink to="/" className="text-2xl font-bold text-blue-600">
-        BookStore
+      <NavLink to="/" className="flex items-center gap-2">
+        {websiteSettings.websiteLogo && (
+          <img
+            src={`http://localhost:3000${websiteSettings.websiteLogo}`}
+            alt={websiteSettings.websiteName}
+            className="h-8 w-auto object-contain"
+          />
+        )}
+        <span className="text-2xl font-bold text-blue-600">
+          {websiteSettings.websiteName}
+        </span>
       </NavLink>
 
       {/* Hamburger icon for mobile */}

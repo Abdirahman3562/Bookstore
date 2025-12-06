@@ -3,7 +3,8 @@ import {
   getAllAdmins,
   getAdminById,
   createAdmin,
-  updateAdmin
+  updateAdmin,
+  deleteAdmin
 } from "../controllers/admins.controller.js";
 
 const router = express.Router();
@@ -19,6 +20,9 @@ router.post("/", createAdmin);
 
 // PUT /api/admins/:id - Update admin
 router.put("/:id", updateAdmin);
+
+// DELETE /api/admins/:id - Delete admin
+router.delete("/:id", deleteAdmin);
 
 export default router;
 

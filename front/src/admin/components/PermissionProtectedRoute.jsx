@@ -13,6 +13,8 @@ const routePermissions = {
   "/admin/users": "users",
   "/admin/authors": "authors",
   "/admin/blogs": "blogs",
+  "/admin/contacts": "contacts",
+  "/admin/website-settings": "websiteSettings",
   "/admin/add-admin-user": "addAdminUser",
   "/admin/admin-users": "addAdminUser"
 };
@@ -67,12 +69,16 @@ export default function PermissionProtectedRoute({ children, requiredPermission 
             
             if (admin) {
               setCurrentUser(admin);
-              // Check if user has permission
-              if (admin.adminRole === "admin") {
-                // Admin has all permissions
-                setHasAccess(true);
-              } else if (admin.permissions && admin.permissions[routePermission] === true) {
-                setHasAccess(true);
+              // Check if user has permission - always check granular permissions
+              if (admin.permissions) {
+                // Check for granular permissions (view action)
+                const sectionPerms = admin.permissions[routePermission];
+                if (sectionPerms && (sectionPerms.view === true || sectionPerms === true)) {
+                  setHasAccess(true);
+                } else {
+                  setHasAccess(false);
+                  toast.error("You don't have permission to access this page");
+                }
               } else {
                 setHasAccess(false);
                 toast.error("You don't have permission to access this page");
@@ -91,11 +97,16 @@ export default function PermissionProtectedRoute({ children, requiredPermission 
           
           if (user) {
             setCurrentUser(user);
-            // Check if user has permission
-            if (user.adminRole === "admin") {
-              setHasAccess(true);
-            } else if (user.permissions && user.permissions[routePermission] === true) {
-              setHasAccess(true);
+            // Check if user has permission - always check granular permissions
+            if (user.permissions) {
+              // Check for granular permissions (view action)
+              const sectionPerms = user.permissions[routePermission];
+              if (sectionPerms && (sectionPerms.view === true || sectionPerms === true)) {
+                setHasAccess(true);
+              } else {
+                setHasAccess(false);
+                toast.error("You don't have permission to access this page");
+              }
             } else {
               setHasAccess(false);
               toast.error("You don't have permission to access this page");
@@ -138,21 +149,20 @@ export default function PermissionProtectedRoute({ children, requiredPermission 
       testimonials: "/admin/testimonials",
       users: "/admin/users",
       authors: "/admin/authors",
-      blogs: "/admin/blogs"
+      blogs: "/admin/blogs",
+      contacts: "/admin/contacts",
+      websiteSettings: "/admin/website-settings"
     };
 
     let redirectPath = "/admin/blogs"; // Default fallback
 
-    if (currentUser) {
-      if (currentUser.adminRole === "admin") {
-        redirectPath = "/admin/dashboard";
-      } else if (currentUser.permissions) {
-        // Find first allowed page
-        for (const [key, path] of Object.entries(permissionRoutes)) {
-          if (currentUser.permissions[key] === true) {
-            redirectPath = path;
-            break;
-          }
+    if (currentUser && currentUser.permissions) {
+      // Find first allowed page based on permissions
+      for (const [key, path] of Object.entries(permissionRoutes)) {
+        const sectionPerms = currentUser.permissions[key];
+        if (sectionPerms && (sectionPerms.view === true || sectionPerms === true)) {
+          redirectPath = path;
+          break;
         }
       }
     }
@@ -162,4 +172,5 @@ export default function PermissionProtectedRoute({ children, requiredPermission 
 
   return children;
 }
+
 

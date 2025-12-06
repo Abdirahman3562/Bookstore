@@ -3,12 +3,14 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { UserPlus, X, Shield, Check, Eye, EyeOff } from "lucide-react";
+import { getCurrentAdminUser, canView, canAdd } from "../utils/permissions";
 
 export default function AddAdminUser() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [authors, setAuthors] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,19 +18,22 @@ export default function AddAdminUser() {
     adminRole: "author", // default to author
     authorId: "", // Link to author
     permissions: {
-      dashboard: false,
-      books: false,
-      downloads: false,
-      purchased: false,
-      testimonials: false,
-      users: false,
-      authors: true, // Auto-check authors permission for author role
-      blogs: true, // default blogs to true for authors
-      addAdminUser: false
+      dashboard: { view: false, add: false, edit: false, delete: false },
+      books: { view: false, add: false, edit: false, delete: false },
+      downloads: { view: false, add: false, edit: false, delete: false, revoke: false },
+      purchased: { view: false, add: false, edit: false, delete: false },
+      testimonials: { view: false, add: false, edit: false, delete: false },
+      users: { view: false, add: false, edit: false, delete: false },
+      authors: { view: false, add: false, edit: false, delete: false },
+      blogs: { view: false, add: false, edit: false, delete: false },
+      blogComments: { view: false, reply: false, delete: false },
+      contacts: { view: false, add: false, edit: false, delete: false },
+      websiteSettings: { view: false, add: false, edit: false, delete: false },
+      addAdminUser: { view: false, add: false, edit: false, delete: false }
     }
   });
 
-  // Fetch authors list
+  // Fetch authors list and current user
   useEffect(() => {
     const fetchAuthors = async () => {
       try {
@@ -39,60 +44,63 @@ export default function AddAdminUser() {
         console.error("Error fetching authors:", error);
       }
     };
+    
+    // Get current admin user for permission checks
+    const loadCurrentUser = async () => {
+      const user = await getCurrentAdminUser();
+      setCurrentUser(user);
+      
+      // Check if user has view permission - if not, redirect
+      if (!canView(user, 'addAdminUser')) {
+        toast.error("You don't have permission to view this page");
+        navigate("/admin/admin-users");
+      }
+    };
+    
     fetchAuthors();
-  }, []);
+    loadCurrentUser();
+  }, [navigate]);
 
-  // If admin role is selected, give all permissions
+  // Handle role change - don't auto-set permissions, let user select manually
   const handleRoleChange = (role) => {
     if (role === "admin") {
       setFormData((prev) => ({
         ...prev,
         adminRole: role,
-        authorId: "", // Clear authorId for admin
-        permissions: {
-          dashboard: true,
-          books: true,
-          downloads: true,
-          purchased: true,
-          testimonials: true,
-          users: true,
-          authors: true,
-          blogs: true,
-          addAdminUser: true
-        }
+        authorId: "" // Clear authorId for admin
+        // Keep existing permissions - don't auto-set
       }));
     } else {
-      // For author role, automatically check "authors" and "blogs" permissions
       setFormData((prev) => ({
         ...prev,
-        adminRole: role,
-        permissions: {
-          dashboard: false,
-          books: false,
-          downloads: false,
-          purchased: false,
-          testimonials: false,
-          users: false,
-          authors: true, // Auto-check authors permission for author role
-          blogs: true,
-          addAdminUser: false
-        }
+        adminRole: role
+        // Keep existing permissions - don't auto-set
       }));
     }
   };
 
-  const handlePermissionChange = (permission) => {
+  const handlePermissionChange = (section, action) => {
     setFormData((prev) => ({
       ...prev,
       permissions: {
         ...prev.permissions,
-        [permission]: !prev.permissions[permission]
+        [section]: {
+          ...prev.permissions[section],
+          [action]: !prev.permissions[section][action]
+        }
       }
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check permission before submitting
+    if (!canAdd(currentUser, 'addAdminUser')) {
+      toast.error("You don't have permission to add admin users");
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -125,7 +133,35 @@ export default function AddAdminUser() {
     users: "Users",
     authors: "Authors",
     blogs: "Blogs",
+    blogComments: "Blog Comments",
+    contacts: "Contacts",
+    websiteSettings: "Website Settings",
     addAdminUser: "Add Admin User"
+  };
+
+  const actionLabels = {
+    view: "View",
+    add: "Add",
+    edit: "Edit",
+    delete: "Delete",
+    revoke: "Revoke", // For downloads - revoke/grant access
+    reply: "Reply" // For blog comments - reply to comments
+  };
+
+  // Define which actions are available for each section based on actual page functionality
+  const sectionActions = {
+    dashboard: ["view"], // Dashboard only has view
+    books: ["view", "add", "edit", "delete"], // Books has all actions
+    downloads: ["view", "revoke"], // Downloads has view and revoke/grant access (revoke is like edit)
+    purchased: ["view", "edit", "delete"], // Purchased has view, edit (status: approve/cancel/activate/restore), delete (no add)
+    testimonials: ["view", "add", "edit", "delete"], // Testimonials has all actions
+    users: ["view", "edit"], // Users has view and edit (status toggle: activate/deactivate, no add/delete)
+    authors: ["view", "add", "edit", "delete"], // Authors has all actions
+    blogs: ["view", "add", "edit", "delete"], // Blogs has all actions
+    blogComments: ["view", "reply", "delete"], // Blog Comments has view, reply, delete (no add)
+    contacts: ["view", "edit", "delete"], // Contacts has view, edit (reply, mark as read), delete (no add)
+    websiteSettings: ["view", "edit"], // Website Settings has view and edit (no add/delete)
+    addAdminUser: ["view", "add", "edit", "delete"] // Add Admin User has all actions
   };
 
   return (
@@ -142,6 +178,23 @@ export default function AddAdminUser() {
           Create a new admin user with specific role and permissions
         </p>
       </div>
+
+      {/* Permission Warning - Show if user can view but not add */}
+      {currentUser && canView(currentUser, 'addAdminUser') && !canAdd(currentUser, 'addAdminUser') && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+            <div>
+              <h3 className="text-sm font-semibold text-yellow-900 dark:text-yellow-200">
+                View Only Mode
+              </h3>
+              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                You have view permission but cannot add admin users. All form fields are disabled.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -162,7 +215,8 @@ export default function AddAdminUser() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                  disabled={!canAdd(currentUser, 'addAdminUser')}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="John Doe"
                 />
               </div>
@@ -176,7 +230,8 @@ export default function AddAdminUser() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                  disabled={!canAdd(currentUser, 'addAdminUser')}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="john@example.com"
                 />
               </div>
@@ -191,7 +246,8 @@ export default function AddAdminUser() {
                     required
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                    disabled={!canAdd(currentUser, 'addAdminUser')}
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="••••••••"
                     minLength={6}
                   />
@@ -213,7 +269,8 @@ export default function AddAdminUser() {
                   required
                   value={formData.adminRole}
                   onChange={(e) => handleRoleChange(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                  disabled={!canAdd(currentUser, 'addAdminUser')}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="author">Author</option>
                   <option value="admin">Admin</option>
@@ -247,7 +304,11 @@ export default function AddAdminUser() {
                     {authors.map((author) => (
                       <label
                         key={author._id}
-                        className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                        className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-colors ${
+                          !canAdd(currentUser, 'addAdminUser')
+                            ? "cursor-not-allowed opacity-50"
+                            : "cursor-pointer"
+                        } ${
                           formData.authorId === author._id
                             ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 dark:border-blue-600"
                             : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
@@ -259,7 +320,8 @@ export default function AddAdminUser() {
                           value={author._id}
                           checked={formData.authorId === author._id}
                           onChange={(e) => setFormData({ ...formData, authorId: e.target.value })}
-                          className="w-4 h-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                          disabled={!canAdd(currentUser, 'addAdminUser')}
+                          className="w-4 h-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           {author.avatar ? (
@@ -306,37 +368,82 @@ export default function AddAdminUser() {
             </h2>
             <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Select which sections this user can access:
+                Select which actions this user can perform for each section:
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {Object.entries(permissionLabels).map(([key, label]) => (
-                  <label
-                    key={key}
-                    className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                      formData.permissions[key]
-                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 dark:border-blue-600"
-                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.permissions[key]}
-                      onChange={() => handlePermissionChange(key)}
-                      disabled={formData.adminRole === "admin"}
-                      className="w-4 h-4 text-blue-600 dark:text-blue-500 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
-                    />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {label}
-                    </span>
-                  </label>
-                ))}
+              <div className="space-y-4">
+                {Object.entries(permissionLabels).map(([sectionKey, sectionLabel]) => {
+                  // Initialize sectionPerms based on section type
+                  let defaultPerms;
+                  if (sectionKey === 'blogComments') {
+                    defaultPerms = { view: false, reply: false, delete: false };
+                  } else if (sectionKey === 'downloads') {
+                    defaultPerms = { view: false, add: false, edit: false, delete: false, revoke: false };
+                  } else {
+                    defaultPerms = { view: false, add: false, edit: false, delete: false };
+                  }
+                  const sectionPerms = formData.permissions[sectionKey] || defaultPerms;
+                  const availableActions = sectionActions[sectionKey] || [];
+                  
+                  // Check if all available actions are checked
+                  const allChecked = availableActions.length > 0 && availableActions.every(action => sectionPerms[action] === true);
+
+                  return (
+                    <div key={sectionKey} className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={allChecked}
+                            onChange={() => {
+                              const newValue = !allChecked;
+                              const updatedPerms = { ...sectionPerms };
+                              // Only update available actions
+                              availableActions.forEach(action => {
+                                updatedPerms[action] = newValue;
+                              });
+                              setFormData(prev => ({
+                                ...prev,
+                                permissions: {
+                                  ...prev.permissions,
+                                  [sectionKey]: updatedPerms
+                                }
+                              }));
+                            }}
+                            disabled={!canAdd(currentUser, 'addAdminUser')}
+                            className="w-4 h-4 text-blue-600 dark:text-blue-500 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <span>{sectionLabel}</span>
+                        </label>
+                      </div>
+                      {availableActions.length > 0 && (
+                        <div className={`grid gap-2 ml-6 ${availableActions.length === 1 ? 'grid-cols-1' : availableActions.length === 2 ? 'grid-cols-2' : availableActions.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
+                          {availableActions.map((actionKey) => (
+                            <label
+                              key={actionKey}
+                              className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
+                                sectionPerms[actionKey]
+                                  ? "bg-blue-50 dark:bg-blue-900/30"
+                                  : "bg-gray-50 dark:bg-gray-700/50"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={sectionPerms[actionKey] || false}
+                                onChange={() => handlePermissionChange(sectionKey, actionKey)}
+                                disabled={!canAdd(currentUser, 'addAdminUser')}
+                                className="w-3 h-3 text-blue-600 dark:text-blue-500 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                              />
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                {actionLabels[actionKey]}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              {formData.adminRole === "admin" && (
-                <p className="text-xs text-amber-600 dark:text-amber-400 mt-3 flex items-center gap-1">
-                  <Shield className="w-4 h-4" />
-                  Admin role has all permissions enabled
-                </p>
-              )}
             </div>
           </div>
 
@@ -351,8 +458,9 @@ export default function AddAdminUser() {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !canAdd(currentUser, 'addAdminUser')}
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+              title={!canAdd(currentUser, 'addAdminUser') ? "You don't have permission to add admin users" : "Create Admin User"}
             >
               {loading ? (
                 <>

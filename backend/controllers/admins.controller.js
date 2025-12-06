@@ -50,26 +50,23 @@ export const updateAdmin = async (req, res) => {
     // If password is being changed and currentPassword is provided, verify it
     // If currentPassword is not provided, allow password change (admin editing another admin)
     if (password && currentPassword) {
-      // Check if stored password is hashed (starts with $2a$ or $2b$) or plain text (for legacy)
+      // Check if stored password is hashed (starts with $2a$ or $2b$) or plain text (for backward compatibility)
       const isHashed = admin.password && (admin.password.startsWith('$2a$') || admin.password.startsWith('$2b$'));
       
+      let passwordMatch = false;
       if (isHashed) {
-        // Compare hashed password
-        const isMatch = await bcrypt.compare(currentPassword, admin.password);
-        if (!isMatch) {
-          return res.status(400).json({
-            success: false,
-            message: "Current password is incorrect"
-          });
-        }
+        // Compare hashed password (for old encrypted passwords)
+        passwordMatch = await bcrypt.compare(currentPassword, admin.password);
       } else {
-        // Legacy plain text comparison (for backward compatibility)
-        if (currentPassword !== admin.password) {
-          return res.status(400).json({
-            success: false,
-            message: "Current password is incorrect"
-          });
-        }
+        // Plain text comparison (new passwords are stored as plain text)
+        passwordMatch = currentPassword === admin.password;
+      }
+      
+      if (!passwordMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "Current password is incorrect"
+        });
       }
     }
 
@@ -88,9 +85,8 @@ export const updateAdmin = async (req, res) => {
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (password) {
-      // Hash password with bcrypt before saving
-      const hashed = await bcrypt.hash(password, 10);
-      updateData.password = hashed;
+      // Store password as plain text (not encrypted)
+      updateData.password = password;
     }
     if (avatar !== undefined) updateData.avatar = avatar;
     if (adminRole) updateData.adminRole = adminRole;
@@ -121,6 +117,26 @@ export const updateAdmin = async (req, res) => {
   }
 };
 
+// DELETE ADMIN
+export const deleteAdmin = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.params.id);
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Admin not found" });
+    }
+
+    await Admin.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: "Admin deleted successfully"
+    });
+  } catch (err) {
+    console.error("Error deleting admin:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 // CREATE ADMIN
 export const createAdmin = async (req, res) => {
   try {
@@ -135,13 +151,11 @@ export const createAdmin = async (req, res) => {
       });
     }
 
-    // Hash password before saving
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    // Store password as plain text (not encrypted)
     const newAdmin = new Admin({
       name,
       email,
-      password: hashedPassword,
+      password: password,
       adminRole: adminRole || 'author',
       permissions: permissions || {
         dashboard: false,
@@ -152,7 +166,7 @@ export const createAdmin = async (req, res) => {
         users: false,
         authors: false,
         blogs: true,
-        addAdminUser: false
+        addAdminUser: { view: false, add: false, edit: false, delete: false }
       }
     });
 

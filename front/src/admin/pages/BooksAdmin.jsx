@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { BookOpen, Upload, Save, Plus, Edit, Trash2, Eye, RotateCcw } from "lucide-react";
+import { getCurrentAdminUser, canAdd, canEdit, canDelete } from "../utils/permissions";
 
 export default function BooksAdmin() {
   const [formData, setFormData] = useState({
@@ -22,6 +23,7 @@ export default function BooksAdmin() {
   const [showForm, setShowForm] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ show: false, book: null });
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -175,8 +177,13 @@ export default function BooksAdmin() {
     }
   };
 
-  // Load books on component mount
+  // Load current user and books on component mount
   useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentAdminUser();
+      setCurrentUser(user);
+    };
+    loadUser();
     fetchBooks();
   }, []);
 
@@ -213,7 +220,9 @@ export default function BooksAdmin() {
                     resetForm();
                   }
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors w-full sm:w-auto justify-center"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors w-full sm:w-auto justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
+                disabled={!canAdd(currentUser, 'books')}
+                title={!canAdd(currentUser, 'books') ? "You don't have permission to add books" : showForm ? 'Cancel' : 'Add Book'}
               >
                 <Plus className="w-4 h-4" />
                 {showForm ? 'Cancel' : 'Add Book'}
@@ -435,12 +444,15 @@ export default function BooksAdmin() {
                 <BookOpen className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No books yet</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">Start by adding your first book to the collection.</p>
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
-                >
-                  Add First Book
-                </button>
+                {canAdd(currentUser, 'books') && (
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!canAdd(currentUser, 'books')}
+                  >
+                    Add First Book
+                  </button>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -474,15 +486,17 @@ export default function BooksAdmin() {
                           <div className="flex gap-1 sm:gap-2">
                             <button
                               onClick={() => handleEdit(book)}
-                              className="p-1.5 sm:p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                              title="Edit"
+                              className="p-1.5 sm:p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                              title={!canEdit(currentUser, 'books') ? "You don't have permission to edit" : "Edit"}
+                              disabled={!canEdit(currentUser, 'books')}
                             >
                               <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
                             <button
                               onClick={() => showDeleteModal(book)}
-                              className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              title="Delete"
+                              className="p-1.5 sm:p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                              title={!canDelete(currentUser, 'books') ? "You don't have permission to delete" : "Delete"}
+                              disabled={!canDelete(currentUser, 'books')}
                             >
                               <Trash2 className="w-3 h-3 sm:w-3 sm:h-3" />
                             </button>
@@ -558,7 +572,8 @@ export default function BooksAdmin() {
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors font-medium text-sm sm:text-base"
+                className="flex-1 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors font-medium text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!canDelete(currentUser, 'books')}
               >
                 Delete Book
               </button>

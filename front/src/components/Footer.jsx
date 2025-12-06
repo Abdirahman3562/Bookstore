@@ -1,12 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function Footer() {
+  const [websiteName, setWebsiteName] = useState("BookStore");
+  const currentYear = new Date().getFullYear();
+
+  // Fetch website settings
+  useEffect(() => {
+    const fetchWebsiteSettings = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/website-settings");
+        if (response.data.success) {
+          setWebsiteName(response.data.data.websiteName || "BookStore");
+        }
+      } catch (error) {
+        console.error("Error fetching website settings:", error);
+        // Keep default "BookStore" if fetch fails
+      }
+    };
+
+    fetchWebsiteSettings();
+
+    // Listen for website settings updates
+    const handleSettingsUpdate = () => {
+      fetchWebsiteSettings();
+    };
+
+    window.addEventListener("websiteSettingsUpdated", handleSettingsUpdate);
+
+    return () => {
+      window.removeEventListener("websiteSettingsUpdated", handleSettingsUpdate);
+    };
+  }, []);
+
   return (
     <footer className="bg-[#f8f7f7] shadow-md rounded-md border border-gray-200 shaddow text-[#2563eb] py-6 mt-10">
       <div className="max-w-6xl mx-auto px-6 text-center">
         {/* Footer logo */}
         <div className="mb-4">
-          <h3 className="text-3xl font-semibold">BookStore</h3>
+          <h3 className="text-3xl font-semibold">{websiteName}</h3>
         </div>
 
         {/* Footer Links */}
@@ -19,7 +51,7 @@ export default function Footer() {
 
         {/* Footer Text */}
         <p className="text-sm text-[#2563eb] mb-2">
-          © 2025 BookStore. All rights reserved.
+          © {currentYear} {websiteName}. All rights reserved.
         </p>
         <p className="text-sm text-[#2563eb]">
           Powered by <a href="https://github.com/Abdirahmaan12" className="text-[#2563eb]">Samafale</a>

@@ -27,15 +27,78 @@ const adminSchema = new mongoose.Schema({
     default: 'admin'
   },
   permissions: {
-    dashboard: { type: Boolean, default: true },
-    books: { type: Boolean, default: true },
-    downloads: { type: Boolean, default: true },
-    purchased: { type: Boolean, default: true },
-    testimonials: { type: Boolean, default: true },
-    users: { type: Boolean, default: true },
-    authors: { type: Boolean, default: true },
-    blogs: { type: Boolean, default: true },
-    addAdminUser: { type: Boolean, default: true }
+    dashboard: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    books: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    downloads: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined },
+      revoke: { type: Boolean, default: undefined }
+    },
+    purchased: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    testimonials: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    users: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    authors: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    blogs: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    blogComments: {
+      view: { type: Boolean, default: undefined },
+      reply: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    contacts: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    websiteSettings: { 
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    },
+    addAdminUser: {
+      view: { type: Boolean, default: undefined },
+      add: { type: Boolean, default: undefined },
+      edit: { type: Boolean, default: undefined },
+      delete: { type: Boolean, default: undefined }
+    }
   },
   twoStepVerification: {
     type: Boolean,

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Download, RotateCcw, FileText, User, Calendar, DollarSign, ShieldX, CheckCircle } from "lucide-react";
+import { getCurrentAdminUser, canRevoke } from "../utils/permissions";
 
 export default function DownloadsAdmin() {
   const [downloads, setDownloads] = useState([]);
@@ -10,6 +11,7 @@ export default function DownloadsAdmin() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [revokeModal, setRevokeModal] = useState({ show: false, download: null });
   const [userDownloadCounts, setUserDownloadCounts] = useState({});
+  const [currentUser, setCurrentUser] = useState(null);
   const [stats, setStats] = useState({
     totalDownloads: 0,
     totalUsers: 0,
@@ -97,8 +99,13 @@ export default function DownloadsAdmin() {
     }
   };
 
-  // Load data on component mount
+  // Load current user and data on component mount
   useEffect(() => {
+    const loadUser = async () => {
+      const user = await getCurrentAdminUser();
+      setCurrentUser(user);
+    };
+    loadUser();
     fetchDownloads();
   }, []);
 
@@ -285,15 +292,20 @@ export default function DownloadsAdmin() {
                             </span>
                           </div>
 
-                          {/* Toggle Access Button */}
+                          {/* Toggle Access Button - Always visible but disabled if no permission */}
                           <button
                             onClick={() => showRevokeModal(download)}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium ${
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
                               download.notDownloaded
                                 ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800'
                                 : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800'
                             }`}
-                            title={download.notDownloaded ? "Allow user's access to this book" : "Revoke user's access to this book"}
+                            title={!canRevoke(currentUser, 'downloads') 
+                              ? "You don't have permission to revoke access" 
+                              : download.notDownloaded 
+                                ? "Allow user's access to this book" 
+                                : "Revoke user's access to this book"}
+                            disabled={!canRevoke(currentUser, 'downloads')}
                           >
                             {download.notDownloaded ? (
                               <>
@@ -376,11 +388,12 @@ export default function DownloadsAdmin() {
               </button>
               <button
                 onClick={confirmToggleAccess}
-                className={`flex-1 px-4 py-3 rounded-lg hover:opacity-90 transition-colors font-medium text-sm sm:text-base ${
+                className={`flex-1 px-4 py-3 rounded-lg hover:opacity-90 transition-colors font-medium text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed ${
                   revokeModal.download?.notDownloaded
                     ? 'bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600'
                     : 'bg-red-600 dark:bg-red-700 text-white hover:bg-red-700 dark:hover:bg-red-600'
                 }`}
+                disabled={!canRevoke(currentUser, 'downloads')}
               >
                 {revokeModal.download?.notDownloaded ? 'Allow Download' : 'Revoke Access'}
               </button>

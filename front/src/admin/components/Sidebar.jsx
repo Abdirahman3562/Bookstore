@@ -9,7 +9,9 @@ import {
   MessageSquare,
   Users,
   PenTool,
-  FileText
+  FileText,
+  Settings,
+  Mail
 } from "lucide-react";
 import axios from "axios";
 
@@ -108,9 +110,11 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/admin/downloads", label: "Downloads", icon: Download, permission: "downloads" },
     { path: "/admin/purchased", label: "Purchased", icon: ShoppingCart, permission: "purchased" },
     { path: "/admin/testimonials", label: "Testimonials", icon: MessageSquare, permission: "testimonials" },
+    { path: "/admin/contacts", label: "Contacts", icon: Mail, permission: "contacts" },
     { path: "/admin/users", label: "Users", icon: Users, permission: "users" },
     { path: "/admin/authors", label: "Authors", icon: PenTool, permission: "authors" },
     { path: "/admin/blogs", label: "Blogs", icon: FileText, permission: "blogs" },
+    { path: "/admin/website-settings", label: "Website Settings", icon: Settings, permission: "websiteSettings", adminOnly: true },
   ];
 
   // Filter menu items based on user permissions
@@ -120,21 +124,35 @@ export default function Sidebar({ isOpen, onClose }) {
       return allMenuItems;
     }
 
-    // If user is admin, show all items
-    if (currentUser.adminRole === "admin") {
-      return allMenuItems;
-    }
-
-    // If user is author or has permissions, filter based on permissions
-    if (currentUser.adminRole === "author" && currentUser.permissions) {
+    // Always check granular permissions, even for admin role
+    // Admin role doesn't automatically grant all permissions - must be explicitly set
+    if (currentUser.permissions) {
       return allMenuItems.filter(item => {
-        // Check if permission is explicitly set to true
-        return currentUser.permissions[item.permission] === true;
+        // Hide admin-only items if user doesn't have permission
+        if (item.adminOnly) {
+          const sectionPerms = currentUser.permissions[item.permission];
+          if (typeof sectionPerms === 'boolean') {
+            return sectionPerms === true;
+          }
+          if (typeof sectionPerms === 'object' && sectionPerms !== null) {
+            return sectionPerms.view === true;
+          }
+          return false;
+        }
+        // Check if permission is explicitly set to true (for view access)
+        const sectionPerms = currentUser.permissions[item.permission];
+        if (typeof sectionPerms === 'boolean') {
+          return sectionPerms === true;
+        }
+        if (typeof sectionPerms === 'object' && sectionPerms !== null) {
+          return sectionPerms.view === true;
+        }
+        return false;
       });
     }
 
-    // Default: show only blogs for authors
-    return allMenuItems.filter(item => item.permission === "blogs");
+    // Default: show only blogs if no permissions set
+    return allMenuItems.filter(item => item.permission === "blogs" && !item.adminOnly);
   };
 
   const menuItems = getFilteredMenuItems();
