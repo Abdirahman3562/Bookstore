@@ -400,11 +400,11 @@ export default function AdminLogin() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email
                 </label>
                 <input
-                  className="border border-gray-300 dark:border-gray-600 p-3 w-full rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                  className="border border-gray-300 dark:border-gray-600 p-3 w-full rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent focus:outline-none"
                   placeholder="your@email.com"
                   type="email"
                   required
@@ -415,12 +415,12 @@ export default function AdminLogin() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Password
                 </label>
                 <div className="relative">
                   <input
-                    className="border border-gray-300 p-3 w-full pr-10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                    className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 p-3 w-full pr-10 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent focus:outline-none"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     required
@@ -431,7 +431,7 @@ export default function AdminLogin() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -441,7 +441,7 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={loginLoading}
-                  className="bg-blue-600 dark:bg-blue-700 text-white p-3 w-full rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="bg-blue-600 dark:bg-blue-500 text-white p-3 w-full rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loginLoading ? (
                   <>
@@ -474,19 +474,19 @@ export default function AdminLogin() {
                   Verification Required
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                We've sent a verification code to <strong>{email}</strong>
+                We've sent a verification code to <strong className="text-gray-900 dark:text-white">{email}</strong>
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Shield className="w-4 h-4" />
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     Verification Code
                   </label>
                   {verificationTimeRemaining > 0 && (
-                    <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                       <Clock className="w-4 h-4" />
                       <span>{formatTime(verificationTimeRemaining)}</span>
                     </div>
@@ -501,7 +501,7 @@ export default function AdminLogin() {
                       inputMode="numeric"
                       maxLength={1}
                       value={verificationCode[index] || ''}
-                      className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+                      className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-600 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
                       onChange={(e) => {
                         const value = e.target.value.replace(/\D/g, ''); // Only numbers
                         if (value) {
@@ -545,11 +545,11 @@ export default function AdminLogin() {
                     />
                   ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   Enter the 6-digit code sent to your email
                 </p>
                 {verificationTimeRemaining === 0 && (
-                  <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     Verification code has expired. Please login again.
                   </p>
@@ -560,7 +560,7 @@ export default function AdminLogin() {
                 type="button"
                 onClick={handleVerifyLoginCode}
                 disabled={verifyingCode || !verificationCode || verificationCode.length !== 6 || verificationTimeRemaining === 0}
-                  className="w-full bg-blue-600 dark:bg-blue-700 text-white py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-blue-600 dark:bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {verifyingCode ? (
                   <>
@@ -605,7 +605,7 @@ export default function AdminLogin() {
                   setOtpExpiration(null);
                   setTimeRemaining(0);
                 }}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -616,15 +616,15 @@ export default function AdminLogin() {
               {/* Step 1: Enter Email */}
               {!otpSent && (
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                    <Mail className="w-4 h-4" />
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     Email Address
                   </label>
                   <input
                     type="email"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    className="border border-gray-300 dark:border-gray-600 p-3 w-full rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                    className="border border-gray-300 dark:border-gray-600 p-3 w-full rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent focus:outline-none"
                     placeholder="Enter your email"
                     required
                   />
@@ -632,7 +632,7 @@ export default function AdminLogin() {
                     type="button"
                     onClick={handleSendOTP}
                     disabled={sendingOTP || !forgotEmail}
-                    className="mt-3 bg-blue-600 text-white p-3 w-full rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="mt-3 bg-blue-600 dark:bg-blue-500 text-white p-3 w-full rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {sendingOTP ? (
                       <>
@@ -654,11 +654,11 @@ export default function AdminLogin() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      <Shield className="w-4 h-4" />
+                      <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       OTP Code
                     </label>
                     {timeRemaining > 0 && (
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                      <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                         <Clock className="w-4 h-4" />
                         <span>{formatTime(timeRemaining)}</span>
                       </div>
@@ -673,7 +673,7 @@ export default function AdminLogin() {
                         inputMode="numeric"
                         maxLength={1}
                         value={otpCode[index] || ''}
-                        className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+                        className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-600 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none transition disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
                         onChange={(e) => {
                           const value = e.target.value.replace(/\D/g, ''); // Only numbers
                           if (value) {
@@ -722,7 +722,7 @@ export default function AdminLogin() {
                       type="button"
                       onClick={handleVerifyOTP}
                       disabled={verifyingOTP || !otpCode || otpCode.length !== 6 || timeRemaining === 0}
-                      className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-3 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
                     >
                       {verifyingOTP ? "Verifying..." : "Verify OTP"}
                     </button>
@@ -731,7 +731,7 @@ export default function AdminLogin() {
                     <button
                       type="button"
                       onClick={handleRequestNewOTP}
-                      className="mt-2 text-blue-600 hover:text-blue-700 text-sm w-full text-center"
+                      className="mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm w-full text-center transition-colors"
                     >
                       Request New OTP
                     </button>
@@ -747,16 +747,16 @@ export default function AdminLogin() {
               {/* Step 3: Set New Password */}
               {otpVerified && (
                 <div className="space-y-4">
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-700 flex items-center gap-2">
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <p className="text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
                       <Shield className="w-4 h-4" />
                       OTP verified successfully! Set your new password.
                     </p>
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                      <Key className="w-4 h-4" />
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <Key className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                       New Password
                     </label>
                     <div className="relative">
@@ -764,7 +764,7 @@ export default function AdminLogin() {
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="border border-gray-300 p-3 w-full pr-10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                        className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 p-3 w-full pr-10 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent focus:outline-none"
                         placeholder="Enter new password (min 6 characters)"
                         minLength={6}
                         required
@@ -772,7 +772,7 @@ export default function AdminLogin() {
                       <button
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                       >
                         {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -788,12 +788,12 @@ export default function AdminLogin() {
                         type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className={`border p-3 w-full pr-10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none ${
+                        className={`border p-3 w-full pr-10 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent focus:outline-none ${
                           confirmPassword && newPassword !== confirmPassword
-                            ? "border-red-300"
+                            ? "border-red-300 dark:border-red-600"
                             : confirmPassword && newPassword === confirmPassword
-                            ? "border-green-300"
-                            : "border-gray-300"
+                            ? "border-green-300 dark:border-green-600"
+                            : "border-gray-300 dark:border-gray-600"
                         }`}
                         placeholder="Confirm new password"
                         minLength={6}
@@ -802,7 +802,7 @@ export default function AdminLogin() {
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                       >
                         {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -828,7 +828,7 @@ export default function AdminLogin() {
                     type="button"
                     onClick={handleResetPassword}
                     disabled={resettingPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword}
-                    className="bg-blue-600 text-white p-3 w-full rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="bg-blue-600 dark:bg-blue-500 text-white p-3 w-full rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {resettingPassword ? (
                       <>

@@ -269,25 +269,29 @@ export default function TopBar() {
     }
   }, [currentUser, fetchNotificationCount]);
 
-  // Initialize on mount - start with light mode by default
+  // Initialize on mount - sync with main darkMode preference
   useEffect(() => {
-    // Always start by removing dark class to ensure light mode
-    document.documentElement.classList.remove('dark');
+    // Check main darkMode first, then admin_dark_mode
+    const mainDarkMode = localStorage.getItem('darkMode');
+    const adminDarkMode = localStorage.getItem('admin_dark_mode');
     
-    // Check if user has explicitly enabled dark mode
-    const saved = localStorage.getItem('admin_dark_mode');
+    // Use main darkMode if available, otherwise use admin_dark_mode
+    const saved = mainDarkMode || adminDarkMode;
     const isDark = saved === 'true';
     
-    // Only apply dark mode if explicitly enabled
+    // Apply dark mode if enabled
     if (isDark) {
       document.documentElement.classList.add('dark');
       setDarkMode(true);
+      // Sync both keys
+      localStorage.setItem('darkMode', 'true');
+      localStorage.setItem('admin_dark_mode', 'true');
     } else {
-      // Ensure light mode (dark class removed)
       document.documentElement.classList.remove('dark');
       setDarkMode(false);
-      // Set localStorage to 'false' if not set
-      if (saved === null) {
+      // Sync both keys
+      localStorage.setItem('darkMode', 'false');
+      if (adminDarkMode === null) {
         localStorage.setItem('admin_dark_mode', 'false');
       }
     }
@@ -296,12 +300,14 @@ export default function TopBar() {
   // Apply dark mode changes when state changes
   useEffect(() => {
     if (darkMode) {
-      // Only apply dark mode if explicitly ON
+      // Apply dark mode and sync both keys
       document.documentElement.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
       localStorage.setItem('admin_dark_mode', 'true');
     } else {
-      // Remove dark mode and ensure light mode
+      // Remove dark mode and sync both keys
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
       localStorage.setItem('admin_dark_mode', 'false');
     }
   }, [darkMode]);
@@ -312,19 +318,27 @@ export default function TopBar() {
     // Update state
     setDarkMode(newDarkMode);
     
-    // Immediately apply changes
+    // Immediately apply changes and sync both keys
     if (newDarkMode) {
       // Turn ON dark mode
       document.documentElement.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
       localStorage.setItem('admin_dark_mode', 'true');
     } else {
       // Turn OFF dark mode - ensure light mode
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
       localStorage.setItem('admin_dark_mode', 'false');
     }
   };
 
   const handleLogout = () => {
+    // Save dark mode preference to main darkMode key before logout
+    const adminDarkMode = localStorage.getItem('admin_dark_mode');
+    if (adminDarkMode) {
+      localStorage.setItem('darkMode', adminDarkMode);
+    }
+    
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_email");
     window.location.href = "/admin";

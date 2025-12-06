@@ -114,35 +114,35 @@ export default function CommentList({
 
   return (
     <div>
-      <h3 className="text-xl font-bold mb-4 flex items-center text-blue-600 gap-2">
-        <FaRegCommentDots className="text-blue-600 text-[23px] mt-1" />
+      <h3 className="text-xl font-bold mb-4 flex items-center text-blue-600 dark:text-blue-400 gap-2">
+        <FaRegCommentDots className="text-blue-600 dark:text-blue-400 text-[23px] mt-1" />
         Comments ({comments.length})
       </h3>
 
       {comments.map((c) => (
-        <div key={c.id} className="py-4 px-4 lg:px-0 md:px-0  border-b border-gray-200">
+        <div key={c.id} className="py-4 px-4 lg:px-0 md:px-0 border-b border-gray-200 dark:border-gray-700">
           <div className="flex gap-3">
             {/* Avatar */}
             {c.avatar ? (
               <img
                 src={c.avatar}
-                className="w-10 h-10 rounded-full object-cover"
+                className="w-10 h-10 rounded-full object-cover border-2 border-blue-400 dark:border-blue-500"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center font-bold border-2 border-blue-400 dark:border-blue-500">
                 {c.username?.charAt(0).toUpperCase()}
               </div>
             )}
 
             <div className="flex-1">
               {/* Name + Comment */}
-              <p className="font-semibold text-gray-900">{c.username}</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{c.username}</p>
 
               {editingId === c.id ? (
                 <>
                   <textarea
                     rows="3"
-                    className="w-full resize-none rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+                    className="w-full resize-none rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                   ></textarea>
@@ -150,14 +150,14 @@ export default function CommentList({
                   <div className="flex gap-3 mt-1">
                     <button
                       onClick={saveEdit}
-                      className="px-3 py-1 bg-blue-600 text-white rounded"
+                      className="px-3 py-1 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                     >
                       Save
                     </button>
 
                     <button
                       onClick={() => setEditingId(null)}
-                      className="px-3 py-1 bg-gray-300 rounded"
+                      className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-700 transition-colors"
                     >
                       Cancel
                     </button>
@@ -167,7 +167,7 @@ export default function CommentList({
                 <>
                   {/* Comment text with clamp */}
                   <div
-                    className="text-gray-800 mt-1 overflow-hidden transition-all duration-300 break-words"
+                    className="text-gray-800 dark:text-gray-200 mt-1 overflow-hidden transition-all duration-300 break-words"
                     style={{
                       maxHeight: expanded[c.id] ? "none" : "80px",
                       wordBreak: "break-word",
@@ -187,7 +187,7 @@ export default function CommentList({
                           [c.id]: !prev[c.id],
                         }))
                       }
-                      className="text-blue-600 text-sm mt-1 flex items-center gap-1"
+                      className="text-blue-600 dark:text-blue-400 text-sm mt-1 flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                     >
                       {expanded[c.id] ? (
                         <>
@@ -205,13 +205,13 @@ export default function CommentList({
                 </>
               )}
 
-              <p className="text-xs text-gray-500 mt-1">{timeAgo(c.date)}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{timeAgo(c.date)}</p>
 
               {/* Action buttons */}
-              <div className="flex gap-4 text-sm mt-2 text-blue-600">
+              <div className="flex gap-4 text-sm mt-2 text-blue-600 dark:text-blue-400">
                 {user && (user._id || user.id)?.toString() !== c.userId?.toString() && (
                   <button
-                    className="flex items-center gap-1 text-blue-600"
+                    className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                     onClick={() =>
                       setReplyBox((prev) => (prev === c.id ? null : c.id))
                     }
@@ -223,7 +223,7 @@ export default function CommentList({
 
                 {user && (user._id || user.id)?.toString() === c.userId?.toString() && (
                   <button
-                    className=" flex items-center gap-1 text-blue-600"
+                    className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                     onClick={() => startEditing(c)}
                   >
                     <FiEdit className="text-[18px]" />
@@ -232,7 +232,7 @@ export default function CommentList({
                 )}
 
                 <button
-                  className=" flex items-center gap-1 text-blue-600"
+                  className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                   onClick={handleShare}
                 >
                   <IoMdShareAlt className="text-[18px]" />
@@ -245,14 +245,14 @@ export default function CommentList({
                 <div className="mt-2">
                   <textarea
                     rows="2"
-                    className="w-full resize-none rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+                    className="w-full resize-none rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
                     placeholder="Write reply..."
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                   ></textarea>
 
                   <button
-                    className="mt-1 bg-blue-600 text-white px-3 py-1 rounded"
+                    className="mt-1 bg-blue-600 dark:bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                     onClick={() => {
                       if (!replyText.trim()) {
                         toast.error("Please reply to this comment");
@@ -269,7 +269,7 @@ export default function CommentList({
               )}
               {c.replies.length > 0 && (
                 <button
-                  className="text-sm text-blue-600 font-medium mt-4 flex items-center gap-1"
+                  className="text-sm text-blue-600 dark:text-blue-400 font-medium mt-4 flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                   onClick={() =>
                     setOpenReplies((prev) => ({
                       ...prev,

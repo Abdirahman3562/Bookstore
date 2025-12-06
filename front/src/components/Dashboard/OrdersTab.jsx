@@ -70,26 +70,26 @@ export default function OrdersTab() {
     switch (status) {
       case "pending":
         return (
-          <span className="flex items-center gap-1 text-yellow-600 bg-yellow-100 px-2 py-1 text-xs rounded">
+          <span className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 text-xs rounded">
             <FiClock /> Pending
           </span>
         );
       case "active":
       case "processing":
         return (
-          <span className="flex items-center gap-1 text-blue-600 bg-blue-100 px-2 py-1 text-xs rounded">
+          <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 text-xs rounded">
             <FiLoader /> {status}
           </span>
         );
       case "completed":
         return (
-          <span className="flex items-center gap-1 text-green-600 bg-green-100 px-2 py-1 text-xs rounded">
+          <span className="flex items-center gap-1 text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 text-xs rounded">
             <FiCheckCircle /> Completed
           </span>
         );
       default:
         return (
-          <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">
+          <span className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
             {status}
           </span>
         );
@@ -99,7 +99,7 @@ export default function OrdersTab() {
   // ❌ Show error
   if (error) {
     return (
-      <div className="text-center text-red-500 font-semibold py-10">
+      <div className="text-center text-red-500 dark:text-red-400 font-semibold py-10">
         {error}
       </div>
     );
@@ -108,9 +108,9 @@ export default function OrdersTab() {
   // 🔄 LOADING FULL PAGE SPINNER
   if (loading) {
     return (
-      <div className="flex  border border-gray-300 shadow-md  rounded-lg justify-center items-center py-10">
+      <div className="flex border border-gray-300 dark:border-gray-700 shadow-md rounded-lg justify-center items-center py-10 bg-white dark:bg-gray-800">
         <svg
-          className="h-12 w-12 animate-spin text-blue-600"
+          className="h-12 w-12 animate-spin text-blue-600 dark:text-blue-400"
           viewBox="0 0 50 50"
         >
           <circle
@@ -141,17 +141,17 @@ export default function OrdersTab() {
   // 🛒 NO ORDERS
   if (orders.length === 0) {
     return (
-      <div className="border border-gray-200 rounded-md bg-white py-10 flex flex-col items-center justify-center text-center">
-        <h2 className="text-[16px] font-semibold text-gray-800">
+      <div className="border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 py-10 flex flex-col items-center justify-center text-center">
+        <h2 className="text-[16px] font-semibold text-gray-800 dark:text-white">
           No orders found
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           You haven't placed any orders yet.
         </p>
 
         <button
           onClick={() => navigate("/books")}
-          className="mt-4 px-4 py-2 text-sm font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-500 transition"
+          className="mt-4 px-4 py-2 text-sm font-semibold rounded-md text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
         >
           Add new Order
         </button>
@@ -162,13 +162,13 @@ export default function OrdersTab() {
   // 📦 SHOW ORDERS LIST
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Your Orders</h2>
+      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Your Orders</h2>
 
       <div className="space-y-4">
         {orders.map((order) => (
           <div
             key={order._id || order.id}
-            className="border rounded-lg p-4 shadow-sm hover:shadow-md transition flex flex-col md:flex-row gap-4"
+            className="border dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white dark:bg-gray-800 flex flex-col md:flex-row gap-4"
           >
             {/* IMAGE */}
             <img
@@ -182,21 +182,21 @@ export default function OrdersTab() {
 
             {/* TEXT */}
             <div className="flex-1 lg:text-left ml-2">
-              <h3 className="text-lg font-semibold">{order.title}</h3>
-              <p className="text-sm text-gray-500">by {order.author}</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{order.title}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">by {order.author}</p>
 
               <p className="mt-2">
-                <span className="text-sm text-gray-500">Price: </span>
-                <span className="font-semibold">${order.price}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Price: </span>
+                <span className="font-semibold text-gray-900 dark:text-white">${order.price}</span>
               </p>
 
               <p className="mt-1">
-                <span className="text-sm text-gray-500">Payment Method: </span>
-                {order.paymentmethod}
+                <span className="text-sm text-gray-500 dark:text-gray-400">Payment Method: </span>
+                <span className="text-gray-900 dark:text-white">{order.paymentmethod}</span>
               </p>
 
               <p className="mt-1">
-                <span className="text-sm text-gray-500">Date: </span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Date: </span>
                 <span className="bg-gradient-to-r from-blue-500 to-teal-500 text-white font-semibold px-1 ml-1 rounded-md shadow-md">
                   {formatDate(order.timestamp)}
                 </span>
@@ -210,7 +210,7 @@ export default function OrdersTab() {
                 onClick={() =>
                   navigate(`/dashboard/orderdetails/${order._id || order.id}`)
                 }
-                className="px-2 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 w-[100px] md:w-auto lg:mt-20"
+                className="px-2 py-1 bg-blue-600 dark:bg-blue-500 text-white text-sm rounded hover:bg-blue-700 dark:hover:bg-blue-600 w-[100px] md:w-auto lg:mt-20 transition-colors"
               >
                 View details
               </button>

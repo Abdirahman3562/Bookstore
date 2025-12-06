@@ -7,7 +7,7 @@ import Testimonials from "../components/Home/Testimonials";
 
 export default function Home() {
   return (
-    <div className="pt-2">
+    <div className="pt-2 bg-white dark:bg-gray-900 min-h-screen transition-colors duration-200">
     <EbookAd />
     <BookCarousel />
         <NewReleases />

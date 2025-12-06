@@ -437,12 +437,12 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center px-4 py-10">
-      <div className="bg-[#ffffff] w-full max-w-6xl shadow-xl rounded-lg p-10 relative">
+    <div className="w-full min-h-screen flex items-center justify-center px-4 py-10 bg-white dark:bg-gray-900 transition-colors duration-200">
+      <div className="bg-white dark:bg-gray-800 w-full max-w-6xl shadow-xl rounded-lg p-10 relative border border-gray-200 dark:border-gray-700 transition-colors duration-200">
         {/* Back to Home Button */}
         <Link
           to="/"
-          className="absolute top-4 left-4 flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          className="absolute top-4 left-4 flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
         >
           <FiArrowLeft size={20} />
           <span>Back to Home</span>
@@ -451,13 +451,16 @@ export default function AuthPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-8">
       {/* SIGNUP FORM */}
       <div>
-        <h2 className="text-2xl font-bold mb-4 text-blue-600">Create Account</h2>
+        <h2 className="text-2xl font-bold mb-4 text-blue-600 dark:text-blue-400">Create Account</h2>
 
         {isSigningUp ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600 text-sm">Creating account...</p>
-            <p className="text-gray-500 text-xs mt-2">Please wait while we set up your account</p>
+            <div className="relative w-12 h-12 mb-4">
+              <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-blue-600 dark:border-blue-400 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Creating account...</p>
+            <p className="text-gray-500 dark:text-gray-500 text-xs mt-2">Please wait while we set up your account</p>
           </div>
         ) : (
           <>
@@ -465,7 +468,7 @@ export default function AuthPage() {
               type="text"
               placeholder="Full Name"
               value={signupData.name}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-5 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
               onChange={(e) =>
                 setSignupData({ ...signupData, name: e.target.value })
               }
@@ -475,7 +478,7 @@ export default function AuthPage() {
               type="email"
               placeholder="Email"
               value={signupData.email}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-5 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
               onChange={(e) =>
                 setSignupData({ ...signupData, email: e.target.value })
               }
@@ -486,7 +489,7 @@ export default function AuthPage() {
                 type={showSignupPassword ? "text" : "password"}
                 placeholder="Password"
                 value={signupData.password}
-                className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
                 onChange={(e) =>
                   setSignupData({ ...signupData, password: e.target.value })
                 }
@@ -495,7 +498,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => setShowSignupPassword(!showSignupPassword)}
-                className="absolute right-3 top-2 mt-1 text-green-900 "
+                className="absolute right-3 top-2 mt-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
               >
                 {showSignupPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
               </button>
@@ -504,11 +507,11 @@ export default function AuthPage() {
             <button
               onClick={handleSignup}
               disabled={isSigningUp}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded disabled:bg-blue-400 disabled:cursor-not-allowed"
+              className="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white py-3 rounded disabled:bg-blue-400 dark:disabled:bg-blue-600 disabled:cursor-not-allowed transition-colors"
             >
               Sign Up
             </button>
-            <p className="text-xs text-gray-500 mt-2 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
               By signing up, you agree to verify your email address. A verification link will be sent to your email.
             </p>
           </>
@@ -519,13 +522,16 @@ export default function AuthPage() {
       <div>
         {!showForgotPassword ? (
           <>
-            <h2 className="text-2xl font-bold mb-4 text-blue-600">Login</h2>
+            <h2 className="text-2xl font-bold mb-4 text-blue-600 dark:text-blue-400">Login</h2>
 
             {isLoggingIn ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600 text-sm">Logging in...</p>
-            <p className="text-gray-500 text-xs mt-2">Please wait while we verify your credentials</p>
+            <div className="relative w-12 h-12 mb-4">
+              <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-blue-600 dark:border-blue-400 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Logging in...</p>
+            <p className="text-gray-500 dark:text-gray-500 text-xs mt-2">Please wait while we verify your credentials</p>
           </div>
         ) : !requiresOTP ? (
           <>
@@ -533,7 +539,7 @@ export default function AuthPage() {
               type="email"
               placeholder="Email"
               value={loginData.email}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
               onChange={(e) =>
                 setLoginData({ ...loginData, email: e.target.value })
               }
@@ -544,7 +550,7 @@ export default function AuthPage() {
                 type={showLoginPassword ? "text" : "password"}
                 placeholder="Password"
                 value={loginData.password}
-                className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
                 onChange={(e) =>
                   setLoginData({ ...loginData, password: e.target.value })
                 }
@@ -553,7 +559,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => setShowLoginPassword(!showLoginPassword)}
-                className="absolute right-3 top-2 text-green-900 mt-1 hover:text-gray-700"
+                className="absolute right-3 top-2 text-gray-600 dark:text-gray-400 mt-1 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
               >
                 {showLoginPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
               </button>
@@ -562,7 +568,7 @@ export default function AuthPage() {
             <button
               onClick={handleLogin}
               disabled={isLoggingIn}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded disabled:bg-blue-400 disabled:cursor-not-allowed"
+              className="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white py-3 rounded disabled:bg-blue-400 dark:disabled:bg-blue-600 disabled:cursor-not-allowed transition-colors"
             >
               Login
             </button>
@@ -570,28 +576,28 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() => setShowForgotPassword(true)}
-              className="w-full text-blue-600 hover:text-blue-700 text-sm mt-2 text-right"
+              className="w-full text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm mt-2 text-right transition-colors"
             >
               Forgot Password?
             </button>
           </>
         ) : (
           <>
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800 mb-2">
-                We've sent a 6-digit verification code to <strong>{loginEmail}</strong>
+            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                We've sent a 6-digit verification code to <strong className="text-blue-900 dark:text-blue-100">{loginEmail}</strong>
               </p>
-              <p className="text-xs text-blue-600 mb-2">
+              <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
                 Please check your email and enter the code below.
               </p>
               <div className="flex items-center justify-center gap-2 mt-3">
-                <span className="text-sm font-semibold text-blue-700">Code expires in:</span>
-                <span className={`text-lg font-bold ${timer < 60 ? 'text-red-600' : 'text-blue-700'}`}>
+                <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">Code expires in:</span>
+                <span className={`text-lg font-bold ${timer < 60 ? 'text-red-600 dark:text-red-400' : 'text-blue-700 dark:text-blue-400'}`}>
                   {formatTimer(timer)}
                 </span>
               </div>
               {timer === 0 && (
-                <p className="text-xs text-red-600 mt-2 text-center font-semibold">
+                <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-center font-semibold">
                   Code expired! Please go back and login again to receive a new code.
                 </p>
               )}
@@ -606,7 +612,7 @@ export default function AuthPage() {
                   inputMode="numeric"
                   maxLength={1}
                   value={otpCode[index] || ''}
-                  className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                  className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:border-blue-600 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
                   onChange={(e) => {
                     const value = e.target.value.replace(/\D/g, ''); // Only numbers
                     if (value) {
@@ -653,10 +659,10 @@ export default function AuthPage() {
             <button
               onClick={handleVerifyOTP}
               disabled={timer === 0}
-              className={`w-full py-3 rounded mb-2 ${
+              className={`w-full py-3 rounded mb-2 transition-colors ${
                 timer === 0
-                  ? 'bg-gray-400 cursor-not-allowed text-white'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
+                  : 'bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white'
               }`}
             >
               {timer === 0 ? 'Code Expired' : 'Verify Code'}
@@ -669,7 +675,7 @@ export default function AuthPage() {
                 setLoginEmail("");
                 setTimer(600); // Reset timer
               }}
-              className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded text-sm"
+              className="w-full bg-gray-500 dark:bg-gray-600 hover:bg-gray-600 dark:hover:bg-gray-700 text-white py-2 rounded text-sm transition-colors"
             >
               Back to Login
             </button>
@@ -678,11 +684,11 @@ export default function AuthPage() {
           </>
         ) : (
           <>
-            <h2 className="text-2xl font-bold mb-4 text-blue-600">Forgot Password</h2>
+            <h2 className="text-2xl font-bold mb-4 text-blue-600 dark:text-blue-400">Forgot Password</h2>
 
             {forgotPasswordStep === 1 && (
               <>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Enter your email address and we'll send you an OTP code to reset your password.
                 </p>
 
@@ -690,19 +696,22 @@ export default function AuthPage() {
                   type="email"
                   placeholder="Enter your email"
                   value={forgotPasswordEmail}
-                  className="w-full rounded-lg border border-gray-300 py-2 pl-5 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
                   onChange={(e) => setForgotPasswordEmail(e.target.value)}
                 />
 
                 {isSendingOTP ? (
                   <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-                    <span className="text-gray-600">Sending OTP...</span>
+                    <div className="relative w-8 h-8 mr-3">
+                      <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full"></div>
+                      <div className="absolute inset-0 border-4 border-blue-600 dark:border-blue-400 rounded-full border-t-transparent animate-spin"></div>
+                    </div>
+                    <span className="text-gray-600 dark:text-gray-400">Sending OTP...</span>
                   </div>
                 ) : (
                   <button
                     onClick={handleForgotPassword}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded mb-2"
+                    className="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white py-3 rounded mb-2 transition-colors"
                   >
                     Send OTP Code
                   </button>
@@ -714,7 +723,7 @@ export default function AuthPage() {
                     setForgotPasswordEmail("");
                     setForgotPasswordStep(1);
                   }}
-                  className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded text-sm"
+                  className="w-full bg-gray-500 dark:bg-gray-600 hover:bg-gray-600 dark:hover:bg-gray-700 text-white py-2 rounded text-sm transition-colors"
                 >
                   Back to Login
                 </button>
@@ -723,21 +732,21 @@ export default function AuthPage() {
 
             {forgotPasswordStep === 2 && (
               <>
-                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800 mb-2">
-                    We've sent a 6-digit OTP code to <strong>{forgotPasswordEmail}</strong>
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                    We've sent a 6-digit OTP code to <strong className="text-blue-900 dark:text-blue-100">{forgotPasswordEmail}</strong>
                   </p>
-                  <p className="text-xs text-blue-600 mb-2">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
                     Please check your email and enter the code below.
                   </p>
                   <div className="flex items-center justify-center gap-2 mt-3">
-                    <span className="text-sm font-semibold text-blue-700">Code expires in:</span>
-                    <span className={`text-lg font-bold ${forgotPasswordTimer < 60 ? 'text-red-600' : 'text-blue-700'}`}>
+                    <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">Code expires in:</span>
+                    <span className={`text-lg font-bold ${forgotPasswordTimer < 60 ? 'text-red-600 dark:text-red-400' : 'text-blue-700 dark:text-blue-400'}`}>
                       {formatTimer(forgotPasswordTimer)}
                     </span>
                   </div>
                   {forgotPasswordTimer === 0 && (
-                    <p className="text-xs text-red-600 mt-2 text-center font-semibold">
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-2 text-center font-semibold">
                       Code expired! Please go back and request a new code.
                     </p>
                   )}
@@ -752,7 +761,7 @@ export default function AuthPage() {
                       inputMode="numeric"
                       maxLength={1}
                       value={forgotPasswordOTP[index] || ''}
-                      className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                      className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:border-blue-600 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
                       onChange={(e) => {
                         const value = e.target.value.replace(/\D/g, ''); // Only numbers
                         if (value) {
@@ -799,10 +808,10 @@ export default function AuthPage() {
                 <button
                   onClick={handleVerifyForgotPasswordOTP}
                   disabled={forgotPasswordTimer === 0}
-                  className={`w-full py-3 rounded mb-2 ${
+                  className={`w-full py-3 rounded mb-2 transition-colors ${
                     forgotPasswordTimer === 0
-                      ? 'bg-gray-400 cursor-not-allowed text-white'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed text-white'
+                      : 'bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white'
                   }`}
                 >
                   {forgotPasswordTimer === 0 ? 'Code Expired' : 'Verify Code'}
@@ -814,7 +823,7 @@ export default function AuthPage() {
                     setForgotPasswordOTP("");
                     setForgotPasswordTimer(600);
                   }}
-                  className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded text-sm"
+                  className="w-full bg-gray-500 dark:bg-gray-600 hover:bg-gray-600 dark:hover:bg-gray-700 text-white py-2 rounded text-sm transition-colors"
                 >
                   Back
                 </button>
@@ -823,7 +832,7 @@ export default function AuthPage() {
 
             {forgotPasswordStep === 3 && (
               <>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Enter your new password below.
                 </p>
 
@@ -832,13 +841,13 @@ export default function AuthPage() {
                     type={showLoginPassword ? "text" : "password"}
                     placeholder="New Password"
                     value={newPassword}
-                    className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none placeholder-gray-500 dark:placeholder-gray-400"
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-3 top-2 text-green-900 mt-1 hover:text-gray-700"
+                    className="absolute right-3 top-2 text-gray-600 dark:text-gray-400 mt-1 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                   >
                     {showLoginPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                   </button>
@@ -849,13 +858,13 @@ export default function AuthPage() {
                     type={showLoginPassword ? "text" : "password"}
                     placeholder="Confirm New Password"
                     value={confirmNewPassword}
-                    className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none placeholder-gray-500 dark:placeholder-gray-400"
                     onChange={(e) => setConfirmNewPassword(e.target.value)}
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-3 top-2 text-green-900 mt-1 hover:text-gray-700"
+                    className="absolute right-3 top-2 text-gray-600 dark:text-gray-400 mt-1 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                   >
                     {showLoginPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                   </button>
@@ -863,13 +872,16 @@ export default function AuthPage() {
 
                 {isResettingPassword ? (
                   <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-                    <span className="text-gray-600">Resetting password...</span>
+                    <div className="relative w-8 h-8 mr-3">
+                      <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full"></div>
+                      <div className="absolute inset-0 border-4 border-blue-600 dark:border-blue-400 rounded-full border-t-transparent animate-spin"></div>
+                    </div>
+                    <span className="text-gray-600 dark:text-gray-400">Resetting password...</span>
                   </div>
                 ) : (
                   <button
                     onClick={handleResetPassword}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded mb-2"
+                    className="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white py-3 rounded mb-2 transition-colors"
                   >
                     Reset Password
                   </button>
@@ -881,7 +893,7 @@ export default function AuthPage() {
                     setNewPassword("");
                     setConfirmNewPassword("");
                   }}
-                  className="w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded text-sm"
+                  className="w-full bg-gray-500 dark:bg-gray-600 hover:bg-gray-600 dark:hover:bg-gray-700 text-white py-2 rounded text-sm transition-colors"
                 >
                   Back
                 </button>

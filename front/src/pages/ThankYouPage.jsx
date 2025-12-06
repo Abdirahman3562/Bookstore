@@ -86,10 +86,10 @@ export default function ThankYouPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-200">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading order details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading order details...</p>
         </div>
       </div>
     );
@@ -105,31 +105,31 @@ export default function ThankYouPage() {
   // If no orders found, show different design
   if (orderDetails.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white border border-gray-200 shadow-md rounded-lg w-full max-w-2xl p-8 text-center">
-          <div className="text-gray-400 mb-6">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 transition-colors duration-200">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md rounded-lg w-full max-w-2xl p-8 text-center">
+          <div className="text-gray-400 dark:text-gray-500 mb-6">
             <FiCheckCircle className="text-6xl mx-auto mb-4" />
           </div>
 
-          <h1 className="text-3xl font-semibold text-gray-800 mb-4">
+          <h1 className="text-3xl font-semibold text-gray-800 dark:text-white mb-4">
             No Recent Orders Found
           </h1>
 
-          <p className="text-lg text-gray-600 mb-6">
+          <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
             You haven't placed any orders recently. Start shopping to see your order confirmation here!
           </p>
 
           <div className="space-x-4 mt-8">
             <button
               onClick={handleReturnToShop}
-              className="bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 transition"
+              className="bg-blue-600 dark:bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition"
             >
               Start Shopping
             </button>
 
             <button
               onClick={handleViewOrders}
-              className="bg-gray-700 text-white py-2 px-6 rounded-md hover:bg-gray-800 transition"
+              className="bg-gray-700 dark:bg-gray-600 text-white py-2 px-6 rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 transition"
             >
               View All Orders
             </button>
@@ -141,43 +141,43 @@ export default function ThankYouPage() {
 
   // Show thank you page with order details
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8">
-      <div className="bg-white border border-gray-200 shadow-md rounded-lg w-full max-w-4xl p-6 sm:p-8 text-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8 transition-colors duration-200">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md rounded-lg w-full max-w-4xl p-6 sm:p-8 text-center">
 
-        <div className="text-green-500 mb-6">
+        <div className="text-green-500 dark:text-green-400 mb-6">
           <FiCheckCircle className="text-6xl mx-auto mb-4" />
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-800 dark:text-white mb-4">
           Thank You for Your Purchase, {user?.name}!
         </h1>
 
-        <p className="text-base sm:text-lg text-gray-600 mb-6">
+        <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-6">
           Your order has been placed successfully. We will notify you once it's processed.
         </p>
 
         {/* USER INFO */}
-        <div className="bg-white border shadow-md p-4 rounded-lg mb-6">
-          <h2 className="text-xl font-semibold mb-2">Your Information</h2>
-          <p><strong>Name:</strong> {user?.name}</p>
-          <p><strong>Email:</strong> {user?.email}</p>
-          <p><strong>Phone:</strong> {orderDetails[0]?.phone || user?.phone || "Not Provided"}</p>
+        <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-md p-4 rounded-lg mb-6">
+          <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Your Information</h2>
+          <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Name:</strong> {user?.name}</p>
+          <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Email:</strong> {user?.email}</p>
+          <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Phone:</strong> {orderDetails[0]?.phone || user?.phone || "Not Provided"}</p>
         </div>
 
         {/* ORDER SUMMARY */}
         {orderDetails.length > 0 && (
-          <div className="bg-white border shadow-md p-4 rounded-lg mb-6">
-            <h2 className="text-xl font-semibold mb-2">Order Summary</h2>
-            <p><strong>Order ID:</strong> #{orderDetails[0]._id || orderDetails[0].id}</p>
-            <p><strong>Total:</strong> ${totalAmount}</p>
-            <p><strong>Payment Method:</strong> {orderDetails[0].paymentmethod}</p>
-            <p><strong>Status:</strong> {orderDetails[0].status}</p>
+          <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-md p-4 rounded-lg mb-6">
+            <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Order Summary</h2>
+            <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Order ID:</strong> #{orderDetails[0]._id || orderDetails[0].id}</p>
+            <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Total:</strong> ${totalAmount}</p>
+            <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Payment Method:</strong> {orderDetails[0].paymentmethod}</p>
+            <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Status:</strong> {orderDetails[0].status}</p>
           </div>
         )}
 
         {/* BOOK LIST */}
-        <div className="bg-white border shadow p-4 rounded-lg mb-6">
-          <h3 className="text-xl font-semibold mb-4">Books in Your Order</h3>
+        <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow p-4 rounded-lg mb-6">
+          <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Books in Your Order</h3>
 
           {orderDetails.length > 0 ? (
             orderDetails.map((item) => (
@@ -190,15 +190,15 @@ export default function ThankYouPage() {
                     e.target.src = 'https://via.placeholder.com/64x96?text=No+Image';
                   }}
                 />
-              <div>
-                <p className="font-semibold">{item.title}</p>
-                <p className="text-gray-600">By {item.author}</p>
-                <p>${item.price.toFixed(2)}</p>
+              <div className="text-left">
+                <p className="font-semibold text-gray-900 dark:text-white">{item.title}</p>
+                <p className="text-gray-600 dark:text-gray-400">By {item.author}</p>
+                <p className="text-gray-900 dark:text-white font-medium">${item.price.toFixed(2)}</p>
               </div>
             </div>
             ))
           ) : (
-            <p className="text-gray-600">No pending orders found.</p>
+            <p className="text-gray-600 dark:text-gray-400">No pending orders found.</p>
           )}
         </div>
 
@@ -206,14 +206,14 @@ export default function ThankYouPage() {
         <div className="space-x-4 mb-3">
           <button
             onClick={handleReturnToShop}
-            className="bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700"
+            className="bg-blue-600 dark:bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition"
           >
             Continue Shopping
           </button>
 
           <button
             onClick={handleViewOrders}
-            className="bg-gray-700 text-white py-2 px-6 rounded-md hover:bg-gray-800"
+            className="bg-gray-700 dark:bg-gray-600 text-white py-2 px-6 rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 transition"
           >
             View Orders
           </button>

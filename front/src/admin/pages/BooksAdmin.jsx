@@ -126,6 +126,7 @@ export default function BooksAdmin() {
 
   // Reset form
   const resetForm = () => {
+    const publisherName = currentUser?.name || currentUser?.email || "";
     setFormData({
       title: "",
       author: "",
@@ -133,7 +134,7 @@ export default function BooksAdmin() {
       pdfFile: null,
       coverFile: null,
       description: "",
-      publisher: "",
+      publisher: publisherName,
       publishedDate: ""
     });
   };
@@ -141,6 +142,7 @@ export default function BooksAdmin() {
   // Edit book
   const handleEdit = (book) => {
     setEditingBook(book);
+    const publisherName = currentUser?.name || currentUser?.email || book.publisher || "";
     setFormData({
       title: book.title,
       author: book.author,
@@ -148,7 +150,7 @@ export default function BooksAdmin() {
       pdfFile: null,
       coverFile: null,
       description: book.description,
-      publisher: book.publisher,
+      publisher: publisherName,
       publishedDate: book.publishedDate ? new Date(book.publishedDate).toISOString().split('T')[0] : ""
     });
     setShowForm(true);
@@ -182,10 +184,29 @@ export default function BooksAdmin() {
     const loadUser = async () => {
       const user = await getCurrentAdminUser();
       setCurrentUser(user);
+      // Set publisher when user is loaded and form is visible
+      if (user && showForm) {
+        const publisherName = user.name || user.email || "";
+        setFormData(prev => ({
+          ...prev,
+          publisher: publisherName
+        }));
+      }
     };
     loadUser();
     fetchBooks();
   }, []);
+
+  // Update publisher when currentUser changes and form is shown
+  useEffect(() => {
+    if (currentUser && showForm) {
+      const publisherName = currentUser.name || currentUser.email || "";
+      setFormData(prev => ({
+        ...prev,
+        publisher: publisherName
+      }));
+    }
+  }, [currentUser, showForm]);
 
   return (
     <div className="p-4 sm:p-6 w-full">
@@ -218,6 +239,13 @@ export default function BooksAdmin() {
                   if (showForm) {
                     setEditingBook(null);
                     resetForm();
+                  } else {
+                    // Set publisher when opening form
+                    const publisherName = currentUser?.name || currentUser?.email || "";
+                    setFormData(prev => ({
+                      ...prev,
+                      publisher: publisherName
+                    }));
                   }
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors w-full sm:w-auto justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
@@ -312,8 +340,10 @@ export default function BooksAdmin() {
                 name="publisher"
                 value={formData.publisher}
                 onChange={handleChange}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-colors"
-                placeholder="Enter publisher name"
+                disabled
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed opacity-75"
+                placeholder="Auto-filled from your account"
+                title="Publisher is automatically set from your account information"
               />
             </div>
           </div>

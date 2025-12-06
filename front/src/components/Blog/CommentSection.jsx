@@ -111,7 +111,7 @@ export default function CommentSection() {
   };
 
   return (
-    <div className="mt-10">
+    <div className="mt-10 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-200">
       <CommentList
         comments={comments}
         user={user}
@@ -124,7 +124,7 @@ export default function CommentSection() {
       {user ? (
         <form onSubmit={handleSubmit} className="mt-5">
           <textarea
-            className="w-full resize-none rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+            className="w-full resize-none rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
             placeholder="Write comment..."
             rows="3"
             value={comment}
@@ -132,21 +132,21 @@ export default function CommentSection() {
           ></textarea>
 
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+            className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded-lg mt-2 hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? "Posting..." : "Post Comment"}
           </button>
         </form>
       ) : (
-        <div className="p-6 mt-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
-          <p className="text-gray-700 text-lg font-medium mb-3">
+        <div className="p-6 mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-center">
+          <p className="text-gray-700 dark:text-gray-300 text-lg font-medium mb-3">
             Please login to comment
           </p>
 
           <a
             href="/auth"
-            className="inline-block px-5 py-2 bg-blue-600 text-white font-semibold rounded-md shadow hover:bg-blue-700 transition"
+            className="inline-block px-5 py-2 bg-blue-600 dark:bg-blue-500 text-white font-semibold rounded-md shadow hover:bg-blue-700 dark:hover:bg-blue-600 transition"
           >
             Login Now
           </a>

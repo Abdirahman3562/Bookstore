@@ -49,8 +49,8 @@ export default function NewReleases() {
   return (
     <div className="w-full mt-10 px-4 lg:px-0 md:px-0">
       <div className="flex justify-between items-center mb-6 p-4">
-        <h2 className="text-2xl ml-0 font-bold text-blue-600 tracking-tight">New Releases</h2>
-        <Link to="/all-new-releases" className="text-blue-600 border border-gray-300 px-2 py-1 shadow-md hover:shadow-lg rounded-md">
+        <h2 className="text-2xl ml-0 font-bold text-blue-600 dark:text-blue-400 tracking-tight">New Releases</h2>
+        <Link to="/all-new-releases" className="text-blue-600 dark:text-blue-400 border border-gray-300 dark:border-gray-600 px-2 py-1 shadow-md hover:shadow-lg rounded-md bg-white dark:bg-gray-800 transition-colors">
           View All ({latestBooks.length})
         </Link>
       </div>
@@ -59,7 +59,7 @@ export default function NewReleases() {
         {newestBooks.map((book) => (
           <div
             key={book._id || book.id}
-            className="bg-white border border-gray-200   rounded-lg shadow-lg p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
           >
             <Link to={`/book/${slugify(book.title)}`} className="block">
               <img
@@ -71,9 +71,9 @@ export default function NewReleases() {
                 }}
               />
               <div className="mt-4">
-                <h3 className="text-lg font-semibold">{book.title}</h3>
-                <p className="text-gray-600 text-sm">{book.author}</p>
-                <p className="text-blue-600 font-bold mt-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{book.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{book.author}</p>
+                <p className="text-blue-600 dark:text-blue-400 font-bold mt-2">
                   {book.price === 0 ? "Free" : `Price: $${book.price}`}
                 </p>
               </div>

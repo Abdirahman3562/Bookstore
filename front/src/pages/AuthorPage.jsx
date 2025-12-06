@@ -17,6 +17,8 @@ function AuthorPage() {
   const [author, setAuthor] = useState(null);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const articlesPerPage = 9;
 
   // ✅ Helper: convert title to slug
   const toSlug = (str) => str?.toLowerCase().trim().replace(/\s+/g, "-") ?? "";
@@ -147,13 +149,17 @@ function AuthorPage() {
     };
 
     loadAuthorAndPosts();
+    setCurrentPage(1); // Reset to page 1 when author changes
   }, [username]);
 
   // 🕓 Loading state
   if (loading) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center text-gray-500">
-        Loading author…
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">Loading author...</p>
+        </div>
       </div>
     );
   }
@@ -161,8 +167,14 @@ function AuthorPage() {
   // ❌ Author not found
   if (!author) {
     return (
-      <div className="text-center mt-12 text-gray-500">
-        Author not found.
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="text-center bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 max-w-md mx-4">
+          <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FaCheckCircle className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Author Not Found</h2>
+          <p className="text-gray-500 dark:text-gray-400">The author you're looking for doesn't exist.</p>
+        </div>
       </div>
     );
   }
@@ -170,174 +182,325 @@ function AuthorPage() {
   const social = author.social || {};
 
   return (
-    <div className=" lg:px-0 md:px-0 border border-gray-100  rounded-md px-6 py-12 space-y-10 mt-6">
-      {/* ✅ Author Profile Section */}
-      <div className="flex flex-col md:flex-row items-center md:items-start bg-white p-6 rounded-xl shadow-md">
-        <img
-          src={author.image || "/images/authors/default.jpg"}
-          alt={author.name}
-          onError={(e) => (e.target.src = "/images/authors/default.jpg")}
-          className="w-56 h-56 rounded-xl object-cover "
-        />
-
-        <div className="flex-1 ml-12 md:ml-6 mt-4 md:mt-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-1">
-              {author.username}
-              {author.verified && (
-                <FaCheckCircle
-                  className="text-blue-600 text-lg"
-                  title="Verified Author"
-                />
-              )}
-            </h1>
-            {author.badge && (
-              <span className="mt-2 sm:mt-0 inline-block bg-blue-100 text-white px-3 py-1 rounded-full text-sm font-semibold uppercase">
-                {author.badge}
-              </span>
-            )}
-          </div>
-
-          <p className="text-gray-600 mt-1">@{author.username}</p>
-          <p className="text-gray-700 mt-2 max-w-xl mr-5">"{author.bio}"</p>
-
-          {/* ✅ Social Links */}
-          <div className="flex flex-wrap gap-2 mt-6">
-            {social.github && social.github.trim() !== '' && (
-              <a
-                href={social.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
-              >
-                <FaGithub className="text-blue-600 text-lg" />
-                <span>GitHub</span>
-              </a>
-            )}
-            {social.linkedin && social.linkedin.trim() !== '' && (
-              <a
-                href={social.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
-              >
-                <FaLinkedin className="text-blue-600 text-lg" />
-                <span>LinkedIn</span>
-              </a>
-            )}
-            {social.twitter && social.twitter.trim() !== '' && (
-              <a
-                href={social.twitter}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
-              >
-                <FaTwitter className="text-blue-600 text-lg" />
-                <span>Twitter</span>
-              </a>
-            )}
-            {social.website && social.website.trim() !== '' && (
-              <a
-                href={social.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
-              >
-                <FaGlobe className="text-blue-600 text-lg" />
-                <span>Website</span>
-              </a>
-            )}
-            {social.youtube && social.youtube.trim() !== '' && (
-              <a
-                href={social.youtube}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
-              >
-                <FaYoutube className="text-blue-600 text-lg" />
-                <span>YouTube</span>
-              </a>
-            )}
-            {social.facebook && social.facebook.trim() !== '' && (
-              <a
-                href={social.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
-              >
-                <FaFacebook className="text-blue-600 text-lg" />
-                <span>Facebook</span>
-              </a>
-            )}
-            {social.instagram && social.instagram.trim() !== '' && (
-              <a
-                href={social.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-200 hover:border-blue-400 rounded-md text-gray-700 hover:bg-blue-100 transition"
-              >
-                <FaInstagram className="text-blue-600 text-lg" />
-                <span>Instagram</span>
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* ✅ Posts count */}
-        <div className="mt-6 md:mt-0 md:ml-6 text-blue-600 text-sm font-semibold border border-blue-400 rounded-full px-4 py-2">
-          Posts{" "}
-          <span className="ml-1 text-blue-600">({articles.length})</span>
-        </div>
-      </div>
-
-      {/* ✅ Author Posts Grid */}
-      {articles.length > 0 ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {articles.map((post) => (
-            <Link
-              to={`/blog/${toSlug(post.title)}`}
-              key={post._id || post.id}
-              className="relative bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-blue-100 overflow-hidden group"
-            >
-              <img
-                src={
-                  post.thumbnail || "/images/placeholders/article-thumb.jpg"
-                }
-                alt={post.title}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500 ease-in-out"
-                onError={(e) =>
-                  (e.target.src = "/images/placeholders/article-thumb.jpg")
-                }
-              />
-
-              {post.category && (
-                <span className="absolute top-3 left-3 bg-blue-100 text-blue-600 text-xs font-semibold px-3 py-1 rounded-full uppercase shadow-sm">
-                  {post.category}
-                </span>
-              )}
-
-              <div className="p-5 space-y-3">
-                <h3 className="text-lg font-bold text-gray-900 leading-snug line-clamp-2">
-                  {post.title}
-                </h3>
-
-                <div className="inline-flex items-center gap-1 text-xs font-medium bg-blue-100 text-blue-600 px-2 py-1 rounded-md shadow-sm">
-                  <FaCalendarAlt className="text-[12px]" />
-                  <span>{getRelativeTime(post.publishedDate || post.date || post.createdAt)}</span>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* ✅ Author Profile Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden mb-12">
+          <div className="flex flex-col lg:flex-row items-center lg:items-start p-6 sm:p-8 lg:p-10 gap-6 lg:gap-8">
+            {/* Author Avatar */}
+            <div className="flex-shrink-0">
+              {author.image && author.image !== "/images/authors/default.jpg" ? (
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-xl opacity-30"></div>
+                  <img
+                    src={author.image}
+                    alt={author.name || author.username}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      const fallback = e.target.nextElementSibling;
+                      if (fallback) fallback.style.display = "flex";
+                    }}
+                    className="relative w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-2xl object-cover border-4 border-white dark:border-gray-700 shadow-xl"
+                  />
                 </div>
-
-                <p className="text-gray-700 text-sm line-clamp-3 leading-relaxed">
-                  {stripHtml(post.content)}
-                </p>
+              ) : null}
+              <div 
+                className={`w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-2xl bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center border-4 border-white dark:border-gray-700 shadow-xl ${
+                  author.image && author.image !== "/images/authors/default.jpg" ? "hidden" : ""
+                }`}
+              >
+                <span className="text-4xl sm:text-5xl lg:text-6xl text-blue-600 dark:text-blue-400 font-bold">
+                  {(author.name || author.username)?.charAt(0).toUpperCase() || "?"}
+                </span>
               </div>
-            </Link>
-          ))}
+            </div>
+
+            {/* Author Info */}
+            <div className="flex-1 w-full text-center lg:text-left min-w-0">
+              <div className="flex flex-col items-center lg:items-start gap-3 mb-4">
+                <div className="flex items-center gap-3 flex-wrap justify-center lg:justify-start">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span>{author.username || author.username}</span>
+                    {author.verified && (
+                      <FaCheckCircle
+                        className="text-blue-600 dark:text-blue-400 text-xl sm:text-2xl flex-shrink-0"
+                        title="Verified Author"
+                      />
+                    )}
+                  </h1>
+                  {author.badge && (
+                    <span className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold uppercase shadow-lg">
+                      {author.badge}
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">@{author.username}</p>
+              </div>
+              
+              <p className="text-gray-700 dark:text-gray-300 mt-4 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                "{author.bio}"
+              </p>
+
+              {/* ✅ Social Links */}
+              <div className="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-3 mt-6">
+                {social.github && social.github.trim() !== '' && (
+                  <a
+                    href={social.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm sm:text-base"
+                  >
+                    <FaGithub className="text-blue-600 dark:text-blue-400 text-base sm:text-lg" />
+                    <span className="hidden sm:inline">GitHub</span>
+                  </a>
+                )}
+                {social.linkedin && social.linkedin.trim() !== '' && (
+                  <a
+                    href={social.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm sm:text-base"
+                  >
+                    <FaLinkedin className="text-blue-600 dark:text-blue-400 text-base sm:text-lg" />
+                    <span className="hidden sm:inline">LinkedIn</span>
+                  </a>
+                )}
+                {social.twitter && social.twitter.trim() !== '' && (
+                  <a
+                    href={social.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm sm:text-base"
+                  >
+                    <FaTwitter className="text-blue-600 dark:text-blue-400 text-base sm:text-lg" />
+                    <span className="hidden sm:inline">Twitter</span>
+                  </a>
+                )}
+                {social.website && social.website.trim() !== '' && (
+                  <a
+                    href={social.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm sm:text-base"
+                  >
+                    <FaGlobe className="text-blue-600 dark:text-blue-400 text-base sm:text-lg" />
+                    <span className="hidden sm:inline">Website</span>
+                  </a>
+                )}
+                {social.youtube && social.youtube.trim() !== '' && (
+                  <a
+                    href={social.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm sm:text-base"
+                  >
+                    <FaYoutube className="text-blue-600 dark:text-blue-400 text-base sm:text-lg" />
+                    <span className="hidden sm:inline">YouTube</span>
+                  </a>
+                )}
+                {social.facebook && social.facebook.trim() !== '' && (
+                  <a
+                    href={social.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm sm:text-base"
+                  >
+                    <FaFacebook className="text-blue-600 dark:text-blue-400 text-base sm:text-lg" />
+                    <span className="hidden sm:inline">Facebook</span>
+                  </a>
+                )}
+                {social.instagram && social.instagram.trim() !== '' && (
+                  <a
+                    href={social.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 border border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm sm:text-base"
+                  >
+                    <FaInstagram className="text-blue-600 dark:text-blue-400 text-base sm:text-lg" />
+                    <span className="hidden sm:inline">Instagram</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* ✅ Posts count */}
+            <div className="flex-shrink-0 w-full lg:w-auto">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-full px-4 sm:px-6 py-2 sm:py-3 text-blue-600 dark:text-blue-400 text-sm sm:text-base font-semibold">
+                <span>Posts</span>
+                <span className="bg-blue-600 dark:bg-blue-500 text-white rounded-full px-2 sm:px-3 py-0.5 text-xs sm:text-sm font-bold">
+                  {articles.length}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-      ) : (
-        <p className="text-gray-500 text-center mt-8">
-          This author hasn’t published any articles yet.
-        </p>
-      )}
+
+        {/* ✅ Author Posts Grid */}
+        {articles.length > 0 ? (
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+              <span className="w-1 h-8 bg-gradient-to-b from-blue-600 to-purple-600 rounded-full"></span>
+              Published Articles ({articles.length})
+            </h2>
+            
+            {/* Pagination calculation */}
+            {(() => {
+              const totalPages = Math.ceil(articles.length / articlesPerPage);
+              const startIndex = (currentPage - 1) * articlesPerPage;
+              const endIndex = startIndex + articlesPerPage;
+              const currentArticles = articles.slice(startIndex, endIndex);
+
+              const goToPage = (page) => {
+                setCurrentPage(page);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              };
+
+              return (
+                <>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {currentArticles.map((post) => (
+                      <Link
+                        to={`/blog/${toSlug(post.title)}`}
+                        key={post._id || post.id}
+                        className="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden transform hover:-translate-y-2"
+                      >
+                        {/* Image Container */}
+                        <div className="relative h-48 sm:h-56 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-700 dark:to-gray-800">
+                          <img
+                            src={post.thumbnail || "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=400&fit=crop"}
+                            alt={post.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            onError={(e) =>
+                              (e.target.src = "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=400&fit=crop")
+                            }
+                          />
+                          {/* Gradient Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          
+                          {/* Category Badge */}
+                          {post.category && (
+                            <span className="absolute top-3 left-3 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 text-xs font-semibold px-3 py-1.5 rounded-full uppercase shadow-lg">
+                              {post.category}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-5 sm:p-6 space-y-4">
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {post.title}
+                          </h3>
+
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                            <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-lg">
+                              <FaCalendarAlt className="text-xs" />
+                              <span className="font-medium">{getRelativeTime(post.publishedDate || post.date || post.createdAt)}</span>
+                            </div>
+                          </div>
+
+                          <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base line-clamp-3 leading-relaxed">
+                            {stripHtml(post.content)}
+                          </p>
+
+                          {/* Read More Indicator */}
+                          <div className="pt-2 flex items-center text-blue-600 dark:text-blue-400 text-sm font-semibold group-hover:translate-x-2 transition-transform duration-300">
+                            <span>Read More</span>
+                            <span className="ml-2">→</span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="mt-10 flex flex-col items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => goToPage(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className={`px-4 py-2 rounded-lg border transition-colors ${
+                            currentPage === 1
+                              ? "text-gray-400 dark:text-gray-600 border-gray-200 dark:border-gray-700 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+                              : "text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 bg-white dark:bg-gray-800"
+                          }`}
+                        >
+                          Prev
+                        </button>
+
+                        {/* Page Numbers */}
+                        {[...Array(totalPages)].map((_, i) => {
+                          const page = i + 1;
+                          // Show first page, last page, current page, and pages around current
+                          if (
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          ) {
+                            return (
+                              <button
+                                key={page}
+                                onClick={() => goToPage(page)}
+                                className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${
+                                  page === currentPage
+                                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
+                                    : "text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 bg-white dark:bg-gray-800"
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            );
+                          } else if (
+                            page === currentPage - 2 ||
+                            page === currentPage + 2
+                          ) {
+                            return (
+                              <span
+                                key={page}
+                                className="text-gray-400 dark:text-gray-600"
+                              >
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        })}
+
+                        <button
+                          onClick={() => goToPage(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className={`px-4 py-2 rounded-lg border transition-colors ${
+                            currentPage === totalPages
+                              ? "text-gray-400 dark:text-gray-600 border-gray-200 dark:border-gray-700 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+                              : "text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 bg-white dark:bg-gray-800"
+                          }`}
+                        >
+                          Next
+                        </button>
+                      </div>
+
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Showing {articles.length === 0 ? 0 : startIndex + 1}–
+                        {Math.min(endIndex, articles.length)} of {articles.length} articles
+                      </p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaCalendarAlt className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Articles Yet</h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              This author hasn't published any articles yet.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

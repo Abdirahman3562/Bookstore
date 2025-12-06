@@ -158,7 +158,14 @@ export default function Sidebar({ isOpen, onClose }) {
   const menuItems = getFilteredMenuItems();
 
   const handleLogout = () => {
+    // Save dark mode preference to main darkMode key before logout
+    const adminDarkMode = localStorage.getItem('admin_dark_mode');
+    if (adminDarkMode) {
+      localStorage.setItem('darkMode', adminDarkMode);
+    }
+    
     localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_email");
     window.location.href = "/admin";
   };
 

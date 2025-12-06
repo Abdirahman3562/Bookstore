@@ -30,8 +30,8 @@ export default function HeroSlider() {
         {images.map((_, index) => (
           <span
             key={index}
-            className={`w-3 h-3 rounded-full ${
-              currentIndex === index ? 'bg-[#2563eb]' : 'bg-gray-300'
+            className={`w-3 h-3 rounded-full transition-colors ${
+              currentIndex === index ? 'bg-[#2563eb] dark:bg-blue-400' : 'bg-gray-300 dark:bg-gray-600'
             }`}
           ></span>
         ))}

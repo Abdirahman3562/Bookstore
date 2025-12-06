@@ -87,10 +87,10 @@ export default function BookCarousel() {
         <div className="flex justify-between  rounded-md  p-2  lg:p-1 md:p-1  items-center w-full">
           {/* LEFT SIDE */}
           <div>
-            <h1 className="lg:text-3xl md:text-3xl text-sm font-bold text-blue-600">
+            <h1 className="lg:text-3xl md:text-3xl text-sm font-bold text-blue-600 dark:text-blue-400">
               Books
             </h1>
-            <p className="text-gray-500 lg:text-sm md:text-sm text-[10px] ">
+            <p className="text-gray-500 dark:text-gray-400 lg:text-sm md:text-sm text-[10px] ">
               Discover the latest releases
             </p>
           </div>
@@ -99,7 +99,7 @@ export default function BookCarousel() {
           <div className="flex items-center gap-4">
             <Link
               to="/books"
-              className="text-blue-600 border px-3 py-1 lg:text-[18px] md:text-[18px] text-[12px] rounded-md shadow-md"
+              className="text-blue-600 dark:text-blue-400 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1 lg:text-[18px] md:text-[18px] text-[12px] rounded-md shadow-md transition-colors"
             >
               View All ({allBooksData.length})
             </Link>
@@ -107,11 +107,11 @@ export default function BookCarousel() {
             <button
               onClick={prevSlide}
               disabled={currentIndex === 0}
-              className={`lg:p-2 md:p-2 p-1 rounded-full border ${
+              className={`lg:p-2 md:p-2 p-1 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 ${
                 currentIndex === 0
                   ? "opacity-30 cursor-not-allowed"
-                  : "hover:bg-gray-100"
-              }`}
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700"
+              } transition-colors`}
             >
               <FaChevronLeft />
             </button>
@@ -119,11 +119,11 @@ export default function BookCarousel() {
             <button
               onClick={nextSlide}
               disabled={currentIndex >= maxIndex}
-              className={`lg:p-2 md:p-2 p-1 rounded-full border ${
+              className={`lg:p-2 md:p-2 p-1 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 ${
                 currentIndex >= maxIndex
                   ? "opacity-30 cursor-not-allowed"
-                  : "hover:bg-gray-100"
-              }`}
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700"
+              } transition-colors`}
             >
               <FaChevronRight />
             </button>
@@ -145,7 +145,7 @@ export default function BookCarousel() {
             {booksData.map((book) => (
               <div
                 key={book._id || book.id}
-                className="flex-shrink-0 bg-white mb-4 rounded-xl shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden"
+                className="flex-shrink-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-4 rounded-xl shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden"
                 style={{ width: bookWidth }}
               >
                 <Link to={`/book/${slugify(book.title)}`}>
@@ -158,10 +158,10 @@ export default function BookCarousel() {
                     }}
                   />
                   <div className="p-3">
-                    <h3 className="font-semibold text-sm line-clamp-2">
+                    <h3 className="font-semibold text-sm line-clamp-2 text-gray-900 dark:text-white">
                       {book.title}
                     </h3>
-                    <p className="text-xs text-gray-500">View details</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">View details</p>
                   </div>
                 </Link>
               </div>

@@ -77,45 +77,45 @@ export default function Contact() {
   };
 
   return (
-    <div className="mt-10">
+    <div className="mt-10 bg-white dark:bg-gray-900 min-h-screen py-8 transition-colors duration-200">
       {/* TITLE */}
-      <h1 className="text-3xl font-bold text-center">Contact Us</h1>
-      <p className="text-gray-600 text-center mt-2">
+      <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Contact Us</h1>
+      <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
         We'd love to hear from you! Reach us anytime.
       </p>
 
       {/* TOP 3 CONTACT CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
         {/* Email */}
-        <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-          <FiMail className="text-blue-600 text-4xl mx-auto" />
-          <h3 className="text-xl font-bold text-center mt-4">Email Us</h3>
-          <p className="text-gray-600 text-center mt-2">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition border border-gray-200 dark:border-gray-700">
+          <FiMail className="text-blue-600 dark:text-blue-400 text-4xl mx-auto" />
+          <h3 className="text-xl font-bold text-center mt-4 text-gray-900 dark:text-white">Email Us</h3>
+          <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
             support@bookstore.com
           </p>
         </div>
 
         {/* Phone */}
-        <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-          <FiPhone className="text-green-600 text-4xl mx-auto" />
-          <h3 className="text-xl font-bold text-center mt-4">Call Us</h3>
-          <p className="text-gray-600 text-center mt-2">+123 456 789</p>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition border border-gray-200 dark:border-gray-700">
+          <FiPhone className="text-green-600 dark:text-green-400 text-4xl mx-auto" />
+          <h3 className="text-xl font-bold text-center mt-4 text-gray-900 dark:text-white">Call Us</h3>
+          <p className="text-gray-600 dark:text-gray-400 text-center mt-2">+123 456 789</p>
         </div>
 
         {/* Address */}
-        <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-          <FiMapPin className="text-red-500 text-4xl mx-auto" />
-          <h3 className="text-xl font-bold text-center mt-4">Our Location</h3>
-          <p className="text-gray-600 text-center mt-2">Mogadishu - Somalia</p>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition border border-gray-200 dark:border-gray-700">
+          <FiMapPin className="text-red-500 dark:text-red-400 text-4xl mx-auto" />
+          <h3 className="text-xl font-bold text-center mt-4 text-gray-900 dark:text-white">Our Location</h3>
+          <p className="text-gray-600 dark:text-gray-400 text-center mt-2">Mogadishu - Somalia</p>
         </div>
       </div>
 
       {/* FORM + MAP */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-16">
         {/* CONTACT FORM */}
-        <div className="bg-white p-8 rounded-xl shadow">
-          <h2 className="text-2xl font-bold">Send us a Message</h2>
-          <p className="text-gray-600 mt-1">We reply within 24 hours.</p>
+        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow border border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Send us a Message</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">We reply within 24 hours.</p>
 
           <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
             <input
@@ -125,7 +125,7 @@ export default function Contact() {
               onChange={handleChange}
               required
               placeholder="Your Name"
-              className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
             />
 
             <input
@@ -135,7 +135,7 @@ export default function Contact() {
               onChange={handleChange}
               required
               placeholder="Your Email"
-              className="w-full rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
             />
 
             <textarea
@@ -146,16 +146,16 @@ export default function Contact() {
               required
               maxLength={500}
               placeholder="Write your message..."
-              className="w-full resize-none rounded-lg border border-gray-300 py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4"
+              className="w-full resize-none rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-2 pl-5 pr-12 transition focus:ring-2 focus:ring-blue-500 focus:outline-none mb-4 placeholder-gray-500 dark:placeholder-gray-400"
             ></textarea>
-            <p className="text-xs text-gray-500 -mt-2 mb-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-2 mb-2">
               {formData.message.length}/500 characters
             </p>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-blue-600 text-white px-5 py-3 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition disabled:bg-blue-400 disabled:cursor-not-allowed"
+              className="bg-blue-600 dark:bg-blue-500 text-white px-5 py-3 rounded-lg flex items-center gap-2 hover:bg-blue-700 dark:hover:bg-blue-600 transition disabled:bg-blue-400 dark:disabled:bg-blue-600 disabled:cursor-not-allowed"
             >
               <FiSend /> {isSubmitting ? "Sending..." : "Send Message"}
             </button>

@@ -65,39 +65,39 @@
 
     return (
         <div>
-        <h1 className="text-2xl font-semibold mb-6">Welcome to your dashboard</h1>
+        <h1 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Welcome to your dashboard</h1>
 
         {/* GRID BOXES */}
         <div className="w-full flex justify-center">
 
-        <div className="flex gap-5 w-full    lg:flex-row md:flex-row flex-col">
+        <div className="flex gap-5 w-full lg:flex-row md:flex-row flex-col">
 
             {/* DOWNLOADS */}
-            <div className="bg-white border shadow p-3 w-full  rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition">
-            <FiDownload className="text-4xl text-blue-500 mb-2" />
-            <p className="text-3xl font-bold text-blue-600">{downloads}</p>
-            <p className="text-gray-600   mt-1">Downloaded Books</p>
+            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 shadow p-3 w-full rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition-colors duration-200">
+            <FiDownload className="text-4xl text-blue-500 dark:text-blue-400 mb-2" />
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{downloads}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Downloaded Books</p>
             </div>
 
             {/* PENDING */}
-            <div className="bg-white border shadow p-5 w-full rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition">
-            <FiClock className="text-4xl text-blue-500 mb-2" />
-            <p className="text-3xl font-bold text-blue-600">{pending}</p>
-            <p className="text-gray-600 mt-1">Pending Orders</p>
+            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 shadow p-5 w-full rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition-colors duration-200">
+            <FiClock className="text-4xl text-blue-500 dark:text-blue-400 mb-2" />
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{pending}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Pending Orders</p>
             </div>
 
             {/* ACTIVE */}
-            <div className="bg-white border shadow p-5 w-full rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition">
-            <FiLoader className="text-4xl text-blue-500 mb-2" />
-            <p className="text-3xl font-bold text-blue-600">{active}</p>
-            <p className="text-gray-600 mt-1">Active Orders</p>
+            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 shadow p-5 w-full rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition-colors duration-200">
+            <FiLoader className="text-4xl text-blue-500 dark:text-blue-400 mb-2" />
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{active}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Active Orders</p>
             </div>
 
             {/* TOTAL ORDERS */}
-            <div className="bg-white border shadow p-5 w-full  rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition">
-            <FiPackage className="text-4xl text-blue-500 mb-2" />
-            <p className="text-3xl font-bold text-blue-600">{totalOrders}</p>
-            <p className="text-gray-600 mt-1">Total Orders</p>
+            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 shadow p-5 w-full rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition-colors duration-200">
+            <FiPackage className="text-4xl text-blue-500 dark:text-blue-400 mb-2" />
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{totalOrders}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Total Orders</p>
             </div>
 
         </div>

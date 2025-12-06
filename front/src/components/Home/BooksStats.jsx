@@ -37,30 +37,30 @@ export default function BooksStats() {
   const countBuy = useCountUp(ready ? buyBooks : 0);
 
   const box =
-    "bg-white  border shadow hover:shadow-md   px-5 py-5 w-full rounded-xl flex flex-col items-center justify-center";
+    "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow hover:shadow-md px-5 py-5 w-full rounded-xl flex flex-col items-center justify-center transition-colors duration-200";
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6  lg:p-0 md:p-0 p-4 mx-auto mt-10">
 
       {/* ALL BOOKS */}
       <div className={box}>
-        <FiBookOpen className="text-4xl text-blue-600 mb-2" />
-        <p className="text-3xl text-blue-600  font-bold">{countAll}</p>
-        <p className="text-gray-600 text-sm mt-1">ALL BOOKS</p>
+        <FiBookOpen className="text-4xl text-blue-600 dark:text-blue-400 mb-2" />
+        <p className="text-3xl text-blue-600 dark:text-blue-400 font-bold">{countAll}</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">ALL BOOKS</p>
       </div>
 
       {/* FREE BOOKS */}
       <div className={box}>
-        <FiGift className="text-4xl text-green-600 mb-2" />
-        <p className="text-3xl text-blue-600  font-bold">{countFree}</p>
-        <p className="text-gray-600 text-sm mt-1">FREE BOOKS</p>
+        <FiGift className="text-4xl text-green-600 dark:text-green-400 mb-2" />
+        <p className="text-3xl text-green-600 dark:text-green-400 font-bold">{countFree}</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">FREE BOOKS</p>
       </div>
 
       {/* BUY BOOKS */}
       <div className={box}>
-        <FiShoppingCart className="text-4xl text-purple-600 mb-2" />
-        <p className="text-3xl text-blue-600  font-bold">{countBuy}</p>
-        <p className="text-gray-600 text-sm mt-1">BUY BOOKS</p>
+        <FiShoppingCart className="text-4xl text-purple-600 dark:text-purple-400 mb-2" />
+        <p className="text-3xl text-purple-600 dark:text-purple-400 font-bold">{countBuy}</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">BUY BOOKS</p>
       </div>
 
     </div>

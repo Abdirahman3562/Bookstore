@@ -60,25 +60,28 @@ export default function VerifyEmail() {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 transition-colors duration-200">
+      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-8 text-center transition-colors duration-200">
         {status === "verifying" && (
           <>
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Verifying Email</h2>
-            <p className="text-gray-600">{message}</p>
+            <div className="relative w-16 h-16 mx-auto mb-4">
+              <div className="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-blue-600 dark:border-blue-400 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Verifying Email</h2>
+            <p className="text-gray-600 dark:text-gray-400">{message}</p>
           </>
         )}
 
         {status === "success" && (
           <>
-            <FiCheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-green-600 mb-2">Email Verified!</h2>
-            <p className="text-gray-600 mb-4">{message}</p>
-            <p className="text-sm text-gray-500">Redirecting to login page...</p>
+            <FiCheckCircle className="w-16 h-16 text-green-500 dark:text-green-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">Email Verified!</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{message}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Redirecting to login page...</p>
             <button
               onClick={() => navigate("/auth")}
-              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
+              className="mt-4 bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
             >
               Go to Login
             </button>
@@ -87,19 +90,19 @@ export default function VerifyEmail() {
 
         {status === "error" && (
           <>
-            <FiXCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-red-600 mb-2">Verification Failed</h2>
-            <p className="text-gray-600 mb-4">{message}</p>
+            <FiXCircle className="w-16 h-16 text-red-500 dark:text-red-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">Verification Failed</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{message}</p>
             <div className="space-y-2">
               <button
                 onClick={() => navigate("/auth")}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
+                className="w-full bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
               >
                 Go to Login
               </button>
               <button
                 onClick={() => window.location.reload()}
-                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg transition"
+                className="w-full bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-white px-6 py-2 rounded-lg transition-colors"
               >
                 Try Again
               </button>
@@ -107,8 +110,8 @@ export default function VerifyEmail() {
           </>
         )}
 
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <FiMail className="w-4 h-4" />
             <span>Need help? Contact support</span>
           </div>

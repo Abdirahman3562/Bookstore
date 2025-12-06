@@ -74,8 +74,8 @@ export default function DashboardLayout() {
   };
 
   const getButtonClass = (tabKey) =>
-    `flex items-center gap-2 p-2 border-b border-gray-300 rounded hover:bg-gray-100 ${
-      activeTab === tabKey ? "bg-blue-100 font-bold" : ""
+    `flex items-center gap-2 p-2 border-b border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-[#2563eb] dark:text-blue-400 transition-colors ${
+      activeTab === tabKey ? "bg-blue-100 dark:bg-blue-900/30 font-bold" : ""
     }`;
 
   const renderContent = () => {
@@ -95,7 +95,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white pt-10">
+    <div className="flex min-h-screen bg-white dark:bg-gray-900 pt-10 transition-colors duration-200">
       {/* MOBILE OVERLAY BACKGROUND */}
       {isMobileSidebarOpen && (
         <div
@@ -106,7 +106,7 @@ export default function DashboardLayout() {
 
       {/* MOBILE TOGGLE BUTTON */}
       <button
-        className="md:hidden py-2 px-2 mt-10 text-xl absolute right-2 top-20  rounded z-[1000]"
+        className="md:hidden py-2 px-2 mt-10 text-xl absolute right-2 top-20 rounded z-[1000] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
       >
         {isMobileSidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
@@ -115,7 +115,7 @@ export default function DashboardLayout() {
       {/* SIDEBAR */}
       <aside
         className={`
-          bg-white border shadow-md text-[#2563eb] p-4 flex flex-col gap-2
+          bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-md text-[#2563eb] dark:text-blue-400 p-4 flex flex-col gap-2
           w-52 h-full fixed top-0 left-0 z-[999]
           transform transition-transform duration-300
           ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -163,13 +163,13 @@ export default function DashboardLayout() {
           <FiUser /> Account Details
         </button>
 
-        <button onClick={handleLogout} className={getButtonClass("logout")}>
+        <button onClick={handleLogout} className={`flex items-center gap-2 p-2 border-b border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-[#2563eb] dark:text-blue-400 transition-colors`}>
           <FiLogOut /> Log Out
         </button>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 px-8 py-4  md:ml-0 overflow-auto">
+      <main className="flex-1 px-8 py-4 md:ml-0 overflow-auto bg-white dark:bg-gray-900 transition-colors duration-200">
         {renderContent()}
       </main>
     </div>

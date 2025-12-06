@@ -222,8 +222,8 @@ export default function DownloadsTab() {
   // ⏳ Spinner
   if (loading) {
     return (
-      <div className="flex justify-center border border-gray-300 rounded-lg shadow-md py-10">
-        <svg className="h-12 w-12 animate-spin text-blue-600" viewBox="0 0 50 50">
+      <div className="flex justify-center border border-gray-300 dark:border-gray-700 rounded-lg shadow-md py-10 bg-white dark:bg-gray-800">
+        <svg className="h-12 w-12 animate-spin text-blue-600 dark:text-blue-400" viewBox="0 0 50 50">
           <circle className="opacity-25" cx="25" cy="25" r="20" stroke="currentColor" strokeWidth="5" fill="none" />
           <circle className="opacity-75" cx="25" cy="25" r="20" stroke="currentColor" strokeWidth="5" strokeDasharray="31.4 188.4" strokeLinecap="round" fill="none" />
         </svg>
@@ -233,16 +233,16 @@ export default function DownloadsTab() {
 
   return (
     <div className="p-4 sm:p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Your Downloads</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Your Downloads</h2>
 
       {books.length === 0 ? (
-        <div className="flex justify-center items-center py-10 border border-gray-300 rounded-lg shadow-md">
-          <p className="text-gray-600 text-lg font-semibold">No downloads available.</p>
+        <div className="flex justify-center items-center py-10 border border-gray-300 dark:border-gray-700 rounded-lg shadow-md bg-white dark:bg-gray-800">
+          <p className="text-gray-600 dark:text-gray-400 text-lg font-semibold">No downloads available.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {books.map((book, i) => (
-            <div key={i} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-gray-100 rounded-lg shadow-md gap-4">
+            <div key={i} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md gap-4 border border-gray-200 dark:border-gray-700">
               
               {/* LEFT SIDE */}
               <div className="flex lg:flex-row md:flex-row flex-col lg:items-center md:items-center gap-4 w-full sm:w-auto">
@@ -255,12 +255,12 @@ export default function DownloadsTab() {
                   }}
                 />
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">{book.title}</h3>
-                  <p className="text-gray-600 text-sm">By {book.author}</p>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{book.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">By {book.author}</p>
                   {book.source === "free" ? (
-                    <p className="text-green-600 text-sm font-medium">FREE DOWNLOAD</p>
+                    <p className="text-green-600 dark:text-green-400 text-sm font-medium">FREE DOWNLOAD</p>
                   ) : (
-                    <p className="text-blue-600 text-sm font-medium">PURCHASED · ACTIVE</p>
+                    <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">PURCHASED · ACTIVE</p>
                   )}
                 </div>
               </div>
@@ -273,16 +273,16 @@ export default function DownloadsTab() {
                     disabled={book.notDownloaded}
                     className={`px-4 py-2 rounded-md text-sm sm:text-base transition-all ${
                       book.notDownloaded
-                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed opacity-60'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-300 cursor-not-allowed opacity-60'
+                        : 'bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600'
                     }`}
                   >
                     Download
                   </button>
                   {book.notDownloaded && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
                       Too many downloads
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
                     </div>
                   )}
                 </div>
@@ -293,16 +293,16 @@ export default function DownloadsTab() {
                     disabled={book.notDownloaded}
                     className={`px-4 py-2 rounded-md text-sm sm:text-base transition-all ${
                       book.notDownloaded
-                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed opacity-60'
-                        : 'bg-green-600 text-white hover:bg-green-700'
+                        ? 'bg-gray-400 dark:bg-gray-600 text-gray-200 dark:text-gray-300 cursor-not-allowed opacity-60'
+                        : 'bg-green-600 dark:bg-green-500 text-white hover:bg-green-700 dark:hover:bg-green-600'
                     }`}
                   >
                     Read Now
                   </button>
                   {book.notDownloaded && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
                       Access revoked
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
                     </div>
                   )}
                 </div>

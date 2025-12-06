@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -55,15 +56,25 @@ function App() {
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isAuthRoute = location.pathname === "/auth" || location.pathname === "/verify-email";
 
+  // Initialize dark mode from localStorage on app load
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem("darkMode");
+    if (savedDarkMode === "true") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
   return (
-    <div>
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
       {/* PUBLIC UI ONLY */}
       {!isAdminRoute && !isAuthRoute && <DiscountAlert />}
       {!isAdminRoute && !isAuthRoute && <Navbar />}
       {!isAdminRoute && !isAuthRoute && isHomePage && <HerroSlider />}
 
       {/* Wrapper size (public only) */}
-      <div className={`${!isAdminRoute && !isAuthRoute ? "w-full max-w-[64rem] mx-auto" : isAuthRoute ? "w-full" : ""}`}>
+      <div className={`${!isAdminRoute && !isAuthRoute ? "w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" : isAuthRoute ? "w-full" : ""}`}>
         <ScrollToTop />
         {!isAdminRoute && !isAuthRoute && <AdPopup />}
         <Toaster position="top-right" />

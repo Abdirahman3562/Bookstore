@@ -104,16 +104,16 @@ export default function AccountDetails() {
     }
   };
 
-  if (!user) return <p>Loading user...</p>;
+  if (!user) return <p className="text-gray-900 dark:text-white">Loading user...</p>;
 
   return (
-    <div className="p-6 ">
-      <h1 className="text-2xl text-blue-600 font-bold mb-4">Account Details</h1>
+    <div className="p-6">
+      <h1 className="text-2xl text-blue-600 dark:text-blue-400 font-bold mb-4">Account Details</h1>
 
-      <div className="space-y-5 ">
-        <div className="flex  mb-6">
+      <div className="space-y-5">
+        <div className="flex mb-6">
           <div
-            className="lg:w-36 lg:h-36 md:w-36 md:h-36 w-44 h-44 cursor-pointer rounded-xl bg-green-100 
+            className="lg:w-36 lg:h-36 md:w-36 md:h-36 w-44 h-44 cursor-pointer rounded-xl bg-green-100 dark:bg-green-900/30 
           flex items-center justify-center shadow-lg relative group overflow-hidden"
           >
             {preview ? (
@@ -123,14 +123,14 @@ export default function AccountDetails() {
                 className="w-full h-full object-cover rounded-xl"
               />
             ) : (
-              <span className="text-green-600 font-bold text-4xl">
+              <span className="text-green-600 dark:text-green-400 font-bold text-4xl">
                 {user.name ? user.name[0].toUpperCase() : "U"}
               </span>
             )}
 
             {/* Hover Overlay */}
             <div
-              className="absolute inset-0 bg-[#0f0f0fb0] flex flex-col items-center justify-center 
+              className="absolute inset-0 bg-[#0f0f0fb0] dark:bg-[#0f0f0fd0] flex flex-col items-center justify-center 
           rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             >
               <label
@@ -155,21 +155,21 @@ export default function AccountDetails() {
         <div className="grid lg:grid-cols-2 md:grid-cols-2 grid-cols-1 gap-4">
           {/* NAME */}
           <div>
-            <label className="font-semibold">Full Name</label>
+            <label className="font-semibold text-gray-900 dark:text-white">Full Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border mt-1 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600"
+              className="w-full border mt-1 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600 dark:focus:border-blue-400 placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
 
           {/* EMAIL */}
           <div>
-            <label className="font-semibold">Email</label>
+            <label className="font-semibold text-gray-900 dark:text-white">Email</label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border mt-1 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600"
+              className="w-full border mt-1 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600 dark:focus:border-blue-400 placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
         </div>
@@ -177,16 +177,16 @@ export default function AccountDetails() {
         <div className="grid lg:grid-cols-2 md:grid-cols-2 grid-cols-1 gap-4">
           {/* PASSWORD */}
           <div className="relative">
-            <label className="font-semibold">Password</label>
+            <label className="font-semibold text-gray-900 dark:text-white">Password</label>
             <input
               type={showPass ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border mt-1 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600"
+              className="w-full border mt-1 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 pr-10 focus:outline-none focus:border-blue-600 dark:focus:border-blue-400 placeholder-gray-500 dark:placeholder-gray-400"
             />
 
             <button
-              className="absolute right-2 top-9"
+              className="absolute right-2 top-9 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
               onClick={() => setShowPass(!showPass)}
             >
               {showPass ? <FiEyeOff size={20} /> : <FiEye size={20} />}
@@ -195,16 +195,16 @@ export default function AccountDetails() {
 
           {/* CONFIRM PASSWORD */}
           <div className="relative">
-            <label className="font-semibold">Confirm Password</label>
+            <label className="font-semibold text-gray-900 dark:text-white">Confirm Password</label>
             <input
               type={showConfirmPass ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full border mt-1 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-600"
+              className="w-full border mt-1 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 pr-10 focus:outline-none focus:border-blue-600 dark:focus:border-blue-400 placeholder-gray-500 dark:placeholder-gray-400"
             />
 
             <button
-              className="absolute right-2 top-9"
+              className="absolute right-2 top-9 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
               onClick={() => setShowConfirmPass(!showConfirmPass)}
             >
               {showConfirmPass ? <FiEyeOff size={20} /> : <FiEye size={20} />}
@@ -213,11 +213,11 @@ export default function AccountDetails() {
         </div>
 
         {/* 2-STEP VERIFICATION TOGGLE */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
-              <label className="font-semibold text-lg">2-Step Verification</label>
-              <p className="text-sm text-gray-600 mt-1">
+              <label className="font-semibold text-lg text-gray-900 dark:text-white">2-Step Verification</label>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 When enabled, you'll receive an OTP code via email when logging in
               </p>
             </div>
@@ -228,7 +228,7 @@ export default function AccountDetails() {
                 onChange={(e) => setTwoStepVerification(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 dark:peer-checked:bg-blue-500"></div>
             </label>
           </div>
         </div>
@@ -237,7 +237,7 @@ export default function AccountDetails() {
           {/* SAVE BTN */}
           <button
             onClick={handleUpdate}
-            className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+            className="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
           >
             Save Changes
           </button>
