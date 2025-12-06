@@ -1,14 +1,33 @@
 import Download from "../models/downloads.model.js";
+import User from "../models/users.model.js";
 
 // GET ALL DOWNLOADS
 export const getAllDownloads = async (req, res) => {
   try {
     const downloads = await Download.find({}).sort({ createdAt: -1 });
+    
+    // Fetch user avatars for each download
+    const downloadsWithAvatars = await Promise.all(
+      downloads.map(async (download) => {
+        try {
+          const user = await User.findOne({ email: download.email });
+          const downloadObj = download.toObject();
+          if (user && user.avatar) {
+            downloadObj.userAvatar = user.avatar;
+          }
+          return downloadObj;
+        } catch (error) {
+          // If user not found or error, return download without avatar
+          return download.toObject();
+        }
+      })
+    );
+    
     res.status(200).json({
       success: true,
       message: "Downloads fetched successfully",
-      data: downloads,
-      count: downloads.length
+      data: downloadsWithAvatars,
+      count: downloadsWithAvatars.length
     });
   } catch (err) {
     console.error("Error fetching downloads:", err);

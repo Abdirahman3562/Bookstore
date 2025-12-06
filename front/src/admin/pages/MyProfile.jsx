@@ -6,15 +6,12 @@ import { User, Mail, Key, Camera, Save, Shield, Eye, EyeOff, Lock, LockOpen } fr
 export default function MyProfile() {
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [currentPasswordVerified, setCurrentPasswordVerified] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: "" });
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    currentPassword: "",
     password: "",
     confirmPassword: "",
     avatar: "",
@@ -188,7 +185,7 @@ export default function MyProfile() {
         passwordLength: formData.password?.length || 0
       });
 
-      // If password is being changed, require current password verification
+      // If password is being changed, validate it
       if (formData.password && formData.password.trim() !== "") {
         if (formData.password !== formData.confirmPassword) {
           toast.error("Passwords do not match");
@@ -203,13 +200,6 @@ export default function MyProfile() {
           setLoading(false);
           return;
         }
-
-        // Check if verification is done
-        if (!currentPasswordVerified) {
-          toast.error("Please verify your current password first");
-          setLoading(false);
-          return;
-        }
       }
 
       const updateData = {
@@ -220,14 +210,13 @@ export default function MyProfile() {
 
       if (formData.password && formData.password.trim() !== "") {
         updateData.password = formData.password;
-        updateData.currentPassword = formData.currentPassword;
       }
 
       if (formData.avatar && formData.avatar.trim() !== "") {
         updateData.avatar = formData.avatar;
       }
 
-      console.log("Update data being sent:", { ...updateData, password: updateData.password ? "***" : undefined, currentPassword: updateData.currentPassword ? "***" : undefined });
+      console.log("Update data being sent:", { ...updateData, password: updateData.password ? "***" : undefined });
 
       // Determine if user is from admins or users collection
       const adminEmail = localStorage.getItem("admin_email");
@@ -271,11 +260,9 @@ export default function MyProfile() {
         // Reset password fields
         setFormData(prev => ({
           ...prev,
-          currentPassword: "",
           password: "",
           confirmPassword: ""
         }));
-        setCurrentPasswordVerified(false);
         await fetchCurrentUser();
         
         // Get updated user data from response or use formData
@@ -391,203 +378,104 @@ export default function MyProfile() {
           <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Key className="w-5 h-5" />
-              Change Password
+              Change Password (leave blank to keep current)
             </h3>
 
-            {/* New Password - Only show initial field if not verified and password is empty */}
-            {!currentPasswordVerified && !formData.password && (
-              <div className="mb-4">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <Key className="w-4 h-4" />
-                  New Password (leave blank to keep current)
-                </label>
+            <div className="mb-4">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Key className="w-4 h-4" />
+                New Password
+              </label>
+              <div className="relative">
                 <input
-                  type="password"
+                  type={showNewPassword ? "text" : "password"}
                   value={formData.password}
-                  onChange={(e) => {
-                    setFormData({ ...formData, password: e.target.value });
-                    if (!e.target.value) {
-                      setCurrentPasswordVerified(false);
-                      setFormData(prev => ({ ...prev, currentPassword: "" }));
-                    }
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
-                  placeholder="Enter new password to change"
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+                  placeholder="Enter new password (min 8 chars, uppercase, lowercase, number, special char)"
                   minLength={8}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-            )}
-
-            {/* Current Password - Show when password is entered but not verified */}
-            {formData.password && !currentPasswordVerified && (
-              <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  <Shield className="w-4 h-4" />
-                  Current Password *
-                </label>
-                <div className="space-y-3">
-                  <div className="relative">
-                    <input
-                      type={showCurrentPassword ? "text" : "password"}
-                      required
-                      value={formData.currentPassword}
-                      onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                      onBlur={async () => {
-                        // Verify current password when user leaves the field
-                        if (formData.currentPassword && !currentPasswordVerified) {
-                          try {
-                            const adminEmail = localStorage.getItem("admin_email");
-                            let user = null;
-                            
-                            // Try to find user
-                            try {
-                              const adminsResponse = await axios.get("http://localhost:3000/api/admins");
-                              const admins = adminsResponse.data.data || [];
-                              user = admins.find(a => a.email === adminEmail);
-                              
-                              if (!user) {
-                                const usersResponse = await axios.get("http://localhost:3000/api/users");
-                                const users = usersResponse.data.data || [];
-                                user = users.find(u => u.email === adminEmail);
-                              }
-                            } catch (error) {
-                              console.error("Error fetching user:", error);
-                            }
-                            
-                            if (user && user.password === formData.currentPassword) {
-                              setCurrentPasswordVerified(true);
-                              toast.success("Current password verified!");
-                            } else if (user && user.password !== formData.currentPassword) {
-                              toast.error("Current password is incorrect");
-                            }
-                          } catch (error) {
-                            // Silent fail - user might not have entered password yet
-                          }
-                        }
-                      }}
-                      className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
-                      placeholder="Enter current password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                    >
-                      {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+              {formData.password && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          passwordStrength.score <= 1
+                            ? "bg-red-500 dark:bg-red-600"
+                            : passwordStrength.score === 2
+                            ? "bg-orange-500 dark:bg-orange-600"
+                            : passwordStrength.score === 3
+                            ? "bg-yellow-500 dark:bg-yellow-600"
+                            : passwordStrength.score === 4
+                            ? "bg-blue-500 dark:bg-blue-600"
+                            : "bg-green-500 dark:bg-green-600"
+                        }`}
+                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {passwordStrength.label || "Very Weak"}
+                    </span>
                   </div>
-                  {currentPasswordVerified && (
+                  {passwordStrength.feedback && passwordStrength.score < 5 && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{passwordStrength.feedback}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  className={`w-full px-4 py-2 pr-10 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none ${
+                    formData.confirmPassword && formData.password !== formData.confirmPassword
+                      ? "border-red-300 dark:border-red-600"
+                      : formData.confirmPassword && formData.password === formData.confirmPassword
+                      ? "border-green-300 dark:border-green-600"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                  placeholder="Confirm new password"
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {formData.confirmPassword && (
+                <div className="mt-2">
+                  {formData.password === formData.confirmPassword ? (
                     <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                       <Shield className="w-3 h-3" />
-                      Current password verified ✓
+                      Passwords match ✓
+                    </p>
+                  ) : (
+                    <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                      <Shield className="w-3 h-3" />
+                      Passwords do not match
                     </p>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* New Password and Confirm Password - Only show after verification */}
-            {currentPasswordVerified && (
-              <>
-                <div className="mb-4">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Key className="w-4 h-4" />
-                    New Password *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showNewPassword ? "text" : "password"}
-                      required
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
-                      placeholder="Enter new password (min 8 chars, uppercase, lowercase, number, special char)"
-                      minLength={8}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                    >
-                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  {formData.password && (
-                    <div className="mt-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full transition-all ${
-                              passwordStrength.score <= 1
-                                ? "bg-red-500 dark:bg-red-600"
-                                : passwordStrength.score === 2
-                                ? "bg-orange-500 dark:bg-orange-600"
-                                : passwordStrength.score === 3
-                                ? "bg-yellow-500 dark:bg-yellow-600"
-                                : passwordStrength.score === 4
-                                ? "bg-blue-500 dark:bg-blue-600"
-                                : "bg-green-500 dark:bg-green-600"
-                            }`}
-                            style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                          {passwordStrength.label || "Very Weak"}
-                        </span>
-                      </div>
-                      {passwordStrength.feedback && passwordStrength.score < 5 && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{passwordStrength.feedback}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Confirm New Password *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      required
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      className={`w-full px-4 py-2 pr-10 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none ${
-                        formData.confirmPassword && formData.password !== formData.confirmPassword
-                          ? "border-red-300 dark:border-red-600"
-                          : formData.confirmPassword && formData.password === formData.confirmPassword
-                          ? "border-green-300 dark:border-green-600"
-                          : "border-gray-300 dark:border-gray-600"
-                      }`}
-                      placeholder="Confirm new password"
-                      minLength={8}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                  {formData.confirmPassword && (
-                    <div className="mt-2">
-                      {formData.password === formData.confirmPassword ? (
-                        <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                          <Shield className="w-3 h-3" />
-                          Passwords match ✓
-                        </p>
-                      ) : (
-                        <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                          <Shield className="w-3 h-3" />
-                          Passwords do not match
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
 
           {/* 2-Step Verification Section */}
@@ -628,13 +516,7 @@ export default function MyProfile() {
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="submit"
-              disabled={
-                loading ||
-                (formData.password && formData.password.trim() !== "" &&
-                  (formData.password !== formData.confirmPassword ||
-                    passwordStrength.score < 5 ||
-                    !currentPasswordVerified))
-              }
+              disabled={loading}
               className="px-6 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading ? (

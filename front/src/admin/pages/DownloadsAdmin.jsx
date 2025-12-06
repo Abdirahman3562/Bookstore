@@ -10,7 +10,6 @@ export default function DownloadsAdmin() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [revokeModal, setRevokeModal] = useState({ show: false, download: null });
-  const [userDownloadCounts, setUserDownloadCounts] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
   const [stats, setStats] = useState({
     totalDownloads: 0,
@@ -41,12 +40,6 @@ export default function DownloadsAdmin() {
       const freeDownloads = data.filter(d => d.price === 0).length;
       const revokedDownloads = data.filter(d => d.notDownloaded).length;
 
-      // Calculate download count per user
-      const downloadCounts = {};
-      data.forEach(download => {
-        downloadCounts[download.userId] = (downloadCounts[download.userId] || 0) + 1;
-      });
-
       setStats({
         totalDownloads,
         totalUsers,
@@ -54,8 +47,6 @@ export default function DownloadsAdmin() {
         freeDownloads,
         revokedDownloads
       });
-
-      setUserDownloadCounts(downloadCounts);
       setDownloads([...data]);
       setLastUpdated(new Date().toLocaleString());
 
@@ -209,11 +200,10 @@ export default function DownloadsAdmin() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1200px]">
+              <table className="w-full min-w-[1040px]">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <tr className="border-b  border-gray-200 dark:border-gray-700">
                     <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">User</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">User Total</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Book</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Download Count</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Price</th>
@@ -224,20 +214,35 @@ export default function DownloadsAdmin() {
                 </thead>
                 <tbody>
                   {downloads.map((download) => {
-                    const userDownloadCount = userDownloadCounts[download.userId] || 0;
                     return (
                       <tr key={download._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                         <td className="py-3 px-4">
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white text-sm">{download.userName}</p>
-                            <p className="text-gray-600 dark:text-gray-400 text-xs">{download.email}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center justify-center">
-                            <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-sm font-semibold">
-                              {userDownloadCount}
-                            </span>
+                          <div className="flex items-center gap-3">
+                            {download.userAvatar ? (
+                              <img
+                                src={download.userAvatar}
+                                alt={download.userName}
+                                className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
+                                onError={(e) => {
+                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(download.userName)}&background=3B82F6&color=fff&size=128`;
+                                }}
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                                {download.userName
+                                  ? download.userName
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")
+                                      .toUpperCase()
+                                      .slice(0, 2)
+                                  : "U"}
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white text-sm">{download.userName}</p>
+                              <p className="text-gray-600 dark:text-gray-400 text-xs">{download.email}</p>
+                            </div>
                           </div>
                         </td>
                       <td className="py-3 px-4">

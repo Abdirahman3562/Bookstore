@@ -1,14 +1,33 @@
 import Purchased from "../models/purchased.model.js";
+import User from "../models/users.model.js";
 
 // GET ALL PURCHASED ITEMS
 export const getAllPurchased = async (req, res) => {
   try {
     const purchased = await Purchased.find({}).sort({ createdAt: -1 });
+    
+    // Fetch user avatars for each purchased item
+    const purchasedWithAvatars = await Promise.all(
+      purchased.map(async (item) => {
+        try {
+          const user = await User.findOne({ email: item.email });
+          const itemObj = item.toObject();
+          if (user && user.avatar) {
+            itemObj.userAvatar = user.avatar;
+          }
+          return itemObj;
+        } catch (error) {
+          // If user not found or error, return item without avatar
+          return item.toObject();
+        }
+      })
+    );
+    
     res.status(200).json({
       success: true,
       message: "Purchased items fetched successfully",
-      data: purchased,
-      count: purchased.length
+      data: purchasedWithAvatars,
+      count: purchasedWithAvatars.length
     });
   } catch (err) {
     console.error("Error fetching purchased items:", err);

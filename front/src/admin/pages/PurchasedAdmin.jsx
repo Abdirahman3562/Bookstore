@@ -266,9 +266,32 @@ export default function PurchasedAdmin() {
                   {purchased.map((order) => (
                     <tr key={order._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
                       <td className="py-3 px-4">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white text-sm">{order.userName}</p>
-                          <p className="text-gray-600 dark:text-gray-400 text-xs">{order.email}</p>
+                        <div className="flex items-center gap-3">
+                          {order.userAvatar ? (
+                            <img
+                              src={order.userAvatar}
+                              alt={order.userName}
+                              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
+                              onError={(e) => {
+                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(order.userName)}&background=3B82F6&color=fff&size=128`;
+                              }}
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                              {order.userName
+                                ? order.userName
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .toUpperCase()
+                                    .slice(0, 2)
+                                : "U"}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white text-sm">{order.userName}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs">{order.email}</p>
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
