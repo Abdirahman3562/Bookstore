@@ -300,7 +300,7 @@ export default function AddAdminUser() {
                     No authors found. Please create an author first.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto scrollbar-hide">
                     {authors.map((author) => (
                       <label
                         key={author._id}

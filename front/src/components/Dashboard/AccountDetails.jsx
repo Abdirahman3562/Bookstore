@@ -104,7 +104,15 @@ export default function AccountDetails() {
     }
   };
 
-  if (!user) return <p className="text-gray-900 dark:text-white">Loading user...</p>;
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">

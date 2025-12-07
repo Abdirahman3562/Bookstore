@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { LogOut, X, UserPlus, Shield } from "lucide-react";
+import { LogOut, X, UserPlus, Shield, Globe } from "lucide-react";
 import {
   BarChart3,
   BookOpen,
@@ -11,13 +11,46 @@ import {
   PenTool,
   FileText,
   Settings,
-  Mail
+  Mail,
+  MessageCircle
 } from "lucide-react";
 import axios from "axios";
 
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const [currentUser, setCurrentUser] = useState(null);
+  const [websiteSettings, setWebsiteSettings] = useState({
+    websiteName: "Admin Panel",
+  });
+
+  // Fetch website settings
+  useEffect(() => {
+    const fetchWebsiteSettings = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/website-settings");
+        if (response.data.success) {
+          setWebsiteSettings({
+            websiteName: response.data.data.websiteName || "Admin Panel",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching website settings:", error);
+      }
+    };
+
+    fetchWebsiteSettings();
+
+    // Listen for website settings updates
+    const handleSettingsUpdate = () => {
+      fetchWebsiteSettings();
+    };
+
+    window.addEventListener("websiteSettingsUpdated", handleSettingsUpdate);
+
+    return () => {
+      window.removeEventListener("websiteSettingsUpdated", handleSettingsUpdate);
+    };
+  }, []);
 
   // Fetch current admin user data
   useEffect(() => {
@@ -111,6 +144,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/admin/purchased", label: "Purchased", icon: ShoppingCart, permission: "purchased" },
     { path: "/admin/testimonials", label: "Testimonials", icon: MessageSquare, permission: "testimonials" },
     { path: "/admin/contacts", label: "Contacts", icon: Mail, permission: "contacts" },
+    { path: "/admin/live-chat", label: "Live Chat", icon: MessageCircle, permission: "dashboard" },
     { path: "/admin/users", label: "Users", icon: Users, permission: "users" },
     { path: "/admin/authors", label: "Authors", icon: PenTool, permission: "authors" },
     { path: "/admin/blogs", label: "Blogs", icon: FileText, permission: "blogs" },
@@ -181,7 +215,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:static top-0 left-0 z-50
+        fixed top-0 left-0 z-50
         w-64 bg-gray-900 dark:bg-gray-800 text-white h-screen flex flex-col border-r border-gray-800 dark:border-gray-700
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -189,7 +223,10 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-800 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-blue-400 dark:text-blue-500">Admin Panel</h2>
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-blue-400 dark:text-blue-500" />
+            <h2 className="text-xl font-bold text-blue-400 dark:text-blue-500">{websiteSettings.websiteName}</h2>
+          </div>
           <button
             onClick={onClose}
             className="lg:hidden p-1 rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
@@ -199,7 +236,7 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
       {/* Menu */}
-      <div className="flex-1 overflow-y-auto mt-4">
+      <div className="flex-1 overflow-y-auto scrollbar-hide mt-4">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
 

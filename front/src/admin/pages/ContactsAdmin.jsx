@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Mail, RotateCcw, Trash2, CheckCircle, Clock, Eye, User, Calendar, MessageSquare } from "lucide-react";
 import { getCurrentAdminUser, canAdd, canEdit, canDelete } from "../utils/permissions";
+import DataTable from "../components/DataTable";
 
 export default function ContactsAdmin() {
   const [contacts, setContacts] = useState([]);
@@ -302,110 +303,133 @@ export default function ContactsAdmin() {
             <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Contact messages from users will appear here</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Message</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {contacts.map((contact) => (
-                  <tr key={contact._id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {contact.userAvatar ? (
-                          <img
-                            src={contact.userAvatar.startsWith('data:') ? contact.userAvatar : `http://localhost:3000${contact.userAvatar}`}
-                            alt={contact.name}
-                            className="w-8 h-8 rounded-full object-cover mr-2 border border-gray-200 dark:border-gray-600"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'block';
-                            }}
-                          />
-                        ) : null}
-                        <User 
-                          className={`w-5 h-5 text-gray-400 dark:text-gray-500 mr-2 ${contact.userAvatar ? 'hidden' : ''}`}
-                        />
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{contact.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900 dark:text-white">
-                        {contact.email}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-900 dark:text-white max-w-xs truncate">
-                        {contact.message}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        {formatDate(contact.createdAt)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(contact.status)}`}>
-                        {contact.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setSelectedContact(contact)}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 transition-colors"
-                          title="View details"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => openReplyModal(contact)}
-                          className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-green-600 dark:disabled:hover:text-green-400"
-                          title={!canEdit(currentUser, 'contacts') ? "You don't have permission to reply" : "Reply"}
-                          disabled={!canEdit(currentUser, 'contacts')}
-                        >
-                          <Mail className="w-5 h-5" />
-                        </button>
-                        {contact.status !== 'read' && (
-                          <button
-                            onClick={() => updateContactStatus(contact._id, 'read')}
-                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-indigo-600 dark:disabled:hover:text-indigo-400"
-                            title={!canEdit(currentUser, 'contacts') ? "You don't have permission to mark as read" : "Mark as read"}
-                            disabled={!canEdit(currentUser, 'contacts')}
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openDeleteModal(contact)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-red-600 dark:disabled:hover:text-red-400"
-                          title={!canDelete(currentUser, 'contacts') ? "You don't have permission to delete" : "Delete"}
-                          disabled={!canDelete(currentUser, 'contacts')}
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={[
+              {
+                header: "Name",
+                accessor: "name",
+                cell: (contact) => (
+                  <div className="flex items-center">
+                    {contact.userAvatar ? (
+                      <img
+                        src={contact.userAvatar.startsWith('data:') ? contact.userAvatar : `http://localhost:3000${contact.userAvatar}`}
+                        alt={contact.name}
+                        className="w-8 h-8 rounded-full object-cover mr-2 border border-gray-200 dark:border-gray-600"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          if (e.target.nextSibling) {
+                            e.target.nextSibling.style.display = 'block';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <User 
+                      className={`w-5 h-5 text-gray-400 dark:text-gray-500 mr-2 ${contact.userAvatar ? 'hidden' : ''}`}
+                    />
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{contact.name}</span>
+                  </div>
+                ),
+              },
+              {
+                header: "Email",
+                accessor: "email",
+                cellClassName: "text-gray-900 dark:text-white",
+              },
+              {
+                header: "Message",
+                accessor: "message",
+                cell: (contact) => (
+                  <p className="text-sm text-gray-900 dark:text-white max-w-xs truncate">
+                    {contact.message}
+                  </p>
+                ),
+              },
+              {
+                header: "Date",
+                accessor: "createdAt",
+                cellClassName: "text-gray-500 dark:text-gray-400",
+                cell: (contact) => (
+                  <div className="flex items-center text-sm">
+                    <Calendar className="w-4 h-4 mr-1" />
+                    {formatDate(contact.createdAt)}
+                  </div>
+                ),
+              },
+              {
+                header: "Status",
+                accessor: "status",
+                cell: (contact) => (
+                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(contact.status)}`}>
+                    {contact.status}
+                  </span>
+                ),
+              },
+              {
+                header: "Actions",
+                accessor: "actions",
+                cell: (contact) => (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedContact(contact);
+                      }}
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 transition-colors"
+                      title="View details"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openReplyModal(contact);
+                      }}
+                      className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-green-600 dark:disabled:hover:text-green-400"
+                      title={!canEdit(currentUser, 'contacts') ? "You don't have permission to reply" : "Reply"}
+                      disabled={!canEdit(currentUser, 'contacts')}
+                    >
+                      <Mail className="w-5 h-5" />
+                    </button>
+                    {contact.status !== 'read' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateContactStatus(contact._id, 'read');
+                        }}
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-indigo-600 dark:disabled:hover:text-indigo-400"
+                        title={!canEdit(currentUser, 'contacts') ? "You don't have permission to mark as read" : "Mark as read"}
+                        disabled={!canEdit(currentUser, 'contacts')}
+                      >
+                        <Eye className="w-5 h-5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDeleteModal(contact);
+                      }}
+                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-red-600 dark:disabled:hover:text-red-400"
+                      title={!canDelete(currentUser, 'contacts') ? "You don't have permission to delete" : "Delete"}
+                      disabled={!canDelete(currentUser, 'contacts')}
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                ),
+              },
+            ]}
+            data={contacts}
+            itemsPerPage={10}
+            emptyMessage="No contact messages yet"
+            emptyIcon={Mail}
+          />
         )}
       </div>
 
       {/* Contact Details Modal */}
       {selectedContact && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedContact(null)}>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Contact Message Details</h2>
@@ -502,7 +526,7 @@ export default function ContactsAdmin() {
       {/* Reply Modal */}
       {showReplyModal && selectedContact && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowReplyModal(false)}>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Reply to {selectedContact.name}</h2>

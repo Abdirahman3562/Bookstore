@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { Shield, RotateCcw, Edit, X, Save, UserPlus, Check, Eye, EyeOff, Key, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentAdminUser, canView, canAdd, canEdit, canDelete } from "../utils/permissions";
+import DataTable from "../components/DataTable";
 
 export default function AdminUsersAdmin() {
   const navigate = useNavigate();
@@ -481,129 +482,137 @@ export default function AdminUsersAdmin() {
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Admin User</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Role</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Permissions</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {admins.map((admin) => (
-                    <tr key={admin._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          {admin.avatar ? (
-                            <img
-                              src={admin.avatar}
-                              alt={admin.name}
-                              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
-                              onError={(e) => {
-                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(admin.name)}&background=3B82F6&color=fff&size=128`;
-                              }}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                              {admin.name
-                                ? admin.name
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")
-                                    .toUpperCase()
-                                    .slice(0, 2)
-                                : "A"}
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white text-sm">{admin.name}</p>
-                            <p className="text-gray-600 dark:text-gray-400 text-xs">{admin.email}</p>
-                          </div>
+            <DataTable
+              columns={[
+                {
+                  header: "Admin User",
+                  accessor: "admin",
+                  cell: (admin) => (
+                    <div className="flex items-center gap-3">
+                      {admin.avatar ? (
+                        <img
+                          src={admin.avatar}
+                          alt={admin.name}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(admin.name)}&background=3B82F6&color=fff&size=128`;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                          {admin.name
+                            ? admin.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)
+                            : "A"}
                         </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          admin.adminRole === 'admin'
-                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
-                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
-                        }`}>
-                          {admin.adminRole || 'author'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex flex-wrap gap-1">
-                          {Object.entries(permissionLabels).map(([key, label]) => {
-                            // Check granular permissions
-                            const sectionPerms = admin.permissions && admin.permissions[key];
-                            if (sectionPerms) {
-                              // Handle old boolean format
-                              if (typeof sectionPerms === 'boolean' && sectionPerms) {
-                                return (
-                                  <span
-                                    key={key}
-                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
-                                  >
-                                    {label}
-                                  </span>
-                                );
-                              }
-                              // Handle new granular format
-                              if (typeof sectionPerms === 'object') {
-                                const actions = [];
-                                if (sectionPerms.view) actions.push('V');
-                                if (sectionPerms.add) actions.push('A');
-                                if (sectionPerms.edit) actions.push('E');
-                                if (sectionPerms.delete) actions.push('D');
-                                if (sectionPerms.revoke) actions.push('R');
-                                if (sectionPerms.reply) actions.push('Reply');
-                                
-                                // Only show if there are any permissions
-                                if (actions.length > 0) {
-                                  return (
-                                    <span
-                                      key={key}
-                                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
-                                      title={`${label}: ${actions.join(', ')}`}
-                                    >
-                                      {label} ({actions.join(', ')})
-                                    </span>
-                                  );
-                                }
-                              }
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">{admin.name}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">{admin.email}</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  header: "Role",
+                  accessor: "role",
+                  cell: (admin) => (
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      admin.adminRole === 'admin'
+                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
+                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                    }`}>
+                      {admin.adminRole || 'author'}
+                    </span>
+                  ),
+                },
+                {
+                  header: "Permissions",
+                  accessor: "permissions",
+                  cell: (admin) => (
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(permissionLabels).map(([key, label]) => {
+                        const sectionPerms = admin.permissions && admin.permissions[key];
+                        if (sectionPerms) {
+                          if (typeof sectionPerms === 'boolean' && sectionPerms) {
+                            return (
+                              <span
+                                key={key}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                              >
+                                {label}
+                              </span>
+                            );
+                          }
+                          if (typeof sectionPerms === 'object') {
+                            const actions = [];
+                            if (sectionPerms.view) actions.push('V');
+                            if (sectionPerms.add) actions.push('A');
+                            if (sectionPerms.edit) actions.push('E');
+                            if (sectionPerms.delete) actions.push('D');
+                            if (sectionPerms.revoke) actions.push('R');
+                            if (sectionPerms.reply) actions.push('Reply');
+                            
+                            if (actions.length > 0) {
+                              return (
+                                <span
+                                  key={key}
+                                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                                  title={`${label}: ${actions.join(', ')}`}
+                                >
+                                  {label} ({actions.join(', ')})
+                                </span>
+                              );
                             }
-                            return null;
-                          })}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => openEditModal(admin)}
-                            disabled={!canEdit(currentUser, 'addAdminUser')}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
-                            title={!canEdit(currentUser, 'addAdminUser') ? "You don't have permission to edit admin users" : "Edit"}
-                          >
-                            <Edit className="w-3 h-3" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => openDeleteModal(admin)}
-                            disabled={!canDelete(currentUser, 'addAdminUser')}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600 dark:disabled:hover:bg-red-700"
-                            title={!canDelete(currentUser, 'addAdminUser') ? "You don't have permission to delete admin users" : "Delete"}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          }
+                        }
+                        return null;
+                      })}
+                    </div>
+                  ),
+                },
+                {
+                  header: "Actions",
+                  accessor: "actions",
+                  cell: (admin) => (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditModal(admin);
+                        }}
+                        disabled={!canEdit(currentUser, 'addAdminUser')}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
+                        title={!canEdit(currentUser, 'addAdminUser') ? "You don't have permission to edit admin users" : "Edit"}
+                      >
+                        <Edit className="w-3 h-3" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeleteModal(admin);
+                        }}
+                        disabled={!canDelete(currentUser, 'addAdminUser')}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600 dark:disabled:hover:bg-red-700"
+                        title={!canDelete(currentUser, 'addAdminUser') ? "You don't have permission to delete admin users" : "Delete"}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </button>
+                    </div>
+                  ),
+                },
+              ]}
+              data={admins}
+              itemsPerPage={10}
+              emptyMessage="No admin users found"
+              emptyIcon={Shield}
+            />
           )}
         </div>
       </div>
@@ -616,7 +625,7 @@ export default function AdminUsersAdmin() {
             onClick={closeEditModal}
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hide">
               {/* Modal Header */}
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 p-6 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-white flex items-center gap-2">
@@ -732,7 +741,7 @@ export default function AdminUsersAdmin() {
                             No authors found. Please create an author first.
                           </p>
                         ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto scrollbar-hide">
                             {authors.map((author) => (
                               <label
                                 key={author._id}

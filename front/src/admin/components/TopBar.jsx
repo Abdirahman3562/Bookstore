@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, User, Key, Bell, LogOut, Moon, Sun } from "lucide-react";
+import { ChevronDown, User, Key, Bell, LogOut, Moon, Sun, Globe } from "lucide-react";
 import axios from "axios";
 
 export default function TopBar() {
@@ -8,6 +8,9 @@ export default function TopBar() {
   const [showMenu, setShowMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [websiteSettings, setWebsiteSettings] = useState({
+    websiteName: "Admin Dashboard",
+  });
   const [darkMode, setDarkMode] = useState(() => {
     // Default to false (light mode) - only enable if explicitly set to 'true'
     const saved = localStorage.getItem('admin_dark_mode');
@@ -207,6 +210,35 @@ export default function TopBar() {
     }
   }, [currentUser]);
 
+  // Fetch website settings
+  useEffect(() => {
+    const fetchWebsiteSettings = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/website-settings");
+        if (response.data.success) {
+          setWebsiteSettings({
+            websiteName: response.data.data.websiteName || "Admin Dashboard",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching website settings:", error);
+      }
+    };
+
+    fetchWebsiteSettings();
+
+    // Listen for website settings updates
+    const handleSettingsUpdate = () => {
+      fetchWebsiteSettings();
+    };
+
+    window.addEventListener("websiteSettingsUpdated", handleSettingsUpdate);
+
+    return () => {
+      window.removeEventListener("websiteSettingsUpdated", handleSettingsUpdate);
+    };
+  }, []);
+
   useEffect(() => {
     fetchCurrentUser();
 
@@ -347,9 +379,12 @@ export default function TopBar() {
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 lg:px-6 py-3 flex items-center justify-between">
       <div className="flex-1">
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-white hidden lg:block">
-          Admin Dashboard
-        </h1>
+        <div className="flex items-center gap-2 hidden lg:flex">
+          <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {websiteSettings.websiteName}
+          </h1>
+        </div>
       </div>
 
       {/* Right side controls */}

@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Download, RotateCcw, FileText, User, Calendar, DollarSign, ShieldX, CheckCircle } from "lucide-react";
 import { getCurrentAdminUser, canRevoke } from "../utils/permissions";
+import DataTable from "../components/DataTable";
 
 export default function DownloadsAdmin() {
   const [downloads, setDownloads] = useState([]);
@@ -199,139 +200,154 @@ export default function DownloadsAdmin() {
               <p className="text-gray-600 dark:text-gray-400">Downloads will appear here when users download books.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1040px]">
-                <thead>
-                  <tr className="border-b  border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">User</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Book</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Download Count</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Price</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Type</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Access Control</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {downloads.map((download) => {
-                    return (
-                      <tr key={download._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            {download.userAvatar ? (
-                              <img
-                                src={download.userAvatar}
-                                alt={download.userName}
-                                className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
-                                onError={(e) => {
-                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(download.userName)}&background=3B82F6&color=fff&size=128`;
-                                }}
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                                {download.userName
-                                  ? download.userName
-                                      .split(" ")
-                                      .map((n) => n[0])
-                                      .join("")
-                                      .toUpperCase()
-                                      .slice(0, 2)
-                                  : "U"}
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white text-sm">{download.userName}</p>
-                              <p className="text-gray-600 dark:text-gray-400 text-xs">{download.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={`http://localhost:3000${download.cover}`}
-                            alt={download.title}
-                            className="w-10 h-14 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0"
-                            onError={(e) => {
-                              e.target.src = 'https://via.placeholder.com/40x56?text=No+Image';
-                            }}
-                          />
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white text-sm">{download.title}</p>
-                            <p className="text-gray-600 dark:text-gray-400 text-xs">by {download.author}</p>
-                          </div>
+            <DataTable
+              columns={[
+                {
+                  header: "User",
+                  accessor: "user",
+                  cell: (download) => (
+                    <div className="flex items-center gap-3">
+                      {download.userAvatar ? (
+                        <img
+                          src={download.userAvatar}
+                          alt={download.userName}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(download.userName)}&background=3B82F6&color=fff&size=128`;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                          {download.userName
+                            ? download.userName
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)
+                            : "U"}
                         </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="inline-flex items-center justify-center w-10 h-10 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-sm font-bold">
-                            {download.downloadCount || 1}
-                          </span>
-                          <span className="text-xs text-gray-600 dark:text-gray-400">
-                            {(download.downloadCount || 1) === 1 ? 'time' : 'times'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 font-semibold text-green-600 dark:text-green-400 text-sm">${download.price}</td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          download.price === 0
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
-                        }`}>
-                          {download.price === 0 ? 'Free' : 'Paid'}
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">{download.userName}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">{download.email}</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  header: "Book",
+                  accessor: "book",
+                  cell: (download) => (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={`http://localhost:3000${download.cover}`}
+                        alt={download.title}
+                        className="w-10 h-14 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/40x56?text=No+Image';
+                        }}
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">{download.title}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">by {download.author}</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  header: "Download Count",
+                  accessor: "downloadCount",
+                  cell: (download) => (
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="inline-flex items-center justify-center w-10 h-10 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-sm font-bold">
+                        {download.downloadCount || 1}
+                      </span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        {(download.downloadCount || 1) === 1 ? 'time' : 'times'}
+                      </span>
+                    </div>
+                  ),
+                },
+                {
+                  header: "Price",
+                  accessor: "price",
+                  cellClassName: "font-semibold text-green-600 dark:text-green-400",
+                  cell: (download) => `$${download.price}`,
+                },
+                {
+                  header: "Type",
+                  accessor: "type",
+                  cell: (download) => (
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      download.price === 0
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                    }`}>
+                      {download.price === 0 ? 'Free' : 'Paid'}
+                    </span>
+                  ),
+                },
+                {
+                  header: "Date",
+                  accessor: "timestamp",
+                  cellClassName: "text-gray-600 dark:text-gray-400",
+                  cell: (download) => (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(download.timestamp).toLocaleDateString()}
+                    </div>
+                  ),
+                },
+                {
+                  header: "Access Control",
+                  accessor: "access",
+                  cell: (download) => (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1">
+                        <div className={`w-2 h-2 rounded-full ${download.notDownloaded ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                        <span className={`text-xs font-medium ${download.notDownloaded ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                          {download.notDownloaded ? 'Revoked' : 'Allowed'}
                         </span>
-                      </td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(download.timestamp).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex flex-col gap-2">
-                          {/* Access Status Indicator */}
-                          <div className="flex items-center gap-1">
-                            <div className={`w-2 h-2 rounded-full ${download.notDownloaded ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                            <span className={`text-xs font-medium ${download.notDownloaded ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                              {download.notDownloaded ? 'Revoked' : 'Allowed'}
-                            </span>
-                          </div>
-
-                          {/* Toggle Access Button - Always visible but disabled if no permission */}
-                          <button
-                            onClick={() => showRevokeModal(download)}
-                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
-                              download.notDownloaded
-                                ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800'
-                                : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800'
-                            }`}
-                            title={!canRevoke(currentUser, 'downloads') 
-                              ? "You don't have permission to revoke access" 
-                              : download.notDownloaded 
-                                ? "Allow user's access to this book" 
-                                : "Revoke user's access to this book"}
-                            disabled={!canRevoke(currentUser, 'downloads')}
-                          >
-                            {download.notDownloaded ? (
-                              <>
-                                <CheckCircle className="w-3 h-3" />
-                                Allow Download
-                              </>
-                            ) : (
-                              <>
-                                <ShieldX className="w-3 h-3" />
-                                Revoke Access
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showRevokeModal(download);
+                        }}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
+                          download.notDownloaded
+                            ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800'
+                            : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800'
+                        }`}
+                        title={!canRevoke(currentUser, 'downloads') 
+                          ? "You don't have permission to revoke access" 
+                          : download.notDownloaded 
+                            ? "Allow user's access to this book" 
+                            : "Revoke user's access to this book"}
+                        disabled={!canRevoke(currentUser, 'downloads')}
+                      >
+                        {download.notDownloaded ? (
+                          <>
+                            <CheckCircle className="w-3 h-3" />
+                            Allow Download
+                          </>
+                        ) : (
+                          <>
+                            <ShieldX className="w-3 h-3" />
+                            Revoke Access
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ),
+                },
+              ]}
+              data={downloads}
+              itemsPerPage={10}
+              emptyMessage="No downloads found"
+              emptyIcon={Download}
+            />
           )}
         </div>
       </div>

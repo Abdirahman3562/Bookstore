@@ -28,6 +28,7 @@ import SinglePostPage from "./pages/SinglePostPage";
 import ScrollToTop from "./pages/ScrollToTop";
 import HerroSlider from "./components/Home/HerroSlider";
 import VerifyEmail from "./pages/VerifyEmail";
+import CrispChat from "./components/CrispChat";
 
 // admin
 import AdminLogin from "./admin/pages/AdminLogin";
@@ -46,6 +47,7 @@ import MyProfile from "./admin/pages/MyProfile";
 import Notifications from "./admin/pages/Notifications";
 import WebsiteSettings from "./admin/pages/WebsiteSettings";
 import ContactsAdmin from "./admin/pages/ContactsAdmin";
+import LiveChatAdmin from "./admin/pages/LiveChatAdmin";
 import AdminProtectedRoute from "./admin/components/AdminProtectedRoute";
 
 function App() {
@@ -72,6 +74,7 @@ function App() {
       {!isAdminRoute && !isAuthRoute && <DiscountAlert />}
       {!isAdminRoute && !isAuthRoute && <Navbar />}
       {!isAdminRoute && !isAuthRoute && isHomePage && <HerroSlider />}
+      {!isAdminRoute && !isAuthRoute && <CrispChat />}
 
       {/* Wrapper size (public only) */}
       <div className={`${!isAdminRoute && !isAuthRoute ? "w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" : isAuthRoute ? "w-full" : ""}`}>
@@ -255,6 +258,17 @@ function App() {
             }
           />
 
+          <Route
+            path="/admin/live-chat"
+            element={
+              <AdminProtectedRoute requiredPermission="dashboard">
+                <AdminLayout>
+                  <LiveChatAdmin />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            }
+          />
+
           {/* ================= User Dashboard ================= */}
           <Route
             path="/dashboard"
@@ -270,6 +284,7 @@ function App() {
             <Route path="orderdetails/:id" element={<OrderDetails />} />
             <Route path="orders/:id" element={<OrderDetails />} />
             <Route path="downloads" element={<div>Downloads Section</div>} />
+            <Route path="notifications" element={<div>Notifications Section</div>} />
             <Route path="addresses" element={<div>Addresses Section</div>} />
             <Route path="account" element={<AccountDetails />} />
           </Route>

@@ -1,5 +1,7 @@
 import Purchased from "../models/purchased.model.js";
 import User from "../models/users.model.js";
+import Notification from "../models/notifications.model.js";
+import { sendOrderActiveEmail } from "../utils/email.js";
 
 // GET ALL PURCHASED ITEMS
 export const getAllPurchased = async (req, res) => {
@@ -134,6 +136,36 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     console.log(`✅ Successfully updated order ${id} status to: ${updated.status}`);
+
+    // If status is changed to "active", send email and create notification
+    if (status === 'active' && currentOrder.status !== 'active') {
+      try {
+        // Send email notification
+        await sendOrderActiveEmail(
+          updated.email,
+          updated.userName,
+          updated.title,
+          updated.author,
+          updated.pdfUrl
+        );
+        console.log(`📧 Order active email sent to ${updated.email}`);
+
+        // Create notification for user
+        const notification = new Notification({
+          userId: updated.userId,
+          type: 'order_active',
+          title: 'Book Approved & Ready to Download! 🎉',
+          message: `Your book "${updated.title}" by ${updated.author} is now active and ready to download.`,
+          relatedId: updated._id.toString(),
+          relatedType: 'purchase'
+        });
+        await notification.save();
+        console.log(`🔔 Notification created for user ${updated.userId}`);
+      } catch (error) {
+        console.error("❌ Error sending email/notification:", error);
+        // Don't fail the request if email/notification fails
+      }
+    }
 
     res.status(200).json({
       success: true,

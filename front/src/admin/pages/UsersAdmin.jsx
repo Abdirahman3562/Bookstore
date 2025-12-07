@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Users, RotateCcw, UserCheck, UserX, Mail, Calendar, Shield } from "lucide-react";
 import { getCurrentAdminUser, canEdit } from "../utils/permissions";
+import DataTable from "../components/DataTable";
 
 export default function UsersAdmin() {
   const [users, setUsers] = useState([]);
@@ -200,162 +201,150 @@ export default function UsersAdmin() {
         </div>
 
         <div className="p-6">
-          {users.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No users found</h3>
-              <p className="text-gray-600 dark:text-gray-400">User accounts will appear here when registered.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">User</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Role</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Activity</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Join Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          {(() => {
-                            // Get user initials
-                            const initials = user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-                            
-                            // Check if avatar exists and is not empty
-                            const hasAvatar = user.avatar && 
-                                            typeof user.avatar === 'string' && 
-                                            user.avatar.trim() !== '' && 
-                                            user.avatar !== 'null' && 
-                                            user.avatar !== 'undefined';
-                            
-                            if (hasAvatar) {
-                              // Construct avatar URL
-                              let avatarUrl = user.avatar.trim();
-                              
-                              // If it's a base64 data URL, use it directly
-                              if (avatarUrl.startsWith('data:')) {
-                                // Use base64 data URL as is
-                              } else if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
-                                // Use full URL as is
-                              } else {
-                                // Add base URL for relative paths
-                                avatarUrl = avatarUrl.startsWith('/') 
-                                  ? `http://localhost:3000${avatarUrl}`
-                                  : `http://localhost:3000/${avatarUrl}`;
-                              }
-                              
-                              return (
-                                <img
-                                  src={avatarUrl}
-                                  alt={user.name}
-                                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
-                                  onError={(e) => {
-                                    // If image fails to load, replace with initials
-                                    console.log('Avatar failed to load:', avatarUrl);
-                                    e.target.outerHTML = `<div class="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold border-2 border-gray-200 dark:border-gray-700 flex-shrink-0">${initials}</div>`;
-                                  }}
-                                  onLoad={() => {
-                                    console.log('Avatar loaded successfully:', avatarUrl);
-                                  }}
-                                />
-                              );
-                            } else {
-                              // Show initials if no avatar
-                              return (
-                                <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold border-2 border-gray-200 dark:border-gray-700 flex-shrink-0">
-                                  {initials}
-                                </div>
-                              );
-                            }
-                          })()}
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white text-sm">{user.name}</p>
-                            <p className="text-gray-600 dark:text-gray-400 text-xs flex items-center gap-1">
-                              <Mail className="w-3 h-3" />
-                              {user.email}
-                            </p>
-                          </div>
+          <DataTable
+            columns={[
+              {
+                header: "User",
+                accessor: "user",
+                cell: (user) => {
+                  const initials = user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                  const hasAvatar = user.avatar && 
+                                  typeof user.avatar === 'string' && 
+                                  user.avatar.trim() !== '' && 
+                                  user.avatar !== 'null' && 
+                                  user.avatar !== 'undefined';
+                  
+                  let avatarUrl = hasAvatar ? user.avatar.trim() : null;
+                  if (hasAvatar && !avatarUrl.startsWith('data:') && !avatarUrl.startsWith('http://') && !avatarUrl.startsWith('https://')) {
+                    avatarUrl = avatarUrl.startsWith('/') 
+                      ? `http://localhost:3000${avatarUrl}`
+                      : `http://localhost:3000/${avatarUrl}`;
+                  }
+                  
+                  return (
+                    <div className="flex items-center gap-3">
+                      {hasAvatar && avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={user.name}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
+                          onError={(e) => {
+                            e.target.outerHTML = `<div class="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold border-2 border-gray-200 dark:border-gray-700 flex-shrink-0">${initials}</div>`;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-sm font-semibold border-2 border-gray-200 dark:border-gray-700 flex-shrink-0">
+                          {initials}
                         </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          user.role === 'premium'
-                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
-                        }`}>
-                          {user.role || 'regular'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          user.status === 'active'
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-                        }`}>
-                          {user.status === 'active' ? (
-                            <UserCheck size={12} />
-                          ) : (
-                            <UserX size={12} />
-                          )}
-                          {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
-                        <div>
-                          <p>Downloads: {user.downloadsCount}</p>
-                          <p>Purchases: {user.purchasesCount}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {user.createdAt 
-                            ? new Date(user.createdAt).toLocaleDateString('en-US', { 
-                                year: 'numeric', 
-                                month: 'short', 
-                                day: 'numeric' 
-                              })
-                            : 'N/A'
-                          }
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <button
-                          onClick={() => toggleUserStatus(user._id)}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
-                            user.status === 'active'
-                              ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800'
-                              : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800'
-                          }`}
-                          title={!canEdit(currentUser, 'users') ? "You don't have permission to change user status" : user.status === 'active' ? 'Deactivate user' : 'Activate user'}
-                          disabled={!canEdit(currentUser, 'users')}
-                        >
-                            {user.status === 'active' ? (
-                              <>
-                                <UserX className="w-3 h-3" />
-                                Deactivate
-                              </>
-                            ) : (
-                              <>
-                                <UserCheck className="w-3 h-3" />
-                                Activate
-                              </>
-                            )}
-                          </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">{user.name}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                },
+              },
+              {
+                header: "Role",
+                accessor: "role",
+                cell: (user) => (
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    user.role === 'premium'
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                  }`}>
+                    {user.role || 'regular'}
+                  </span>
+                ),
+              },
+              {
+                header: "Status",
+                accessor: "status",
+                cell: (user) => (
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                    user.status === 'active'
+                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                  }`}>
+                    {user.status === 'active' ? (
+                      <UserCheck size={12} />
+                    ) : (
+                      <UserX size={12} />
+                    )}
+                    {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                  </span>
+                ),
+              },
+              {
+                header: "Activity",
+                accessor: "activity",
+                cellClassName: "text-gray-600 dark:text-gray-400",
+                cell: (user) => (
+                  <div>
+                    <p>Downloads: {user.downloadsCount || 0}</p>
+                    <p>Purchases: {user.purchasesCount || 0}</p>
+                  </div>
+                ),
+              },
+              {
+                header: "Join Date",
+                accessor: "createdAt",
+                cellClassName: "text-gray-600 dark:text-gray-400",
+                cell: (user) => (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {user.createdAt 
+                      ? new Date(user.createdAt).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })
+                      : 'N/A'
+                    }
+                  </div>
+                ),
+              },
+              {
+                header: "Actions",
+                accessor: "actions",
+                cell: (user) => (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleUserStatus(user._id);
+                    }}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
+                      user.status === 'active'
+                        ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800'
+                        : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800'
+                    }`}
+                    title={!canEdit(currentUser, 'users') ? "You don't have permission to change user status" : user.status === 'active' ? 'Deactivate user' : 'Activate user'}
+                    disabled={!canEdit(currentUser, 'users')}
+                  >
+                    {user.status === 'active' ? (
+                      <>
+                        <UserX className="w-3 h-3" />
+                        Deactivate
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck className="w-3 h-3" />
+                        Activate
+                      </>
+                    )}
+                  </button>
+                ),
+              },
+            ]}
+            data={users}
+            itemsPerPage={10}
+            emptyMessage="No users found"
+            emptyIcon={Users}
+          />
         </div>
       </div>
 

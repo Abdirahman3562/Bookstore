@@ -1151,7 +1151,7 @@ export default function BlogsAdmin() {
       {/* Modal for Create/Edit */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl lg:ml-40 md:ml-40 ml-0 w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl lg:ml-40 md:ml-40 ml-0 w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
             <div className="sticky z-[10000] top-0 bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-700 dark:to-blue-700 p-6 flex items-center justify-between">
               <h2 className="text-xl font-semibold text-white">
                 {editingBlog ? "Edit Blog" : "Create New Blog"}
@@ -1571,7 +1571,7 @@ export default function BlogsAdmin() {
                   )}
 
                   {/* Editor Content */}
-                  <div className="border border-gray-300 dark:border-gray-600 rounded-b-lg h-[450px] overflow-y-auto p-4 prose prose-sm dark:prose-invert max-w-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                  <div className="border border-gray-300 dark:border-gray-600 rounded-b-lg h-[450px] overflow-y-auto scrollbar-hide p-4 prose prose-sm dark:prose-invert max-w-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                     <EditorContent editor={editor} />
                   </div>
 
@@ -1632,7 +1632,7 @@ export default function BlogsAdmin() {
               </button>
             </div>
 
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+            <div className="p-4 sm:p-6 overflow-y-auto scrollbar-hide flex-1">
               {!blogForComments.comments ||
               blogForComments.comments.length === 0 ? (
                 <div className="text-center py-12">

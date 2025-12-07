@@ -533,35 +533,108 @@ export default function Dashboard() {
 
         <div className="p-6">
           {stats.recentPurchases.length === 0 ? (
-            <div className="text-center py-8">
-              <ShoppingCart className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400">No recent purchases</p>
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
+                <ShoppingCart className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+              </div>
+              <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">No recent purchases</p>
+              <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Purchases will appear here when customers make orders</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {stats.recentPurchases.map((purchase, index) => (
-                <div key={purchase._id || index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-                  <div className="flex items-center gap-4">
+                <div
+                  key={purchase._id || index}
+                  className="group relative flex items-center gap-4 p-4 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg dark:hover:shadow-blue-900/20 transition-all duration-300 overflow-hidden"
+                >
+                  {/* Decorative gradient overlay on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-purple-500/0 group-hover:from-blue-500/5 group-hover:to-purple-500/5 transition-all duration-300 pointer-events-none"></div>
+                  
+                  {/* Book Cover with shadow effect */}
+                  <div className="relative flex-shrink-0">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg blur-sm group-hover:blur-md transition-all duration-300"></div>
                     <img
                       src={`http://localhost:3000${purchase.cover}`}
                       alt={purchase.title}
-                      className="w-12 h-16 object-cover rounded border border-gray-200 dark:border-gray-700"
+                      className="relative w-14 h-20 sm:w-16 sm:h-24 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-md group-hover:shadow-xl group-hover:scale-105 transition-all duration-300"
                       onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/48x64?text=No+Image';
+                        e.target.src = 'https://via.placeholder.com/64x96?text=No+Image';
                       }}
                     />
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white">{purchase.title}</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">by {purchase.author}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500">{purchase.userName}</p>
+                  </div>
+
+                  {/* Book Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                          {purchase.title}
+                        </h4>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">by {purchase.author}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {purchase.userAvatar ? (
+                            <img
+                              src={purchase.userAvatar.startsWith('data:') ? purchase.userAvatar : `http://localhost:3000${purchase.userAvatar}`}
+                              alt={purchase.userName}
+                              className="w-6 h-6 rounded-full object-cover border border-gray-200 dark:border-gray-600 flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                if (e.target.nextSibling) {
+                                  e.target.nextSibling.style.display = 'flex';
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <div 
+                            className={`w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center text-white text-xs font-semibold border border-gray-200 dark:border-gray-600 flex-shrink-0 ${purchase.userAvatar ? 'hidden' : ''}`}
+                            style={{ display: purchase.userAvatar ? 'none' : 'flex' }}
+                          >
+                            {purchase.userName
+                              ? purchase.userName
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .toUpperCase()
+                                  .slice(0, 2)
+                              : "U"}
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-gray-500 truncate">{purchase.userName}</p>
+                        </div>
+                      </div>
+
+                      {/* Price and Date Section */}
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg border border-green-200 dark:border-green-800">
+                          <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+                          <p className="font-bold text-green-600 dark:text-green-400 text-lg">
+                            {purchase.price}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>{new Date(purchase.timestamp).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}</span>
+                        </div>
+                        {purchase.paymentmethod && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+                            <CreditCard className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400 capitalize">
+                              {purchase.paymentmethod}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-green-600 dark:text-green-400">${purchase.price}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(purchase.timestamp).toLocaleDateString()}
-                    </p>
-                  </div>
+
+                  {/* Hover indicator */}
+                  <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
               ))}
             </div>

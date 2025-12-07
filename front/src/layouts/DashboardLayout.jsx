@@ -10,12 +10,14 @@ import {
   FiLogOut,
   FiX,
   FiMenu,
+  FiBell,
 } from "react-icons/fi";
 import DownloadsTab from "../components/Dashboard/DownloadsTab";
 import OrdersTab from "../components/Dashboard/OrdersTab";
 import OrderDetails from "../components/Dashboard/OrderDetails";
 import DashboardTab from "../components/Dashboard/DashboardTab";
 import AccountDetails  from "../components/Dashboard/AccountDetails";
+import NotificationsTab from "../components/Dashboard/NotificationsTab";
 
 
 
@@ -50,7 +52,10 @@ export default function DashboardLayout() {
       return;
     }
 
-   
+    if (path.includes("/dashboard/notifications")) {
+      setActiveTab("notifications");
+      return;
+    }
 
     if (path.includes("/dashboard/account")) {
       setActiveTab("account");
@@ -86,7 +91,8 @@ export default function DashboardLayout() {
         return <OrderDetails />;
       case "downloads":
         return <DownloadsTab />;
-     
+      case "notifications":
+        return <NotificationsTab />;
       case "account":
         return <AccountDetails />;
       default:
@@ -154,7 +160,12 @@ export default function DashboardLayout() {
           <FiDownload /> Downloads
         </button>
 
-      
+        <button
+          onClick={() => handleTabClick("notifications")}
+          className={getButtonClass("notifications")}
+        >
+          <FiBell /> Notifications
+        </button>
 
         <button
           onClick={() => handleTabClick("account")}

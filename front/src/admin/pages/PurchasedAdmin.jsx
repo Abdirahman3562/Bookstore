@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { ShoppingCart, Edit, Trash2, CheckCircle, XCircle, Clock, DollarSign, RefreshCw, RotateCcw } from "lucide-react";
 import { getCurrentAdminUser, canEdit, canDelete } from "../utils/permissions";
+import DataTable from "../components/DataTable";
 
 export default function PurchasedAdmin() {
   const [purchased, setPurchased] = useState([]);
@@ -249,140 +250,173 @@ export default function PurchasedAdmin() {
               <p className="text-gray-600 dark:text-gray-400">Orders will appear here when customers make purchases.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Customer</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Book</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Price</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Payment</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {purchased.map((order) => (
-                    <tr key={order._id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          {order.userAvatar ? (
-                            <img
-                              src={order.userAvatar}
-                              alt={order.userName}
-                              className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
-                              onError={(e) => {
-                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(order.userName)}&background=3B82F6&color=fff&size=128`;
-                              }}
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                              {order.userName
-                                ? order.userName
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")
-                                    .toUpperCase()
-                                    .slice(0, 2)
-                                : "U"}
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white text-sm">{order.userName}</p>
-                            <p className="text-gray-600 dark:text-gray-400 text-xs">{order.email}</p>
-                          </div>
+            <DataTable
+              columns={[
+                {
+                  header: "Customer",
+                  accessor: "customer",
+                  cell: (order) => (
+                    <div className="flex items-center gap-3">
+                      {order.userAvatar ? (
+                        <img
+                          src={order.userAvatar}
+                          alt={order.userName}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 flex-shrink-0"
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(order.userName)}&background=3B82F6&color=fff&size=128`;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-600 dark:bg-blue-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                          {order.userName
+                            ? order.userName
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)
+                            : "U"}
                         </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={`http://localhost:3000${order.cover}`}
-                            alt={order.title}
-                            className="w-10 h-14 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0"
-                            onError={(e) => {
-                              e.target.src = 'https://via.placeholder.com/40x56?text=No+Image';
-                            }}
-                          />
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white text-sm">{order.title}</p>
-                            <p className="text-gray-600 dark:text-gray-400 text-xs">by {order.author}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 font-semibold text-green-600 dark:text-green-400 text-sm">${order.price}</td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">{order.paymentmethod}</td>
-                      <td className="py-3 px-4">{getStatusBadge(order.status)}</td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">
-                        {new Date(order.timestamp).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex gap-1 sm:gap-2">
-                          {order.status === 'pending' && (
-                            <>
-                              <button
-                                onClick={() => updateOrderStatus(order._id, 'approved')}
-                                className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                                title={!canEdit(currentUser, 'purchased') ? "You don't have permission to approve orders" : "Approve Order"}
-                                disabled={!canEdit(currentUser, 'purchased')}
-                              >
-                                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                              </button>
-                              <button
-                                onClick={() => updateOrderStatus(order._id, 'cancelled')}
-                                className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                                title={!canEdit(currentUser, 'purchased') ? "You don't have permission to cancel orders" : "Cancel Order"}
-                                disabled={!canEdit(currentUser, 'purchased')}
-                              >
-                                <XCircle className="w-3 h-3 sm:w-3 sm:h-3" />
-                              </button>
-                            </>
-                          )}
-                          {order.status === 'approved' && (
-                            <button
-                              onClick={() => updateOrderStatus(order._id, 'active')}
-                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                              title={!canEdit(currentUser, 'purchased') ? "You don't have permission to change order status" : "Mark as Active"}
-                              disabled={!canEdit(currentUser, 'purchased')}
-                            >
-                              <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </button>
-                          )}
-                          {order.status === 'active' && (
-                            <button
-                              onClick={() => updateOrderStatus(order._id, 'pending')}
-                              className="p-1.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                              title={!canEdit(currentUser, 'purchased') ? "You don't have permission to change order status" : "Change to Pending"}
-                              disabled={!canEdit(currentUser, 'purchased')}
-                            >
-                              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </button>
-                          )}
-                          {order.status === 'cancelled' && (
-                            <button
-                              onClick={() => updateOrderStatus(order._id, 'pending')}
-                              className="p-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                              title={!canEdit(currentUser, 'purchased') ? "You don't have permission to restore orders" : "Restore Order"}
-                              disabled={!canEdit(currentUser, 'purchased')}
-                            >
-                              <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </button>
-                          )}
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">{order.userName}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">{order.email}</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  header: "Book",
+                  accessor: "book",
+                  cell: (order) => (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={`http://localhost:3000${order.cover}`}
+                        alt={order.title}
+                        className="w-10 h-14 object-cover rounded border border-gray-200 dark:border-gray-700 flex-shrink-0"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/40x56?text=No+Image';
+                        }}
+                      />
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">{order.title}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">by {order.author}</p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  header: "Price",
+                  accessor: "price",
+                  cellClassName: "font-semibold text-green-600 dark:text-green-400",
+                  cell: (order) => `$${order.price}`,
+                },
+                {
+                  header: "Payment",
+                  accessor: "paymentmethod",
+                  cellClassName: "text-gray-600 dark:text-gray-400",
+                },
+                {
+                  header: "Status",
+                  accessor: "status",
+                  cell: (order) => getStatusBadge(order.status),
+                },
+                {
+                  header: "Date",
+                  accessor: "timestamp",
+                  cellClassName: "text-gray-600 dark:text-gray-400",
+                  cell: (order) => new Date(order.timestamp).toLocaleDateString(),
+                },
+                {
+                  header: "Actions",
+                  accessor: "actions",
+                  cell: (order) => (
+                    <div className="flex gap-1 sm:gap-2">
+                      {order.status === 'pending' && (
+                        <>
                           <button
-                            onClick={() => showDeleteModal(order)}
-                            className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                            title={!canDelete(currentUser, 'purchased') ? "You don't have permission to delete orders" : "Delete Order"}
-                            disabled={!canDelete(currentUser, 'purchased')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateOrderStatus(order._id, 'approved');
+                            }}
+                            className="p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            title={!canEdit(currentUser, 'purchased') ? "You don't have permission to approve orders" : "Approve Order"}
+                            disabled={!canEdit(currentUser, 'purchased')}
                           >
-                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateOrderStatus(order._id, 'cancelled');
+                            }}
+                            className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            title={!canEdit(currentUser, 'purchased') ? "You don't have permission to cancel orders" : "Cancel Order"}
+                            disabled={!canEdit(currentUser, 'purchased')}
+                          >
+                            <XCircle className="w-3 h-3 sm:w-3 sm:h-3" />
+                          </button>
+                        </>
+                      )}
+                      {order.status === 'approved' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order._id, 'active');
+                          }}
+                          className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          title={!canEdit(currentUser, 'purchased') ? "You don't have permission to change order status" : "Mark as Active"}
+                          disabled={!canEdit(currentUser, 'purchased')}
+                        >
+                          <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      )}
+                      {order.status === 'active' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order._id, 'pending');
+                          }}
+                          className="p-1.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          title={!canEdit(currentUser, 'purchased') ? "You don't have permission to change order status" : "Change to Pending"}
+                          disabled={!canEdit(currentUser, 'purchased')}
+                        >
+                          <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      )}
+                      {order.status === 'cancelled' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order._id, 'pending');
+                          }}
+                          className="p-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          title={!canEdit(currentUser, 'purchased') ? "You don't have permission to restore orders" : "Restore Order"}
+                          disabled={!canEdit(currentUser, 'purchased')}
+                        >
+                          <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showDeleteModal(order);
+                        }}
+                        className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                        title={!canDelete(currentUser, 'purchased') ? "You don't have permission to delete orders" : "Delete Order"}
+                        disabled={!canDelete(currentUser, 'purchased')}
+                      >
+                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </button>
+                    </div>
+                  ),
+                },
+              ]}
+              data={purchased}
+              itemsPerPage={10}
+              emptyMessage="No orders yet"
+              emptyIcon={ShoppingCart}
+            />
           )}
         </div>
       </div>

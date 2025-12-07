@@ -2,6 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Scrollbar Hide Styles */
+.scrollbar-hide {
+  -ms-overflow-style: none;     /* IE/Edge */
+  scrollbar-width: none;        /* Firefox */
+  scrollbar-gutter: stable;     /* optional */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Print Styles */
+@media print {
+  .noPrint {
+    display: none !important;
+  }
+}
+
 
 /* Sliding text animation */
 @keyframes marquee {
@@ -32,6 +51,62 @@
 
 .animate-slideUp {
   animation: slideUp 0.5s ease-in forwards;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Crisp Chat Widget - Smaller Compact Size */
+#crisp-chatbox {
+  width: 380px !important;
+  height: 520px !important;
+  max-width: 90vw !important;
+  max-height: 80vh !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+#crisp-chatbox iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 16px !important;
+}
+
+/* Chat button size - smaller */
+#crisp-chatbox-button {
+  width: 56px !important;
+  height: 56px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Make chat window more compact */
+.crisp-client--box {
+  max-width: 380px !important;
+  max-height: 520px !important;
+}
+
+/* Responsive - smaller on mobile */
+@media (max-width: 640px) {
+  #crisp-chatbox {
+    width: calc(100vw - 16px) !important;
+    height: calc(100vh - 80px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 80px) !important;
+    border-radius: 12px !important;
+  }
 }
 
 
