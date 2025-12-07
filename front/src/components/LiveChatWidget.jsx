@@ -585,25 +585,18 @@ export default function LiveChatWidget() {
       {!isOpen && (
         <button
           onClick={handleOpenChat}
-          className="group relative bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 hover:from-blue-600 hover:via-blue-600 hover:to-blue-600 text-white rounded-full p-4 shadow-2xl hover:shadow-purple-500/50 transition-all duration-500 transform hover:scale-110 flex items-center justify-center w-16 h-16 overflow-visible"
-          style={{
-            animation: 'pulse-glow 2s ease-in-out infinite',
-            boxShadow: '0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3)'
-          }}
+          className="relative bg-blue-600 hover:bg-blue-500 text-white rounded-full p-4 shadow-lg transition-all duration-300 flex items-center justify-center w-16 h-16 overflow-visible"
           aria-label="Live Chat"
         >
-          {/* Animated gradient ring */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 opacity-75 animate-spin-slow blur-sm"></div>
-          
           {/* Main button content */}
           <div className="relative z-10">
-            <MessageCircle className="w-7 h-7 drop-shadow-lg" />
+            <MessageCircle className="w-7 h-7" />
           </div>
           
           {/* Green online indicator - only show when no unread messages */}
           {unreadCount === 0 && (
             <span 
-              className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white dark:border-gray-800 z-20"
+              className="absolute -top-1 right-1 w-3.5 h-3.5 bg-blue-600 rounded-full border-2 border-white dark:border-gray-800 z-20"
               style={{
                 animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
                 boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.7)'
@@ -623,36 +616,11 @@ export default function LiveChatWidget() {
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
-          
-          {/* Hover glow effect */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-50 blur-xl transition-opacity duration-500"></div>
         </button>
       )}
       
       {/* Custom CSS animations */}
       <style>{`
-        @keyframes pulse-glow {
-          0%, 100% {
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5), 0 0 40px rgba(59, 130, 246, 0.3);
-          }
-          50% {
-            box-shadow: 0 0 30px rgba(139, 92, 246, 0.8), 0 0 60px rgba(59, 130, 246, 0.5);
-          }
-        }
-        
-        @keyframes spin-slow {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-        
-        .animate-spin-slow {
-          animation: spin-slow 8s linear infinite;
-        }
-        
         @keyframes bounce-subtle {
           0%, 100% {
             transform: translateY(0);
