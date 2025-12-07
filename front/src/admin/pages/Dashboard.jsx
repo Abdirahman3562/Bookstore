@@ -26,7 +26,8 @@ export default function Dashboard() {
 
   const [stats, setStats] = useState({
     totalBooks: 0,
-    totalUsers: 4, // As mentioned by user
+    totalClientUsers: 0,
+    totalAdminUsers: 0,
     totalDownloads: 0,
     totalRevenue: 0,
     totalPurchases: 0,
@@ -72,18 +73,24 @@ export default function Dashboard() {
       }
 
       // Fetch data from multiple endpoints
-      const [booksRes, downloadsRes, purchasesRes] = await Promise.all([
+      const [booksRes, downloadsRes, purchasesRes, usersRes, adminsRes] = await Promise.all([
         axios.get("http://localhost:3000/api/books"),
         axios.get("http://localhost:3000/api/downloads"),
-        axios.get("http://localhost:3000/api/purchased")
+        axios.get("http://localhost:3000/api/purchased"),
+        axios.get("http://localhost:3000/api/users"),
+        axios.get("http://localhost:3000/api/admins")
       ]);
 
       const books = booksRes.data.data || [];
       const downloads = downloadsRes.data.data || [];
       const purchases = purchasesRes.data.data || [];
+      const clientUsers = usersRes.data.data || [];
+      const adminUsers = adminsRes.data.data || [];
 
       // Calculate statistics
       const totalBooks = books.length;
+      const totalClientUsers = clientUsers.length;
+      const totalAdminUsers = adminUsers.length;
       const totalDownloads = downloads.length;
       const totalPurchases = purchases.length;
       const totalRevenue = purchases.reduce((sum, purchase) => sum + (purchase.price || 0), 0);
@@ -97,7 +104,8 @@ export default function Dashboard() {
 
       setStats({
         totalBooks,
-        totalUsers: 4, // As specified by user
+        totalClientUsers,
+        totalAdminUsers,
         totalDownloads,
         totalRevenue,
         totalPurchases,
@@ -112,22 +120,50 @@ export default function Dashboard() {
         { name: 'Paid Downloads', value: paidDownloads, color: '#3B82F6' }
       ];
 
+      // Calculate real user statistics
       const userStatsData = [
-        { name: 'Active Users', value: 3, color: '#10B981' },
-        { name: 'Inactive Users', value: 1, color: '#EF4444' },
-        { name: 'Premium Users', value: 2, color: '#8B5CF6' }
+        { name: 'Client Users', value: totalClientUsers, color: '#10B981' },
+        { name: 'Admin Users', value: totalAdminUsers, color: '#3B82F6' },
+        { name: 'Total Users', value: totalClientUsers + totalAdminUsers, color: '#8B5CF6' }
       ];
 
-      // Mock revenue trend data (last 7 days)
-      const revenueTrendData = [
-        { day: 'Mon', revenue: 25.50 },
-        { day: 'Tue', revenue: 45.75 },
-        { day: 'Wed', revenue: 32.25 },
-        { day: 'Thu', revenue: 67.80 },
-        { day: 'Fri', revenue: 89.30 },
-        { day: 'Sat', revenue: 54.90 },
-        { day: 'Sun', revenue: totalRevenue }
-      ];
+      // Calculate real revenue trend data (last 7 days)
+      const today = new Date();
+      const last7Days = [];
+      
+      // Generate last 7 days with day names
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        last7Days.push({
+          date: date,
+          day: dayNames[date.getDay()],
+          revenue: 0
+        });
+      }
+      
+      // Calculate revenue for each day from purchases
+      purchases.forEach(purchase => {
+        if (purchase.timestamp) {
+          const purchaseDate = new Date(purchase.timestamp);
+          // Check if purchase is within last 7 days
+          const daysDiff = Math.floor((today - purchaseDate) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff >= 0 && daysDiff < 7) {
+            // Find the day in last7Days array
+            const dayIndex = 6 - daysDiff;
+            if (dayIndex >= 0 && dayIndex < last7Days.length) {
+              last7Days[dayIndex].revenue += purchase.price || 0;
+            }
+          }
+        }
+      });
+      
+      const revenueTrendData = last7Days.map(day => ({
+        day: day.day,
+        revenue: parseFloat(day.revenue.toFixed(2))
+      }));
 
       // Mock downloads trend data
       const downloadsTrendData = [
@@ -236,8 +272,17 @@ export default function Dashboard() {
             <Activity className="w-5 h-5 opacity-60" />
           </div>
           <div>
-            <p className="text-green-100 dark:text-teal-200 text-sm font-medium">Total Users</p>
-            <p className="text-3xl font-bold">{stats.totalUsers}</p>
+            <p className="text-green-100 dark:text-teal-200 text-sm font-medium mb-2">Total Users</p>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-green-100 dark:text-teal-200 text-xs">Client Users:</span>
+                <p className="text-2xl font-bold">{stats.totalClientUsers}</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-green-100 dark:text-teal-200 text-xs">Admin Users:</span>
+                <p className="text-2xl font-bold">{stats.totalAdminUsers}</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -359,7 +404,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
               <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                Total Users: {stats.totalUsers}
+                Total Users: {stats.totalClientUsers + stats.totalAdminUsers}
               </div>
             </div>
           </div>
@@ -676,7 +721,7 @@ export default function Dashboard() {
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
           <BarChart3 className="w-6 h-6 text-gray-600 dark:text-gray-400 mx-auto mb-2" />
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {stats.totalUsers > 0 ? Math.round(stats.totalDownloads / stats.totalUsers) : 0}
+            {stats.totalClientUsers > 0 ? Math.round(stats.totalDownloads / stats.totalClientUsers) : 0}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">Downloads per User</p>
         </div>
