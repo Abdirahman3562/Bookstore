@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { canView } from "../utils/permissions";
 
 // Map routes to their required permissions
 const routePermissions = {
@@ -69,19 +70,12 @@ export default function PermissionProtectedRoute({ children, requiredPermission 
             
             if (admin) {
               setCurrentUser(admin);
-              // Check if user has permission - always check granular permissions
-              if (admin.permissions) {
-                // Check for granular permissions (view action)
-                const sectionPerms = admin.permissions[routePermission];
-                if (sectionPerms && (sectionPerms.view === true || sectionPerms === true)) {
-                  setHasAccess(true);
-                } else {
-                  setHasAccess(false);
-                  toast.error("You don't have permission to access this page");
-                }
+              // Check if user has view permission using canView utility
+              if (canView(admin, routePermission)) {
+                setHasAccess(true);
               } else {
                 setHasAccess(false);
-                toast.error("You don't have permission to access this page");
+                // Don't show toast - silently redirect
               }
               setLoading(false);
               return;
@@ -97,19 +91,12 @@ export default function PermissionProtectedRoute({ children, requiredPermission 
           
           if (user) {
             setCurrentUser(user);
-            // Check if user has permission - always check granular permissions
-            if (user.permissions) {
-              // Check for granular permissions (view action)
-              const sectionPerms = user.permissions[routePermission];
-              if (sectionPerms && (sectionPerms.view === true || sectionPerms === true)) {
-                setHasAccess(true);
-              } else {
-                setHasAccess(false);
-                toast.error("You don't have permission to access this page");
-              }
+            // Check if user has view permission using canView utility
+            if (canView(user, routePermission)) {
+              setHasAccess(true);
             } else {
               setHasAccess(false);
-              toast.error("You don't have permission to access this page");
+              // Don't show toast - silently redirect
             }
           } else {
             setHasAccess(false);
@@ -151,16 +138,16 @@ export default function PermissionProtectedRoute({ children, requiredPermission 
       authors: "/admin/authors",
       blogs: "/admin/blogs",
       contacts: "/admin/contacts",
-      websiteSettings: "/admin/website-settings"
+      websiteSettings: "/admin/website-settings",
+      liveChat: "/admin/live-chat"
     };
 
-    let redirectPath = "/admin/blogs"; // Default fallback
+    let redirectPath = "/admin/dashboard"; // Default fallback
 
-    if (currentUser && currentUser.permissions) {
-      // Find first allowed page based on permissions
+    if (currentUser) {
+      // Find first allowed page based on permissions using canView utility
       for (const [key, path] of Object.entries(permissionRoutes)) {
-        const sectionPerms = currentUser.permissions[key];
-        if (sectionPerms && (sectionPerms.view === true || sectionPerms === true)) {
+        if (canView(currentUser, key)) {
           redirectPath = path;
           break;
         }

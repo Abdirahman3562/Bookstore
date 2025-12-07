@@ -119,4 +119,14 @@ export const canReplyToComments = (user) => hasPermission(user, 'blogComments', 
  */
 export const canDeleteComments = (user) => hasPermission(user, 'blogComments', 'delete');
 
+/**
+ * Check if user can view live chat
+ */
+export const canViewLiveChat = (user) => hasPermission(user, 'liveChat', 'view');
+
+/**
+ * Check if user can reply to messages in live chat
+ */
+export const canReplyLiveChat = (user) => hasPermission(user, 'liveChat', 'reply');
+
 

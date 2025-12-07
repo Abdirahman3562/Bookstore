@@ -25,6 +25,8 @@ export default function BooksAdmin() {
   const [deleteModal, setDeleteModal] = useState({ show: false, book: null });
   const [lastUpdated, setLastUpdated] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleString());
+
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -197,6 +199,13 @@ export default function BooksAdmin() {
     loadUser();
     fetchBooks();
   }, []);
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleString());
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, []);
 
   // Update publisher when currentUser changes and form is shown
   useEffect(() => {
@@ -221,7 +230,7 @@ export default function BooksAdmin() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
               <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
-                Last updated: {lastUpdated}
+                Last updated: {currentTime}
               </span>
             )}
             <div className="flex gap-2">

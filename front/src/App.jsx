@@ -28,7 +28,7 @@ import SinglePostPage from "./pages/SinglePostPage";
 import ScrollToTop from "./pages/ScrollToTop";
 import HerroSlider from "./components/Home/HerroSlider";
 import VerifyEmail from "./pages/VerifyEmail";
-import CrispChat from "./components/CrispChat";
+import LiveChatWidget from "./components/LiveChatWidget";
 
 // admin
 import AdminLogin from "./admin/pages/AdminLogin";
@@ -74,7 +74,7 @@ function App() {
       {!isAdminRoute && !isAuthRoute && <DiscountAlert />}
       {!isAdminRoute && !isAuthRoute && <Navbar />}
       {!isAdminRoute && !isAuthRoute && isHomePage && <HerroSlider />}
-      {!isAdminRoute && !isAuthRoute && <CrispChat />}
+      {!isAdminRoute && !isAuthRoute && <LiveChatWidget />}
 
       {/* Wrapper size (public only) */}
       <div className={`${!isAdminRoute && !isAuthRoute ? "w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" : isAuthRoute ? "w-full" : ""}`}>

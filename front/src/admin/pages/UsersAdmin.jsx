@@ -11,6 +11,8 @@ export default function UsersAdmin() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleString());
+
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -107,6 +109,14 @@ export default function UsersAdmin() {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleString());
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, []);
+
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
@@ -130,7 +140,7 @@ export default function UsersAdmin() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
               <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
-                Last updated: {lastUpdated}
+                Last updated: {currentTime}
               </span>
             )}
             <button

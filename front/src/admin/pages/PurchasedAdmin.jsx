@@ -12,6 +12,8 @@ export default function PurchasedAdmin() {
   const [deleteModal, setDeleteModal] = useState({ show: false, order: null });
   const [lastUpdated, setLastUpdated] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleString());
+
   const [stats, setStats] = useState({
     totalSales: 0,
     totalOrders: 0,
@@ -161,6 +163,14 @@ export default function PurchasedAdmin() {
     fetchPurchased();
   }, []);
 
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleString());
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, []);
+
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
@@ -184,7 +194,7 @@ export default function PurchasedAdmin() {
           <div className="flex items-center gap-3">
             {lastUpdated && (
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                Last updated: {lastUpdated}
+                Last updated: {currentTime}
               </span>
             )}
             <button

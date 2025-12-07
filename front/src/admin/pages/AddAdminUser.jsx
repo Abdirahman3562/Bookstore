@@ -29,7 +29,8 @@ export default function AddAdminUser() {
       blogComments: { view: false, reply: false, delete: false },
       contacts: { view: false, add: false, edit: false, delete: false },
       websiteSettings: { view: false, add: false, edit: false, delete: false },
-      addAdminUser: { view: false, add: false, edit: false, delete: false }
+      addAdminUser: { view: false, add: false, edit: false, delete: false },
+      liveChat: { view: false, reply: false }
     }
   });
 
@@ -50,10 +51,35 @@ export default function AddAdminUser() {
       const user = await getCurrentAdminUser();
       setCurrentUser(user);
       
-      // Check if user has view permission - if not, redirect
+      // Check if user has view permission - if not, redirect silently
       if (!canView(user, 'addAdminUser')) {
-        toast.error("You don't have permission to view this page");
-        navigate("/admin/admin-users");
+        // Redirect to first available page user has permission for
+        const permissionRoutes = {
+          dashboard: "/admin/dashboard",
+          books: "/admin/books",
+          downloads: "/admin/downloads",
+          purchased: "/admin/purchased",
+          testimonials: "/admin/testimonials",
+          users: "/admin/users",
+          authors: "/admin/authors",
+          blogs: "/admin/blogs",
+          contacts: "/admin/contacts",
+          websiteSettings: "/admin/website-settings",
+          liveChat: "/admin/live-chat"
+        };
+        
+        let redirectPath = "/admin/dashboard"; // Default fallback
+        
+        if (user && user.permissions) {
+          for (const [key, path] of Object.entries(permissionRoutes)) {
+            if (canView(user, key)) {
+              redirectPath = path;
+              break;
+            }
+          }
+        }
+        
+        navigate(redirectPath);
       }
     };
     
@@ -104,9 +130,19 @@ export default function AddAdminUser() {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:3000/api/admins", {
-        ...formData
-      });
+      // Prepare data to send - ensure authorId is null if empty, and permissions are properly structured
+      const submitData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        adminRole: formData.adminRole,
+        authorId: formData.authorId && formData.authorId.trim() !== "" ? formData.authorId : null,
+        permissions: formData.permissions
+      };
+      
+      console.log("Submitting admin user data:", submitData);
+      
+      const response = await axios.post("http://localhost:3000/api/admins", submitData);
 
       if (response.data.success) {
         toast.success("Admin user created successfully!");
@@ -114,6 +150,7 @@ export default function AddAdminUser() {
       }
     } catch (error) {
       console.error("Error creating admin user:", error);
+      console.error("Error response:", error.response?.data);
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
@@ -136,7 +173,8 @@ export default function AddAdminUser() {
     blogComments: "Blog Comments",
     contacts: "Contacts",
     websiteSettings: "Website Settings",
-    addAdminUser: "Add Admin User"
+    addAdminUser: "Add Admin User",
+    liveChat: "Live Chat"
   };
 
   const actionLabels = {
@@ -161,7 +199,8 @@ export default function AddAdminUser() {
     blogComments: ["view", "reply", "delete"], // Blog Comments has view, reply, delete (no add)
     contacts: ["view", "edit", "delete"], // Contacts has view, edit (reply, mark as read), delete (no add)
     websiteSettings: ["view", "edit"], // Website Settings has view and edit (no add/delete)
-    addAdminUser: ["view", "add", "edit", "delete"] // Add Admin User has all actions
+    addAdminUser: ["view", "add", "edit", "delete"], // Add Admin User has all actions
+    liveChat: ["view", "reply"] // Live Chat has view and reply (send messages to users)
   };
 
   return (
@@ -353,6 +392,22 @@ export default function AddAdminUser() {
                     ))}
                   </div>
                 )}
+                
+                {/* Show selected author name */}
+                {formData.authorId && (
+                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm font-semibold text-blue-900 dark:text-blue-200">
+                        Selected Author:
+                      </span>
+                      <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                        {authors.find(a => a._id === formData.authorId)?.name || "Unknown Author"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
                   This will link the admin user to the selected author profile. When this author logs in, they will see comments on their blogs.
                 </p>
@@ -378,6 +433,8 @@ export default function AddAdminUser() {
                     defaultPerms = { view: false, reply: false, delete: false };
                   } else if (sectionKey === 'downloads') {
                     defaultPerms = { view: false, add: false, edit: false, delete: false, revoke: false };
+                  } else if (sectionKey === 'liveChat') {
+                    defaultPerms = { view: false, reply: false };
                   } else {
                     defaultPerms = { view: false, add: false, edit: false, delete: false };
                   }
@@ -424,7 +481,7 @@ export default function AddAdminUser() {
                                 sectionPerms[actionKey]
                                   ? "bg-blue-50 dark:bg-blue-900/30"
                                   : "bg-gray-50 dark:bg-gray-700/50"
-                              }`}
+                              } ${!canAdd(currentUser, 'addAdminUser') ? "opacity-50 cursor-not-allowed" : ""}`}
                             >
                               <input
                                 type="checkbox"

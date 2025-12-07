@@ -1,174 +1,798 @@
-import { MessageCircle, ExternalLink, Users, Clock, CheckCircle, MessageSquare, ArrowRight, Zap } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { MessageCircle, Send, User, CheckCircle2, Circle, ArrowLeft, RotateCcw } from "lucide-react";
+import toast from "react-hot-toast";
+import { getCurrentAdminUser, canReplyLiveChat } from "../utils/permissions";
 
 export default function LiveChatAdmin() {
-  // Crisp inbox URL
-  const crispInboxUrl = "https://app.crisp.chat/website/5d982106-8342-48e2-b6ab-2b2b405b48ed/inbox/";
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const messagesEndRef = useRef(null);
+  const messageCountsRef = useRef({});
+  const previousUnreadCountsRef = useRef({}); // Track previous unread counts per conversation
+  const isInitialLoadRef = useRef(true); // Track if this is the first load
+  const [currentAdmin, setCurrentAdmin] = useState({ name: "Admin", avatar: "", email: "" });
+  const [openedConversations, setOpenedConversations] = useState(new Set());
+  const [notifiedMessages, setNotifiedMessages] = useState(new Set());
+  const [canSendMessages, setCanSendMessages] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleString());
 
-  const handleOpenCrisp = () => {
-    window.open(crispInboxUrl, "_blank", "noopener,noreferrer");
+  // Fetch current admin info
+  const fetchCurrentAdmin = async () => {
+    try {
+      const adminUser = await getCurrentAdminUser();
+      
+      if (adminUser) {
+        const adminInfo = {
+          name: adminUser.name || adminUser.email?.split('@')[0] || "Admin",
+          avatar: adminUser.avatar || "",
+          email: adminUser.email || ""
+        };
+        
+        console.log("Setting current admin:", adminInfo);
+        console.log("Admin user data:", adminUser);
+        
+        setCurrentAdmin(adminInfo);
+        
+        // Check if admin has permission to send messages (reply permission)
+        const hasReplyPermission = canReplyLiveChat(adminUser);
+        setCanSendMessages(hasReplyPermission);
+      } else {
+        const adminEmail = localStorage.getItem("admin_email");
+        if (adminEmail) {
+          // Try admins API first
+          try {
+            const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+            const admins = adminsResponse.data.data || [];
+            const admin = admins.find(a => a.email === adminEmail);
+            if (admin) {
+              setCurrentAdmin({
+                name: admin.name || adminEmail.split('@')[0],
+                avatar: admin.avatar || "",
+                email: admin.email
+              });
+              // Check permission
+              const hasReplyPermission = canReplyLiveChat(admin);
+              setCanSendMessages(hasReplyPermission);
+              return;
+            }
+          } catch (error) {
+            console.log("Admins API not available");
+          }
+
+          // Fallback to users API
+          const usersResponse = await axios.get("http://localhost:3000/api/users");
+          const users = usersResponse.data.data || [];
+          const user = users.find(u => u.email === adminEmail);
+          if (user) {
+            setCurrentAdmin({
+              name: user.name || adminEmail.split('@')[0],
+              avatar: user.avatar || "",
+              email: user.email
+            });
+            // Check permission
+            const hasReplyPermission = canReplyLiveChat(user);
+            setCanSendMessages(hasReplyPermission);
+          } else {
+            setCurrentAdmin({
+              name: adminEmail.split('@')[0],
+              avatar: "",
+              email: adminEmail
+            });
+            setCanSendMessages(false);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching admin info:", error);
+      setCanSendMessages(false);
+    }
   };
 
+  // Fetch conversations
+  const fetchConversations = async (showRefreshIndicator = false) => {
+    try {
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      }
+      
+      const response = await axios.get("http://localhost:3000/api/chat/conversations");
+      if (response.data.success) {
+        const convs = response.data.data || [];
+        
+        // Check for new unread messages and play sound (skip on initial load)
+        if (!isInitialLoadRef.current) {
+          convs.forEach(conv => {
+            const previousUnreadCount = previousUnreadCountsRef.current[conv.userId] || 0;
+            const currentUnreadCount = conv.unreadCount || 0;
+            
+            // Play sound whenever unread count increases (user sent new message)
+            if (currentUnreadCount > previousUnreadCount) {
+              // Create a unique key based on conversation and unread count
+              const notificationKey = `unread-${conv.userId}-${currentUnreadCount}`;
+              
+              // Only play sound if we haven't notified for this specific unread count
+              if (!notifiedMessages.has(notificationKey)) {
+                // User sent new message - play sound
+                playNotificationSound();
+                setNotifiedMessages(prev => new Set(prev).add(notificationKey));
+              }
+            }
+            
+            // Update previous unread count
+            previousUnreadCountsRef.current[conv.userId] = currentUnreadCount;
+          });
+        } else {
+          // On initial load, just populate the refs without playing sound
+          convs.forEach(conv => {
+            previousUnreadCountsRef.current[conv.userId] = conv.unreadCount || 0;
+          });
+          isInitialLoadRef.current = false;
+        }
+        
+        // Sort like Messenger: Unread conversations first, then by lastActivity
+        const sortedConvs = [...convs].sort((a, b) => {
+          const aUnread = a.unreadCount > 0;
+          const bUnread = b.unreadCount > 0;
+          
+          // Unread conversations come first
+          if (aUnread && !bUnread) return -1;
+          if (!aUnread && bUnread) return 1;
+          
+          // Within same unread status, sort by lastActivity (most recent first)
+          const dateA = new Date(a.lastActivity);
+          const dateB = new Date(b.lastActivity);
+          return dateB - dateA;
+        });
+        setConversations(sortedConvs);
+        setLastUpdated(new Date().toLocaleString());
+      }
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Fetch unread count
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/chat/unread-count");
+      if (response.data.success) {
+        setUnreadCount(response.data.data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  };
+
+  // Manual refresh handler
+  const handleRefresh = async () => {
+    await Promise.all([
+      fetchConversations(true),
+      fetchUnreadCount()
+    ]);
+    if (selectedConversation) {
+      await fetchMessages(selectedConversation.userId);
+    }
+    toast.success("Chat refreshed!");
+  };
+
+  // Format time ago
+  const formatTimeAgo = (date) => {
+    if (!date) return "";
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return date.toLocaleTimeString();
+  };
+
+
+  // Play system notification sound
+  const playNotificationSound = () => {
+    try {
+      // Use audio file from public folder
+      const audio = new Audio("/mixkit-message-pop-alert-2354.mp3");
+      audio.volume = 0.7;
+      audio.play().catch((error) => {
+        console.log("Could not play notification sound:", error);
+      });
+      
+      // Also show browser notification if permission is granted
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("New Message", {
+          body: "You have a new message",
+          icon: "/favicon.ico",
+          silent: true, // We're playing our own sound, so make notification silent
+          tag: "chat-notification"
+        });
+      }
+    } catch (error) {
+      console.log("Could not play notification sound:", error);
+    }
+  };
+
+  // Fetch messages for selected conversation
+  const fetchMessages = async (userId, previousMessagesCount = null) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/api/chat/messages/${userId}`);
+      if (response.data.success) {
+        const previousMessages = messages;
+        const newMessages = response.data.data || [];
+        const previousCount = previousMessagesCount !== null ? previousMessagesCount : previousMessages.length;
+        const newCount = newMessages.length;
+        
+        // Check for new messages (for auto-scroll only, no sound here)
+        const hasNewMessages = newCount > previousCount && previousCount >= 0;
+        
+        setMessages(newMessages);
+        
+        // Auto-scroll to bottom when new messages arrive
+        if (hasNewMessages) {
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          }, 100);
+        }
+        
+        // Mark as read
+        await axios.patch(`http://localhost:3000/api/chat/read/${userId}`);
+        fetchUnreadCount();
+        fetchConversations();
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      toast.error("Failed to load messages");
+    }
+  };
+
+  // Send message
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation || !canSendMessages) {
+      if (!canSendMessages) {
+        toast.error("You don't have permission to send messages. You can only view conversations.");
+      }
+      return;
+    }
+
+    setSending(true);
+    try {
+      // Ensure we have the latest admin info before sending
+      const adminUser = await getCurrentAdminUser();
+      const adminName = adminUser?.name || currentAdmin.name || "Admin";
+      const adminAvatar = adminUser?.avatar || currentAdmin.avatar || "";
+      const adminEmail = adminUser?.email || currentAdmin.email || "";
+      
+      console.log("Sending message with admin info:", {
+        adminName,
+        adminAvatar,
+        adminEmail,
+        currentAdmin,
+        adminUser
+      });
+      
+      await axios.post("http://localhost:3000/api/chat/send", {
+        userId: selectedConversation.userId,
+        message: newMessage.trim(),
+        sender: "admin",
+        adminId: adminEmail,
+        adminName: adminName,
+        adminAvatar: adminAvatar
+      });
+
+      setNewMessage("");
+      await fetchMessages(selectedConversation.userId);
+      fetchConversations();
+      toast.success("Message sent!");
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Handle conversation select
+  const handleSelectConversation = (conversation) => {
+    setSelectedConversation(conversation);
+    // Mark conversation as opened
+    setOpenedConversations(prev => new Set(prev).add(conversation.userId));
+    
+    // Play sound only if there are unread messages when opening the conversation
+    if (conversation.unreadCount > 0) {
+      playNotificationSound();
+    }
+    
+    fetchMessages(conversation.userId);
+  };
+
+  // Handle back to conversations list (mobile)
+  const handleBackToConversations = () => {
+    setSelectedConversation(null);
+  };
+
+  // Check if user is online (logged in and active within last 5 minutes)
+  const isUserOnline = (lastActivity, userId) => {
+    // First check if user is logged in by checking localStorage or API
+    // For now, we assume if lastActivity is recent, user is logged in and active
+    if (!lastActivity) return false;
+    const lastActiveDate = new Date(lastActivity);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - lastActiveDate) / 1000 / 60);
+    // Online if active within last 5 minutes (meaning user is logged in and active)
+    return diffInMinutes < 5;
+  };
+
+  // Check if admin is logged in
+  const isAdminLoggedIn = () => {
+    return !!localStorage.getItem("admin_email");
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    });
+  };
+
+  useEffect(() => {
+    fetchCurrentAdmin();
+    fetchConversations();
+    fetchUnreadCount();
+    
+    // Don't play sound when admin enters - only play when opening conversations with unread messages
+    
+    // Real-time: Refresh every 2 seconds
+    const interval = setInterval(() => {
+      fetchConversations();
+      fetchUnreadCount();
+      if (selectedConversation) {
+        const userId = selectedConversation.userId;
+        const previousCount = messageCountsRef.current[userId] || messages.length;
+        fetchMessages(userId, previousCount);
+      }
+      setLastUpdated(new Date().toLocaleString());
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [selectedConversation]);
+  
+  // Update message count ref when messages change
+  useEffect(() => {
+    if (selectedConversation) {
+      messageCountsRef.current[selectedConversation.userId] = messages.length;
+    }
+  }, [messages.length, selectedConversation]);
+
+  // Auto-scroll to bottom when messages change (if conversation is selected)
+  useEffect(() => {
+    if (selectedConversation && messages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, [messages.length, selectedConversation]);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Update current time every second for live timer
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleString());
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, []);
+
+  // Sound playing is now handled in fetchConversations when unread count increases
+
   return (
-    <div className="w-full h-full">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+    <div className="w-full h-full flex flex-col">
+      {/* Header - Hidden on mobile when in chat view */}
+      <div className={`mb-6 ${selectedConversation ? 'hidden lg:block' : ''}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <MessageCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Live Chat Management</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                View and respond to customer messages in real-time
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Live Chat Management</h1>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {unreadCount > 0 ? `${unreadCount} unread message${unreadCount > 1 ? 's' : ''}` : 'No unread messages'}
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Users className="w-5 h-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Active Chats</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">Real-time</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Response Time</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">Instant</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">Connected</p>
-              </div>
-            </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+            {lastUpdated && (
+              <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
+                Last updated: {currentTime}
+              </span>
+            )}
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:cursor-not-allowed rounded-lg transition-colors text-gray-700 dark:text-gray-300 w-[110px] sm:w-auto"
+              title="Refresh chat"
+            >
+              <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content - Crisp Inbox Access */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg p-8 md:p-12">
-        <div className="max-w-2xl mx-auto text-center">
-          {/* Icon */}
-          <div className="mb-6 flex justify-center">
-            <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg">
-              <MessageSquare className="w-12 h-12 text-white" />
-            </div>
+      {/* Main Chat Interface */}
+      <div className="flex-1 flex gap-4 min-h-0">
+        {/* Conversations List - Full screen on mobile when no chat selected, side panel on desktop */}
+        <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex-col h-full`}>
+          {/* Fixed Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <h2 className="font-semibold text-gray-900 dark:text-white">Conversations</h2>
           </div>
-
-          {/* Title */}
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Access Your Live Chat Inbox
-          </h2>
           
-          {/* Description */}
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-            Manage all customer conversations, view chat history, and respond to messages in real-time through the Crisp dashboard.
-          </p>
-
-          {/* CTA Button */}
-          <button
-            onClick={handleOpenCrisp}
-            className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 mb-8"
-          >
-            <Zap className="w-5 h-5" />
-            Open Crisp Inbox
-            <ArrowRight className="w-5 h-5" />
-          </button>
-
-          {/* Features List */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-8">
-            <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Real-time Messaging</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Chat with customers instantly as they message you
-                </p>
+          {/* Scrollable List */}
+          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0">
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
               </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Chat History</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  View all previous conversations and customer details
-                </p>
+            ) : conversations.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No conversations yet</p>
               </div>
-            </div>
+            ) : (
+              conversations.map((conv) => {
+                const isOpened = openedConversations.has(conv.userId);
+                const hasUnread = conv.unreadCount > 0;
+                // Messenger style: Show for any conversation with unread messages (regardless of opened status)
+                const showMessengerStyle = hasUnread;
+                
+                return (
+                <button
+                  key={conv.userId}
+                  onClick={() => handleSelectConversation(conv)}
+                  className={`w-full p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 transition-all text-left relative ${
+                    selectedConversation?.userId === conv.userId
+                      ? "bg-blue-50 dark:bg-blue-900/20"
+                      : showMessengerStyle
+                      ? "bg-blue-50 dark:bg-blue-900/15 hover:bg-blue-100 dark:hover:bg-blue-900/20 border-l-4 border-l-blue-500"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  } ${
+                    !hasUnread && isOpened
+                      ? "opacity-60"
+                      : ""
+                  } active:bg-gray-100 dark:active:bg-gray-700`}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Avatar with Online Indicator - Messenger Style */}
+                    <div className="flex-shrink-0 relative">
+                      {conv.userAvatar ? (
+                        <img
+                          src={conv.userAvatar}
+                          alt={conv.userName}
+                          className={`w-12 h-12 md:w-14 md:h-14 rounded-full object-cover ${
+                            showMessengerStyle ? "ring-2 ring-blue-400/50" : ""
+                          }`}
+                        />
+                      ) : (
+                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center ${
+                          showMessengerStyle ? "ring-2 ring-blue-400/50" : ""
+                        }`}>
+                          <User className="w-6 h-6 md:w-7 md:h-7 text-blue-600 dark:text-blue-400" />
+                        </div>
+                      )}
+                      {/* Online Indicator - Only show if user is logged in and online */}
+                      {isUserOnline(conv.lastActivity, conv.userId) && (
+                        <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                      )}
+                    </div>
 
-            <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Customer Info</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  See customer email, name, and browsing history
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Multi-device Support</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Access your inbox from desktop, tablet, or mobile
-                </p>
-              </div>
-            </div>
+                    {/* Content - Messenger Style */}
+                    <div className="flex-1 min-w-0">
+                      {/* Name Row with Timestamp and Blue Dot */}
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className={`truncate ${
+                          showMessengerStyle
+                            ? "text-gray-900 dark:text-white font-bold text-base md:text-lg" 
+                            : "text-gray-700 dark:text-gray-300 font-semibold"
+                        }`}>
+                          {conv.userName}
+                        </h3>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          <span className={`text-xs whitespace-nowrap ${
+                            showMessengerStyle
+                              ? "text-blue-600 dark:text-blue-400 font-semibold" 
+                              : "text-gray-500 dark:text-gray-500"
+                          }`}>
+                            {formatDate(conv.lastActivity)}
+                          </span>
+                          {/* Unread Indicator - Blue Dot (Messenger Style) */}
+                          {showMessengerStyle && (
+                            <span className="w-3.5 h-3.5 bg-blue-500 rounded-full flex-shrink-0 shadow-lg ring-2 ring-blue-200 dark:ring-blue-800"></span>
+                          )}
+                        </div>
+                      </div>
+                      {/* Last Message Row */}
+                      <div className="flex items-center justify-between">
+                        <p className={`text-sm truncate flex-1 ${
+                          showMessengerStyle
+                            ? "text-gray-900 dark:text-white font-bold" 
+                            : "text-gray-600 dark:text-gray-400"
+                        }`}>
+                          {conv.lastMessage?.message?.startsWith("Your:") || conv.lastMessage?.message?.startsWith("You:") 
+                            ? conv.lastMessage.message.replace(/^(Your:|You:)\s*/, "")
+                            : conv.lastMessage?.message || "No messages"}
+                        </p>
+                        {/* Unread Count Badge - Messenger Style */}
+                        {showMessengerStyle && (
+                          <span className="ml-2 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full flex-shrink-0 min-w-[20px] text-center">
+                            {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+                );
+              })
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Instructions */}
-      <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-        <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-3 flex items-center gap-2">
-          <MessageCircle className="w-5 h-5" />
-          How to use Live Chat:
-        </h3>
-        <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-2 list-none">
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 dark:text-blue-400 font-bold">1.</span>
-            <span>Click the "Open Crisp Inbox" button above to access your chat dashboard</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 dark:text-blue-400 font-bold">2.</span>
-            <span>View all active conversations and customer messages in the Crisp inbox</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 dark:text-blue-400 font-bold">3.</span>
-            <span>Click on any conversation to view chat history and respond to customers</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 dark:text-blue-400 font-bold">4.</span>
-            <span>Customers can start chats from any page on the website using the chat button</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 dark:text-blue-400 font-bold">5.</span>
-            <span>All conversations are saved and accessible anytime in your Crisp dashboard</span>
-          </li>
-        </ul>
+        {/* Chat Window - Hidden on mobile when no chat selected */}
+        <div className={`${selectedConversation ? 'flex' : 'hidden lg:flex'} flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex-col h-full`}>
+          {selectedConversation ? (
+            <>
+              {/* Chat Header */}
+              <div className="p-3 md:p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Back Button - Mobile Only */}
+                    <button
+                      onClick={handleBackToConversations}
+                      className="lg:hidden p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors flex-shrink-0"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-gray-900 dark:text-white" />
+                    </button>
+                    
+                    <div className="relative flex-shrink-0">
+                      {selectedConversation.userAvatar ? (
+                        <img
+                          src={selectedConversation.userAvatar}
+                          alt={selectedConversation.userName}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                      )}
+                      {/* Online Indicator - Only show if user is logged in and online */}
+                      {isUserOnline(selectedConversation.lastActivity, selectedConversation.userId) && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2 truncate">
+                        <span className="truncate">{selectedConversation.userName}</span>
+                        {isUserOnline(selectedConversation.lastActivity, selectedConversation.userId) && (
+                          <span className="text-xs font-normal text-green-600 dark:text-green-400 flex-shrink-0">● Online</span>
+                        )}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                        {selectedConversation.userEmail}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Admin Info with Online Indicator - Hidden on mobile */}
+                  <div className="hidden lg:flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">You</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{currentAdmin.name}</p>
+                    </div>
+                    <div className="relative">
+                      {currentAdmin.avatar ? (
+                        <img
+                          src={currentAdmin.avatar}
+                          alt={currentAdmin.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <span className="text-white text-sm font-semibold">
+                            {currentAdmin.name[0]?.toUpperCase() || "A"}
+                          </span>
+                        </div>
+                      )}
+                      {/* Admin Online Indicator - Only show if admin is logged in */}
+                      {isAdminLoggedIn() && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto scrollbar-hide p-3 md:p-4 space-y-4">
+                {messages.map((msg, index) => {
+                  const showAvatar = index === 0 || messages[index - 1].sender !== msg.sender;
+                  const isAdmin = msg.sender === "admin";
+                  
+                  return (
+                    <div
+                      key={msg._id}
+                      className={`flex gap-2 ${isAdmin ? "justify-end" : "justify-start"}`}
+                    >
+                      {/* User Messages - Left Side */}
+                      {!isAdmin && (
+                        <>
+                          <div className="flex-shrink-0">
+                            {showAvatar ? (
+                              <div className="relative">
+                                {msg.userAvatar ? (
+                                  <img
+                                    src={msg.userAvatar}
+                                    alt={msg.userName}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                    <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                  </div>
+                                )}
+                                {/* Online Indicator - Show if user is online */}
+                                {isUserOnline(selectedConversation?.lastActivity, selectedConversation?.userId) && (
+                                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="w-8"></div>
+                            )}
+                          </div>
+                          
+                          <div className="flex flex-col items-start max-w-[75%] md:max-w-[70%]">
+                            {showAvatar && (
+                              <span className="text-xs text-gray-600 dark:text-gray-400 mb-1 px-1">
+                                {msg.userName}
+                              </span>
+                            )}
+                            <div className="rounded-lg px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white break-words">
+                              <p className="text-sm whitespace-pre-wrap break-words word-break break-all">{msg.message}</p>
+                              <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
+                                {formatDate(msg.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Admin Messages - Right Side */}
+                      {isAdmin && (
+                        <>
+                          <div className="flex flex-col items-end max-w-[75%] md:max-w-[70%]">
+                            {showAvatar && (
+                              <span className="text-xs text-gray-600 dark:text-gray-400 mb-1 px-1">
+                                {msg.adminName || currentAdmin.name}
+                              </span>
+                            )}
+                            <div className="rounded-lg px-4 py-2 bg-blue-600 text-white break-words">
+                              <p className="text-sm whitespace-pre-wrap break-words word-break break-all">{msg.message}</p>
+                              <p className="text-xs mt-1 text-blue-100">
+                                {formatDate(msg.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex-shrink-0">
+                            {showAvatar ? (
+                              <div className="relative">
+                                {msg.adminAvatar || currentAdmin.avatar ? (
+                                  <img
+                                    src={msg.adminAvatar || currentAdmin.avatar}
+                                    alt={msg.adminName || currentAdmin.name}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                    <span className="text-white text-xs font-semibold">
+                                      {(msg.adminName || currentAdmin.name)[0]?.toUpperCase() || "A"}
+                                    </span>
+                                  </div>
+                                )}
+                                {/* Admin Online Indicator - Show if admin is logged in */}
+                                {isAdminLoggedIn() && (
+                                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="w-8"></div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Message Input */}
+              <div className="p-3 md:p-4 border-t border-gray-200 dark:border-gray-700">
+                {!canSendMessages && (
+                  <div className="mb-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p className="text-xs text-yellow-800 dark:text-yellow-300">
+                      <strong>View Only:</strong> You can view conversations but cannot send messages. Contact an administrator to grant reply permissions.
+                    </p>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder={canSendMessages ? "Type your message..." : "You can only view messages..."}
+                    className="flex-1 px-3 md:px-4 py-2 text-sm md:text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={sending || !canSendMessages}
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!newMessage.trim() || sending || !canSendMessages}
+                    className="px-4 md:px-6 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 md:gap-2"
+                    title={!canSendMessages ? "You don't have permission to send messages" : ""}
+                  >
+                    <Send className="w-4 h-4" />
+                    <span className="hidden sm:inline">Send</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <MessageCircle className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400">
+                  Select a conversation to start chatting
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-

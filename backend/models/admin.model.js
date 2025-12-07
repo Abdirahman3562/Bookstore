@@ -98,7 +98,15 @@ const adminSchema = new mongoose.Schema({
       add: { type: Boolean, default: undefined },
       edit: { type: Boolean, default: undefined },
       delete: { type: Boolean, default: undefined }
+    },
+    liveChat: {
+      view: { type: Boolean, default: undefined },
+      reply: { type: Boolean, default: undefined }
     }
+  },
+  authorId: {
+    type: String,
+    default: null
   },
   twoStepVerification: {
     type: Boolean,

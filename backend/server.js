@@ -17,6 +17,7 @@ import pdfRoutes from "./routes/pdf.route.js";
 import websiteSettingsRoutes from "./routes/websiteSettings.route.js";
 import contactRoutes from "./routes/contact.route.js";
 import notificationsRoutes from "./routes/notifications.route.js";
+import chatRoutes from "./routes/chat.route.js";
 
 dotenv.config();
 const app = express();
@@ -96,6 +97,7 @@ app.use("/api/admins", adminsRoutes);
 app.use("/api/website-settings", websiteSettingsRoutes);
 app.use("/api/contacts", contactRoutes);
 app.use("/api/notifications", notificationsRoutes);
+app.use("/api/chat", chatRoutes);
 
 // start server
 const PORT = process.env.PORT || 3000;

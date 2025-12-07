@@ -40,7 +40,7 @@ export const getAdminById = async (req, res) => {
 // UPDATE ADMIN
 export const updateAdmin = async (req, res) => {
   try {
-    const { name, email, password, avatar, adminRole, permissions, currentPassword } = req.body;
+    const { name, email, password, avatar, adminRole, permissions, authorId, currentPassword } = req.body;
 
     const admin = await Admin.findById(req.params.id);
     if (!admin) {
@@ -91,6 +91,7 @@ export const updateAdmin = async (req, res) => {
     if (avatar !== undefined) updateData.avatar = avatar;
     if (adminRole) updateData.adminRole = adminRole;
     if (permissions) updateData.permissions = permissions;
+    if (authorId !== undefined) updateData.authorId = authorId || null;
     if (req.body.twoStepVerification !== undefined) updateData.twoStepVerification = req.body.twoStepVerification;
 
     const updated = await Admin.findByIdAndUpdate(
@@ -140,7 +141,7 @@ export const deleteAdmin = async (req, res) => {
 // CREATE ADMIN
 export const createAdmin = async (req, res) => {
   try {
-    const { name, email, password, adminRole, permissions } = req.body;
+    const { name, email, password, adminRole, permissions, authorId } = req.body;
 
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email });
@@ -157,6 +158,7 @@ export const createAdmin = async (req, res) => {
       email,
       password: password,
       adminRole: adminRole || 'author',
+      authorId: authorId || null,
       permissions: permissions || {
         dashboard: false,
         books: false,

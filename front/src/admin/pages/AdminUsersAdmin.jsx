@@ -14,6 +14,8 @@ export default function AdminUsersAdmin() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [editingAdmin, setEditingAdmin] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleString());
+
   const [editFormData, setEditFormData] = useState({
     name: "",
     email: "",
@@ -32,7 +34,8 @@ export default function AdminUsersAdmin() {
         contacts: { view: false, add: false, edit: false, delete: false },
         blogComments: { view: false, reply: false, delete: false },
       websiteSettings: { view: false, add: false, edit: false, delete: false },
-      addAdminUser: false
+      addAdminUser: { view: false, add: false, edit: false, delete: false },
+      liveChat: { view: false, reply: false }
     }
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -40,6 +43,7 @@ export default function AdminUsersAdmin() {
   const [deleteModal, setDeleteModal] = useState({ show: false, admin: null });
   const [deleting, setDeleting] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [previousAuthorId, setPreviousAuthorId] = useState(""); // Store previous authorId when switching to admin
 
   // Fetch admins data
   const fetchAdmins = async (showRefreshIndicator = false) => {
@@ -80,6 +84,8 @@ export default function AdminUsersAdmin() {
   // Handle role change in edit form - don't auto-set permissions, let user select manually
   const handleRoleChange = (role) => {
     if (role === "admin") {
+      // Store current authorId before clearing it
+      setPreviousAuthorId(editFormData.authorId || "");
       setEditFormData((prev) => ({
         ...prev,
         adminRole: role,
@@ -87,9 +93,11 @@ export default function AdminUsersAdmin() {
         // Keep existing permissions - don't auto-set
       }));
     } else {
+      // When switching back to "author", restore previous authorId if it exists
       setEditFormData((prev) => ({
         ...prev,
-        adminRole: role
+        adminRole: role,
+        authorId: previousAuthorId || prev.authorId || "" // Restore previous authorId
         // Keep existing permissions - don't auto-set
       }));
     }
@@ -123,12 +131,13 @@ export default function AdminUsersAdmin() {
         blogs: { view: false, add: false, edit: false, delete: false },
         contacts: { view: false, add: false, edit: false, delete: false },
         websiteSettings: { view: false, add: false, edit: false, delete: false },
-        addAdminUser: { view: false, add: false, edit: false, delete: false }
+        addAdminUser: { view: false, add: false, edit: false, delete: false },
+        liveChat: { view: false, reply: false }
       };
     }
 
     const normalized = {};
-    const sections = ['dashboard', 'books', 'downloads', 'purchased', 'testimonials', 'users', 'authors', 'blogs', 'blogComments', 'contacts', 'websiteSettings'];
+    const sections = ['dashboard', 'books', 'downloads', 'purchased', 'testimonials', 'users', 'authors', 'blogs', 'blogComments', 'contacts', 'websiteSettings', 'liveChat'];
     
     sections.forEach(section => {
       const sectionPerm = perms[section];
@@ -148,6 +157,12 @@ export default function AdminUsersAdmin() {
             view: sectionPerm,
             reply: sectionPerm,
             delete: sectionPerm
+          };
+        } else if (section === 'liveChat') {
+          // Live Chat has view, reply
+          normalized[section] = {
+            view: sectionPerm,
+            reply: sectionPerm
           };
         } else {
           normalized[section] = {
@@ -174,6 +189,12 @@ export default function AdminUsersAdmin() {
             reply: sectionPerm.reply || false,
             delete: sectionPerm.delete || false
           };
+        } else if (section === 'liveChat') {
+          // Live Chat has view, reply
+          normalized[section] = {
+            view: sectionPerm.view || false,
+            reply: sectionPerm.reply || false
+          };
         } else {
           normalized[section] = {
             view: sectionPerm.view || false,
@@ -189,6 +210,9 @@ export default function AdminUsersAdmin() {
         } else if (section === 'blogComments') {
           // Blog Comments has view, reply, delete (no add)
           normalized[section] = { view: false, reply: false, delete: false };
+        } else if (section === 'liveChat') {
+          // Live Chat has view, reply
+          normalized[section] = { view: false, reply: false };
         } else {
           normalized[section] = { view: false, add: false, edit: false, delete: false };
         }
@@ -226,25 +250,47 @@ export default function AdminUsersAdmin() {
       const response = await axios.get(`http://localhost:3000/api/admins/${admin._id}`);
       const fullAdmin = response.data.data || admin;
       
+      // Normalize permissions to ensure correct format
+      const normalizedPerms = normalizePermissions(fullAdmin.permissions || admin.permissions);
+      
+      // Ensure authorId is properly set (can be null, undefined, or empty string)
+      const authorIdValue = fullAdmin.authorId || admin.authorId || "";
+      
+      console.log("Editing admin:", {
+        name: fullAdmin.name || admin.name,
+        authorId: authorIdValue,
+        permissions: normalizedPerms,
+        liveChat: normalizedPerms.liveChat
+      });
+      
+      // Store the authorId as previous when opening modal
+      setPreviousAuthorId(authorIdValue);
+      
       setEditFormData({
         name: fullAdmin.name || admin.name || "",
         email: fullAdmin.email || admin.email || "",
         password: fullAdmin.password || "", // Show current password
         adminRole: fullAdmin.adminRole || admin.adminRole || "author",
-        authorId: fullAdmin.authorId || admin.authorId || "", // Get authorId
-        permissions: normalizePermissions(fullAdmin.permissions || admin.permissions)
+        authorId: authorIdValue, // Get authorId - ensure it's set properly
+        permissions: normalizedPerms
       });
       setShowPassword(true); // Show password by default so they can see it
     } catch (error) {
       console.error("Error fetching admin details:", error);
       // Fallback to admin data without password
+      const normalizedPerms = normalizePermissions(admin.permissions || {});
+      const authorIdValue = admin.authorId || "";
+      
+      // Store the authorId as previous when opening modal
+      setPreviousAuthorId(authorIdValue);
+      
       setEditFormData({
         name: admin.name || "",
         email: admin.email || "",
         password: "", // Empty if can't fetch
         adminRole: admin.adminRole || "author",
-        authorId: admin.authorId || "", // Get authorId
-        permissions: normalizePermissions(admin.permissions)
+        authorId: authorIdValue, // Get authorId - ensure it's set properly
+        permissions: normalizedPerms
       });
       setShowPassword(false);
     }
@@ -253,6 +299,7 @@ export default function AdminUsersAdmin() {
   // Close edit modal
   const closeEditModal = () => {
     setEditingAdmin(null);
+    setPreviousAuthorId(""); // Reset previous authorId
     setEditFormData({
       name: "",
       email: "",
@@ -271,7 +318,8 @@ export default function AdminUsersAdmin() {
         blogComments: { view: false, reply: false, delete: false },
         contacts: { view: false, add: false, edit: false, delete: false },
         websiteSettings: { view: false, add: false, edit: false, delete: false },
-        addAdminUser: { view: false, add: false, edit: false, delete: false }
+        addAdminUser: { view: false, add: false, edit: false, delete: false },
+        liveChat: { view: false, reply: false }
       }
     });
     setShowPassword(false);
@@ -382,7 +430,8 @@ export default function AdminUsersAdmin() {
     blogComments: "Blog Comments",
     contacts: "Contacts",
     websiteSettings: "Website Settings",
-    addAdminUser: "Add Admin User"
+    addAdminUser: "Add Admin User",
+    liveChat: "Live Chat"
   };
 
   const actionLabels = {
@@ -407,8 +456,17 @@ export default function AdminUsersAdmin() {
     blogComments: ["view", "reply", "delete"], // Blog Comments has view, reply, delete (no add)
     contacts: ["view", "edit", "delete"], // Contacts has view, edit (reply, mark as read), delete (no add)
     websiteSettings: ["view", "edit"], // Website Settings has view and edit (no add/delete)
-    addAdminUser: ["view", "add", "edit", "delete"] // Add Admin User has all actions
+    addAdminUser: ["view", "add", "edit", "delete"], // Add Admin User has all actions
+    liveChat: ["view", "reply"] // Live Chat has view and reply (send messages to users)
   };
+
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleString());
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, []);
 
   if (loading) {
     return (
@@ -433,7 +491,7 @@ export default function AdminUsersAdmin() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
               <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
-                Last updated: {lastUpdated}
+                Last updated: {currentTime}
               </span>
             )}
             <button
@@ -742,11 +800,17 @@ export default function AdminUsersAdmin() {
                           </p>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto scrollbar-hide">
-                            {authors.map((author) => (
+                            {authors.map((author) => {
+                              // Convert both to strings for proper comparison
+                              const currentAuthorId = String(editFormData.authorId || "");
+                              const authorIdValue = String(author._id || "");
+                              const isSelected = currentAuthorId === authorIdValue;
+                              
+                              return (
                               <label
                                 key={author._id}
                                 className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                                  editFormData.authorId === author._id
+                                  isSelected
                                     ? "bg-blue-50 dark:bg-blue-900/30 border-blue-500 dark:border-blue-600"
                                     : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
                                 }`}
@@ -755,7 +819,7 @@ export default function AdminUsersAdmin() {
                                   type="radio"
                                   name="authorId"
                                   value={author._id}
-                                  checked={editFormData.authorId === author._id}
+                                  checked={isSelected}
                                   onChange={(e) => setEditFormData({ ...editFormData, authorId: e.target.value })}
                                   className="w-4 h-4 text-blue-600 dark:text-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
                                 />
@@ -786,7 +850,8 @@ export default function AdminUsersAdmin() {
                                   </span>
                                 </div>
                               </label>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
@@ -817,14 +882,16 @@ export default function AdminUsersAdmin() {
                           defaultPerms = { view: false, reply: false, delete: false };
                         } else if (sectionKey === 'downloads') {
                           defaultPerms = { view: false, add: false, edit: false, delete: false, revoke: false };
+                        } else if (sectionKey === 'liveChat') {
+                          defaultPerms = { view: false, reply: false };
                         } else {
                           defaultPerms = { view: false, add: false, edit: false, delete: false };
                         }
                         const sectionPerms = editFormData.permissions[sectionKey] || defaultPerms;
                         const availableActions = sectionActions[sectionKey] || [];
                         
-                        // Check if all available actions are checked
-                        const allChecked = availableActions.length > 0 && availableActions.every(action => sectionPerms[action] === true);
+                        // Check if all available actions are checked (use Boolean to ensure proper check)
+                        const allChecked = availableActions.length > 0 && availableActions.every(action => Boolean(sectionPerms[action]) === true);
 
                         return (
                           <div key={sectionKey} className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800">
@@ -855,18 +922,22 @@ export default function AdminUsersAdmin() {
                             </div>
                             {availableActions.length > 0 && (
                               <div className={`grid gap-2 ml-6 ${availableActions.length === 1 ? 'grid-cols-1' : availableActions.length === 2 ? 'grid-cols-2' : availableActions.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
-                                {availableActions.map((actionKey) => (
+                                {availableActions.map((actionKey) => {
+                                  // Ensure boolean value for checkbox
+                                  const isChecked = Boolean(sectionPerms[actionKey]);
+                                  
+                                  return (
                                   <label
                                     key={actionKey}
                                     className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
-                                      sectionPerms[actionKey]
+                                      isChecked
                                         ? "bg-blue-50 dark:bg-blue-900/30"
                                         : "bg-gray-50 dark:bg-gray-700/50"
                                     }`}
                                   >
                                     <input
                                       type="checkbox"
-                                      checked={sectionPerms[actionKey] || false}
+                                      checked={isChecked}
                                       onChange={() => handlePermissionChange(sectionKey, actionKey)}
                                       className="w-3 h-3 text-blue-600 dark:text-blue-500 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
                                     />
@@ -874,7 +945,8 @@ export default function AdminUsersAdmin() {
                                       {actionLabels[actionKey]}
                                     </span>
                                   </label>
-                                ))}
+                                  );
+                                })}
                               </div>
                             )}
                           </div>

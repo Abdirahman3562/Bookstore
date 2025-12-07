@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { LogOut, X, UserPlus, Shield, Globe } from "lucide-react";
+import { canView } from "../utils/permissions";
 import {
   BarChart3,
   BookOpen,
@@ -22,6 +23,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const [websiteSettings, setWebsiteSettings] = useState({
     websiteName: "Admin Panel",
   });
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Fetch website settings
   useEffect(() => {
@@ -137,6 +139,31 @@ export default function Sidebar({ isOpen, onClose }) {
     fetchCurrentUser();
   }, []);
 
+  // Fetch unread count for Live Chat
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/chat/unread-count");
+        if (response.data.success) {
+          setUnreadCount(response.data.data.unreadCount || 0);
+          console.log(response.data.data.unreadCount);
+        }
+      } catch (error) {
+        console.error("Error fetching unread count:", error);
+      }
+    };
+
+    // Fetch immediately
+    fetchUnreadCount();
+
+    // Update every 2 seconds (real-time)
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const allMenuItems = [
     { path: "/admin/dashboard", label: "Dashboard", icon: BarChart3, permission: "dashboard" },
     { path: "/admin/books", label: "Books", icon: BookOpen, permission: "books" },
@@ -144,7 +171,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/admin/purchased", label: "Purchased", icon: ShoppingCart, permission: "purchased" },
     { path: "/admin/testimonials", label: "Testimonials", icon: MessageSquare, permission: "testimonials" },
     { path: "/admin/contacts", label: "Contacts", icon: Mail, permission: "contacts" },
-    { path: "/admin/live-chat", label: "Live Chat", icon: MessageCircle, permission: "dashboard" },
+    { path: "/admin/live-chat", label: "Live Chat", icon: MessageCircle, permission: "liveChat" },
     { path: "/admin/users", label: "Users", icon: Users, permission: "users" },
     { path: "/admin/authors", label: "Authors", icon: PenTool, permission: "authors" },
     { path: "/admin/blogs", label: "Blogs", icon: FileText, permission: "blogs" },
@@ -239,28 +266,35 @@ export default function Sidebar({ isOpen, onClose }) {
       <div className="flex-1 overflow-y-auto scrollbar-hide mt-4">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
+          const isLiveChat = item.path === "/admin/live-chat";
 
           return (
             <Link
               key={item.path}
               to={item.path}
               onClick={onClose}
-              className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition
+              className={`flex items-center justify-between gap-3 px-6 py-3 text-sm font-medium transition relative
                 ${isActive
                   ? "bg-blue-600 dark:bg-blue-700 text-white"
                   : "text-gray-300 dark:text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-700 hover:text-white"
                 }`}
             >
-              <item.icon size={18} />
-              {item.label}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <item.icon size={18} />
+                <span className="truncate">{item.label}</span>
+              </div>
+              {/* Unread count badge for Live Chat - Right side */}
+              {isLiveChat && unreadCount >= 0 && (
+                <span className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[22px] h-[22px] flex items-center justify-center flex-shrink-0 ml-2 relative z-10 shadow-lg ring-2 ring-white dark:ring-gray-800">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
           );
         })}
 
-        {/* Admin Users Management - Only visible if user has permission */}
-        {currentUser && 
-         (currentUser.adminRole === "admin" || 
-          (currentUser.permissions && currentUser.permissions.addAdminUser)) && (
+        {/* Admin Users Management - Only visible if user has view permission */}
+        {currentUser && canView(currentUser, 'addAdminUser') && (
           <>
             <Link
               to="/admin/admin-users"

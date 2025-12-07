@@ -44,6 +44,8 @@ export default function BlogsAdmin() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [notificationsCount, setNotificationsCount] = useState(0);
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleString());
+
 
   // Function to strip HTML tags and get plain text
   const stripHtml = (html) => {
@@ -820,6 +822,14 @@ export default function BlogsAdmin() {
     }
   }, [userRole, currentUser]);
 
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleString());
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, []);
+
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
@@ -859,7 +869,7 @@ export default function BlogsAdmin() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
               <span className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
-                Last updated: {lastUpdated}
+                Last updated: {currentTime}
               </span>
             )}
             <div className="flex gap-2">
