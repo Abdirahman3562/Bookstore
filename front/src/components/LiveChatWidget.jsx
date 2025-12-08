@@ -31,6 +31,7 @@ export default function LiveChatWidget() {
   const welcomeMessageSentRef = useRef(false); // Track if welcome message has been sent
   const [adminInfo, setAdminInfo] = useState({ name: "Support", avatar: "" }); // Admin info for welcome message
   const [isAdminTyping, setIsAdminTyping] = useState(false); // Track if admin is typing
+  const [typingAdminInfo, setTypingAdminInfo] = useState({ name: "Admin", avatar: "" }); // Admin info for typing indicator
   const typingTimeoutRef = useRef(null); // Timeout for typing indicator
 
   // Check if user is logged in
@@ -429,6 +430,13 @@ export default function LiveChatWidget() {
                 // Only show typing if admin is typing (not user)
                 const adminIsTyping = typingData?.isTyping && typingData?.sender === "admin";
                 setIsAdminTyping(adminIsTyping);
+                // Update typing admin info if admin is typing
+                if (adminIsTyping && typingData?.adminName) {
+                  setTypingAdminInfo({
+                    name: typingData.adminName || "Admin",
+                    avatar: typingData.adminAvatar || ""
+                  });
+                }
                 console.log("📖 Admin typing status:", adminIsTyping, typingData);
               }
             })
@@ -690,16 +698,16 @@ export default function LiveChatWidget() {
                       {isAdminTyping && (
                         <div className="flex gap-2 justify-start">
                           <div className="flex-shrink-0">
-                            {adminInfo.avatar ? (
+                            {typingAdminInfo.avatar ? (
                               <img
-                                src={adminInfo.avatar}
-                                alt={adminInfo.name || "Admin"}
+                                src={typingAdminInfo.avatar}
+                                alt={typingAdminInfo.name || "Admin"}
                                 className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800"
                               />
                             ) : (
                               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                                 <span className="text-white text-xs font-semibold">
-                                  {(adminInfo.name || "Admin")[0]?.toUpperCase() || "A"}
+                                  {(typingAdminInfo.name || "Admin")[0]?.toUpperCase() || "A"}
                                 </span>
                               </div>
                             )}
@@ -708,7 +716,7 @@ export default function LiveChatWidget() {
                             <div className="rounded-2xl px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700">
                               <div className="flex items-center gap-1">
                                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                                  {adminInfo.name || "Admin"} is typing
+                                  {typingAdminInfo.name || "Admin"} is typing
                                 </span>
                                 <div className="flex gap-1">
                                   <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>

@@ -874,11 +874,13 @@ export default function LiveChatAdmin() {
                           clearTimeout(typingTimeoutRef.current);
                         }
                         
-                        // Send typing indicator to backend
+                        // Send typing indicator to backend with admin info
                         axios.post("http://localhost:3000/api/chat/typing", {
                           userId: selectedConversation.userId,
                           isTyping: true,
-                          sender: "admin"
+                          sender: "admin",
+                          adminName: currentAdmin.name,
+                          adminAvatar: currentAdmin.avatar
                         }).then(() => {
                           console.log("✅ Admin typing status sent: true");
                         }).catch((err) => {

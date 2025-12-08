@@ -256,9 +256,9 @@ const typingStatus = new Map(); // userId -> { isTyping: boolean, sender: string
 // SET TYPING STATUS
 export const setTypingStatus = async (req, res) => {
   try {
-    const { userId, isTyping, sender } = req.body;
+    const { userId, isTyping, sender, adminName, adminAvatar } = req.body;
 
-    console.log("📝 Setting typing status:", { userId, isTyping, sender });
+    console.log("📝 Setting typing status:", { userId, isTyping, sender, adminName, adminAvatar });
 
     if (!userId) {
       return res.status(400).json({
@@ -271,7 +271,10 @@ export const setTypingStatus = async (req, res) => {
       typingStatus.set(userId, {
         isTyping: true,
         sender: sender || "user",
-        timestamp: new Date()
+        timestamp: new Date(),
+        // Store admin info if sender is admin
+        adminName: sender === "admin" ? adminName : null,
+        adminAvatar: sender === "admin" ? adminAvatar : null
       });
       console.log("✅ Typing status set:", typingStatus.get(userId));
     } else {
@@ -327,7 +330,9 @@ export const getTypingStatus = async (req, res) => {
       success: true,
       data: {
         isTyping: status?.isTyping || false,
-        sender: status?.sender || null
+        sender: status?.sender || null,
+        adminName: status?.adminName || null,
+        adminAvatar: status?.adminAvatar || null
       }
     });
   } catch (err) {
