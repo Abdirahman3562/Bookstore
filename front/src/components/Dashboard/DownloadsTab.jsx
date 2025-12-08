@@ -160,7 +160,7 @@ export default function DownloadsTab() {
           author: book.author,
           cover: book.cover || "",
           price: book.price || 0,
-          isFree: book.price === 0 || book.source === "free",
+          isFree: (book.price || 0) === 0,
           pdfUrl: book.pdfUrl,
           timestamp: new Date().toISOString(),
           notDownloaded: false

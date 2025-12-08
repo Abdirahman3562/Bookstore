@@ -21,6 +21,12 @@ const testimonialSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  rating: {
+    type: Number,
+    min: 1,
+    max: 5,
+    default: 5
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
@@ -33,6 +39,7 @@ const testimonialSchema = new mongoose.Schema({
 const Testimonial = mongoose.model("Testimonial", testimonialSchema, "testimonials");
 
 export default Testimonial;
+
 
 
 

@@ -84,8 +84,15 @@ export const createDownload = async (req, res) => {
       // Update other fields in case they changed
       if (req.body.pdfUrl) existingDownload.pdfUrl = req.body.pdfUrl;
       if (req.body.cover) existingDownload.cover = req.body.cover;
-      if (req.body.price !== undefined) existingDownload.price = req.body.price;
-      if (req.body.isFree !== undefined) existingDownload.isFree = req.body.isFree;
+      if (req.body.price !== undefined) {
+        existingDownload.price = req.body.price;
+        // Always set isFree based on price, not the value sent from frontend
+        existingDownload.isFree = req.body.price === 0;
+      } else if (req.body.isFree !== undefined) {
+        // If price is not provided but isFree is, validate it against current price
+        const currentPrice = existingDownload.price || 0;
+        existingDownload.isFree = currentPrice === 0;
+      }
       
       await existingDownload.save();
 
@@ -98,8 +105,12 @@ export const createDownload = async (req, res) => {
     }
 
     // Create new download record if it doesn't exist
+    // Ensure isFree is correctly set based on price (not source)
+    const price = req.body.price || 0;
     const downloadData = {
       ...req.body,
+      price: price,
+      isFree: price === 0, // Always set isFree based on price, not source
       id: Date.now().toString() // Generate unique ID
     };
 

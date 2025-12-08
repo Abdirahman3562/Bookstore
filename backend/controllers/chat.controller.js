@@ -133,13 +133,21 @@ export const sendMessage = async (req, res) => {
       userEmail = user.email || "";
       userAvatar = user.avatar || "";
     } else {
-      // For admin messages, get user info from previous messages
+      // For admin messages, get user info from previous messages or User model
       const lastUserMsg = await ChatMessage.findOne({ userId, sender: "user" })
         .sort({ createdAt: -1 });
       if (lastUserMsg) {
         userName = lastUserMsg.userName;
         userEmail = lastUserMsg.userEmail;
         userAvatar = lastUserMsg.userAvatar;
+      } else {
+        // If no previous messages, get user info from User model
+        const user = await User.findById(userId);
+        if (user) {
+          userName = user.name || "";
+          userEmail = user.email || "";
+          userAvatar = user.avatar || "";
+        }
       }
     }
 
@@ -234,6 +242,96 @@ export const getUnreadCount = async (req, res) => {
     });
   } catch (err) {
     console.error("Error getting unread count:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
+  }
+};
+
+// Store typing status in memory (simple approach)
+const typingStatus = new Map(); // userId -> { isTyping: boolean, sender: string, timestamp: Date }
+
+// SET TYPING STATUS
+export const setTypingStatus = async (req, res) => {
+  try {
+    const { userId, isTyping, sender } = req.body;
+
+    console.log("📝 Setting typing status:", { userId, isTyping, sender });
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required"
+      });
+    }
+
+    if (isTyping) {
+      typingStatus.set(userId, {
+        isTyping: true,
+        sender: sender || "user",
+        timestamp: new Date()
+      });
+      console.log("✅ Typing status set:", typingStatus.get(userId));
+    } else {
+      typingStatus.delete(userId);
+      console.log("❌ Typing status cleared for userId:", userId);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Typing status updated"
+    });
+  } catch (err) {
+    console.error("Error setting typing status:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
+  }
+};
+
+// GET TYPING STATUS
+export const getTypingStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required"
+      });
+    }
+
+    const status = typingStatus.get(userId);
+    
+    // Auto-clear typing status after 5 seconds of inactivity
+    if (status && status.timestamp) {
+      const now = new Date();
+      const diffInSeconds = Math.floor((now - status.timestamp) / 1000);
+      if (diffInSeconds > 5) {
+        typingStatus.delete(userId);
+        console.log("⏰ Typing status expired for userId:", userId);
+        return res.status(200).json({
+          success: true,
+          data: { isTyping: false, sender: null }
+        });
+      }
+    }
+
+    console.log("📖 Getting typing status for userId:", userId, "Status:", status);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        isTyping: status?.isTyping || false,
+        sender: status?.sender || null
+      }
+    });
+  } catch (err) {
+    console.error("Error getting typing status:", err);
     res.status(500).json({
       success: false,
       message: "Server error",

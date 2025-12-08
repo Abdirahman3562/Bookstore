@@ -36,10 +36,82 @@ export default function DownloadsAdmin() {
       const data = response.data.data || [];
       console.log(`✅ Fetched ${data.length} downloads from database`);
 
+      // Fetch purchased items to check status
+      const purchasedResponse = await axios.get("http://localhost:3000/api/purchased");
+      const purchasedData = purchasedResponse.data.data || [];
+      
+      // Create a map of active purchases: normalize IDs to strings for matching
+      const activePurchasesMap = {};
+      const activePurchasesByTitle = {}; // Fallback: match by title + user
+      
+      purchasedData
+        .filter(p => p.status === 'active')
+        .forEach(p => {
+          const bookIdStr = String(p.bookId || '');
+          const userIdStr = p.userId ? String(p.userId) : null;
+          const emailStr = p.email ? p.email.toLowerCase() : null;
+          const titleStr = p.title ? p.title.toLowerCase().trim() : '';
+          
+          // Create keys for both userId and email matching with normalized bookId
+          if (userIdStr) {
+            activePurchasesMap[`userId_${userIdStr}_${bookIdStr}`] = true;
+            if (titleStr) {
+              activePurchasesByTitle[`userId_${userIdStr}_${titleStr}`] = true;
+            }
+          }
+          if (emailStr) {
+            activePurchasesMap[`email_${emailStr}_${bookIdStr}`] = true;
+            if (titleStr) {
+              activePurchasesByTitle[`email_${emailStr}_${titleStr}`] = true;
+            }
+          }
+        });
+
       // Calculate stats
       const totalDownloads = data.length;
       const totalUsers = new Set(data.map(d => d.userId)).size;
-      const totalRevenue = data.reduce((sum, d) => sum + (d.price || 0), 0);
+      
+      // Only count revenue from downloads that have active purchase status
+      const totalRevenue = data.reduce((sum, d) => {
+        // Only count paid downloads (price > 0)
+        if ((d.price || 0) === 0) {
+          return sum;
+        }
+        
+        // Normalize IDs to strings for matching
+        const downloadBookIdStr = String(d.bookId || '');
+        const downloadUserIdStr = d.userId ? String(d.userId) : null;
+        const downloadEmailStr = d.email ? d.email.toLowerCase() : null;
+        const downloadTitleStr = d.title ? d.title.toLowerCase().trim() : '';
+        
+        // Check if this download has an active purchase (by userId or email + bookId)
+        const userIdKey = downloadUserIdStr ? `userId_${downloadUserIdStr}_${downloadBookIdStr}` : null;
+        const emailKey = downloadEmailStr ? `email_${downloadEmailStr}_${downloadBookIdStr}` : null;
+        let hasActivePurchase = (userIdKey && activePurchasesMap[userIdKey]) || 
+                                (emailKey && activePurchasesMap[emailKey]);
+        
+        // Fallback: try matching by title if bookId doesn't match
+        if (!hasActivePurchase && downloadTitleStr) {
+          const userIdTitleKey = downloadUserIdStr ? `userId_${downloadUserIdStr}_${downloadTitleStr}` : null;
+          const emailTitleKey = downloadEmailStr ? `email_${downloadEmailStr}_${downloadTitleStr}` : null;
+          hasActivePurchase = (userIdTitleKey && activePurchasesByTitle[userIdTitleKey]) ||
+                              (emailTitleKey && activePurchasesByTitle[emailTitleKey]);
+        }
+        
+        // Count revenue if has active purchase
+        if (hasActivePurchase) {
+          console.log(`✅ Counting revenue for download: ${d.title} - $${d.price} (matched with active purchase)`);
+          return sum + (d.price || 0);
+        } else {
+          console.log(`❌ Skipping download: ${d.title} - $${d.price} (no active purchase found)`);
+        }
+        return sum;
+      }, 0);
+      
+      console.log(`📊 Total Revenue calculated: $${totalRevenue.toFixed(2)}`);
+      console.log(`📊 Active purchases found: ${Object.keys(activePurchasesMap).length}`);
+      console.log(`📊 Total downloads: ${data.length}, Paid downloads: ${data.filter(d => (d.price || 0) > 0).length}`);
+      
       const freeDownloads = data.filter(d => d.price === 0).length;
       const revokedDownloads = data.filter(d => d.notDownloaded).length;
 
@@ -268,6 +340,7 @@ export default function DownloadsAdmin() {
                 {
                   header: "Download Count",
                   accessor: "downloadCount",
+                  className: "whitespace-nowrap",
                   cell: (download) => (
                     <div className="flex items-center justify-center gap-2">
                       <span className="inline-flex items-center justify-center w-10 h-10 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-sm font-bold">
@@ -312,6 +385,7 @@ export default function DownloadsAdmin() {
                 {
                   header: "Access Control",
                   accessor: "access",
+                  className: "whitespace-nowrap",
                   cell: (download) => (
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-1">
@@ -325,7 +399,7 @@ export default function DownloadsAdmin() {
                           e.stopPropagation();
                           showRevokeModal(download);
                         }}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors border text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent whitespace-nowrap ${
                           download.notDownloaded
                             ? 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 border-green-200 dark:border-green-800'
                             : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-800'
@@ -339,12 +413,12 @@ export default function DownloadsAdmin() {
                       >
                         {download.notDownloaded ? (
                           <>
-                            <CheckCircle className="w-3 h-3" />
+                            <CheckCircle className="w-3 h-3 flex-shrink-0" />
                             Allow Download
                           </>
                         ) : (
                           <>
-                            <ShieldX className="w-3 h-3" />
+                            <ShieldX className="w-3 h-3 flex-shrink-0" />
                             Revoke Access
                           </>
                         )}

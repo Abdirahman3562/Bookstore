@@ -4,7 +4,9 @@ import {
   getUserMessages,
   sendMessage,
   markAsRead,
-  getUnreadCount
+  getUnreadCount,
+  setTypingStatus,
+  getTypingStatus
 } from "../controllers/chat.controller.js";
 
 const router = express.Router();
@@ -24,5 +26,12 @@ router.patch("/read/:userId", markAsRead);
 // GET unread count
 router.get("/unread-count", getUnreadCount);
 
+// SET typing status
+router.post("/typing", setTypingStatus);
+
+// GET typing status
+router.get("/typing/:userId", getTypingStatus);
+
 export default router;
+
 

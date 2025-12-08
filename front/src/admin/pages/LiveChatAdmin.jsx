@@ -23,6 +23,9 @@ export default function LiveChatAdmin() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleString());
+  const [isUserTyping, setIsUserTyping] = useState(false); // Track if selected user is typing
+  const [typingUsers, setTypingUsers] = useState(new Map()); // Track typing status for all users: userId -> { isTyping: boolean, userName: string, userAvatar: string }
+  const typingTimeoutRef = useRef(null); // Timeout for typing indicator
 
   // Fetch current admin info
   const fetchCurrentAdmin = async () => {
@@ -291,6 +294,19 @@ export default function LiveChatAdmin() {
       });
 
       setNewMessage("");
+      
+      // Stop typing indicator when sending
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (selectedConversation) {
+        axios.post("http://localhost:3000/api/chat/typing", {
+          userId: selectedConversation.userId,
+          isTyping: false,
+          sender: "admin"
+        }).catch(() => {});
+      }
+      
       await fetchMessages(selectedConversation.userId);
       fetchConversations();
       toast.success("Message sent!");
@@ -371,11 +387,55 @@ export default function LiveChatAdmin() {
         const userId = selectedConversation.userId;
         const previousCount = messageCountsRef.current[userId] || messages.length;
         fetchMessages(userId, previousCount);
+        // Check if user is typing
+        axios.get(`http://localhost:3000/api/chat/typing/${userId}`)
+          .then(res => {
+            if (res.data.success) {
+              const typingData = res.data.data;
+              // Only show typing if user is typing (not admin)
+              const userIsTyping = typingData?.isTyping && typingData?.sender === "user";
+              setIsUserTyping(userIsTyping);
+            }
+          })
+          .catch(() => {});
       }
+      
+      // Check typing status for all conversations in the sidebar
+      conversations.forEach((conv) => {
+        axios.get(`http://localhost:3000/api/chat/typing/${conv.userId}`)
+          .then(res => {
+            if (res.data.success) {
+              const typingData = res.data.data;
+              const userIsTyping = typingData?.isTyping && typingData?.sender === "user";
+              
+              setTypingUsers(prev => {
+                const newMap = new Map(prev);
+                if (userIsTyping) {
+                  newMap.set(conv.userId, {
+                    isTyping: true,
+                    userName: conv.userName,
+                    userAvatar: conv.userAvatar
+                  });
+                } else {
+                  newMap.delete(conv.userId);
+                }
+                return newMap;
+              });
+            }
+          })
+          .catch(() => {});
+      });
+      
       setLastUpdated(new Date().toLocaleString());
-    }, 2000);
+    }, 1000); // Check every 1 second for more responsive typing indicator
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // Clean up typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
   }, [selectedConversation]);
   
   // Update message count ref when messages change
@@ -541,17 +601,30 @@ export default function LiveChatAdmin() {
                       </div>
                       {/* Last Message Row */}
                       <div className="flex items-center justify-between">
-                        <p className={`text-sm truncate flex-1 ${
-                          showMessengerStyle
-                            ? "text-gray-900 dark:text-white font-bold" 
-                            : "text-gray-600 dark:text-gray-400"
-                        }`}>
-                          {conv.lastMessage?.message?.startsWith("Your:") || conv.lastMessage?.message?.startsWith("You:") 
-                            ? conv.lastMessage.message.replace(/^(Your:|You:)\s*/, "")
-                            : conv.lastMessage?.message || "No messages"}
-                        </p>
+                        {typingUsers.has(conv.userId) ? (
+                          <div className="flex items-center gap-1 flex-1">
+                            <span className="text-sm text-blue-600 dark:text-blue-400 font-medium italic">
+                              typing
+                            </span>
+                            <div className="flex gap-0.5">
+                              <span className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                              <span className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                              <span className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className={`text-sm truncate flex-1 ${
+                            showMessengerStyle
+                              ? "text-gray-900 dark:text-white font-bold" 
+                              : "text-gray-600 dark:text-gray-400"
+                          }`}>
+                            {conv.lastMessage?.message?.startsWith("Your:") || conv.lastMessage?.message?.startsWith("You:") 
+                              ? conv.lastMessage.message.replace(/^(Your:|You:)\s*/, "")
+                              : conv.lastMessage?.message || "No messages"}
+                          </p>
+                        )}
                         {/* Unread Count Badge - Messenger Style */}
-                        {showMessengerStyle && (
+                        {showMessengerStyle && !typingUsers.has(conv.userId) && (
                           <span className="ml-2 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full flex-shrink-0 min-w-[20px] text-center">
                             {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
                           </span>
@@ -742,6 +815,40 @@ export default function LiveChatAdmin() {
                     </div>
                   );
                 })}
+                {/* User Typing Indicator */}
+                {isUserTyping && selectedConversation && (
+                  <div className="flex gap-2 justify-start">
+                    <div className="flex-shrink-0">
+                      {selectedConversation.userAvatar ? (
+                        <img
+                          src={selectedConversation.userAvatar}
+                          alt={selectedConversation.userName || "User"}
+                          className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <span className="text-blue-600 dark:text-blue-400 text-xs font-semibold">
+                            {(selectedConversation.userName || "User")[0]?.toUpperCase() || "U"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-start max-w-[75%] md:max-w-[70%]">
+                      <div className="rounded-lg px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {selectedConversation.userName || "User"} is typing
+                          </span>
+                          <div className="flex gap-1">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                            <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                            <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
@@ -758,10 +865,62 @@ export default function LiveChatAdmin() {
                   <input
                     type="text"
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      // Notify user that admin is typing
+                      if (e.target.value.trim() && selectedConversation) {
+                        // Clear previous timeout
+                        if (typingTimeoutRef.current) {
+                          clearTimeout(typingTimeoutRef.current);
+                        }
+                        
+                        // Send typing indicator to backend
+                        axios.post("http://localhost:3000/api/chat/typing", {
+                          userId: selectedConversation.userId,
+                          isTyping: true,
+                          sender: "admin"
+                        }).then(() => {
+                          console.log("✅ Admin typing status sent: true");
+                        }).catch((err) => {
+                          console.error("❌ Error sending admin typing status:", err);
+                        });
+                        
+                        // Stop typing indicator after 2 seconds of no typing
+                        typingTimeoutRef.current = setTimeout(() => {
+                          axios.post("http://localhost:3000/api/chat/typing", {
+                            userId: selectedConversation.userId,
+                            isTyping: false,
+                            sender: "admin"
+                          }).then(() => {
+                            console.log("⏰ Admin typing status cleared");
+                          }).catch(() => {});
+                        }, 2000);
+                      } else if (!e.target.value.trim() && selectedConversation) {
+                        // Stop typing indicator when input is empty
+                        if (typingTimeoutRef.current) {
+                          clearTimeout(typingTimeoutRef.current);
+                        }
+                        axios.post("http://localhost:3000/api/chat/typing", {
+                          userId: selectedConversation.userId,
+                          isTyping: false,
+                          sender: "admin"
+                        }).catch(() => {});
+                      }
+                    }}
                     onKeyPress={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
+                        // Stop typing indicator when sending
+                        if (typingTimeoutRef.current) {
+                          clearTimeout(typingTimeoutRef.current);
+                        }
+                        if (selectedConversation) {
+                          axios.post("http://localhost:3000/api/chat/typing", {
+                            userId: selectedConversation.userId,
+                            isTyping: false,
+                            sender: "admin"
+                          }).catch(() => {});
+                        }
                         handleSendMessage();
                       }
                     }}

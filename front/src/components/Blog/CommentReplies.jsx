@@ -74,7 +74,7 @@ export default function CommentReplies({
 
             {/* SHOW REPLY TEXT */}
             {editingId !== r.id && (
-              <p className="mt-1 text-gray-800 dark:text-gray-200 break-words">{r.reply}</p>
+              <p className="mt-1 text-gray-800 dark:text-gray-200 break-words whitespace-normal overflow-wrap-anywhere word-wrap-break-word">{r.reply}</p>
             )}
 
             {/* EDIT MODE */}
@@ -114,7 +114,7 @@ export default function CommentReplies({
 
             <p className="text-xs text-gray-500 dark:text-gray-400">{timeAgo(r.date)}</p>
 
-            <div className="flex gap-3 text-xs text-blue-600 dark:text-blue-400 mt-2">
+            <div className="flex flex-wrap gap-3 text-xs text-blue-600 dark:text-blue-400 mt-2">
               {/* Reply — only for others, NOT for you */}
               {user && (user._id || user.id)?.toString() !== r.userId?.toString() && (
                 <button

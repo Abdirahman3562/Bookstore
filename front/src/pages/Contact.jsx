@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiMail, FiPhone, FiMapPin, FiSend } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -9,15 +9,43 @@ export default function Contact() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    message: ""
+    message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [websiteSettings, setWebsiteSettings] = useState({
+    supportEmail: "support@bookstore.com",
+    phoneNumber: "+123 456 789",
+    location: "Mogadishu - Somalia",
+  });
+
+  // Fetch website settings
+  useEffect(() => {
+    const fetchWebsiteSettings = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:3000/api/website-settings"
+        );
+        if (response.data.success) {
+          const data = response.data.data;
+          setWebsiteSettings({
+            supportEmail: data.supportEmail || "support@bookstore.com",
+            phoneNumber: data.phoneNumber || "+123 456 789",
+            location: data.location || "Mogadishu - Somalia",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching website settings:", error);
+        // Keep default values if fetch fails
+      }
+    };
+    fetchWebsiteSettings();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -33,7 +61,11 @@ export default function Contact() {
     }
 
     // Validate form
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+    if (
+      !formData.name.trim() ||
+      !formData.email.trim() ||
+      !formData.message.trim()
+    ) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -50,7 +82,7 @@ export default function Contact() {
         userId: user._id || user.id,
         name: formData.name.trim(),
         email: formData.email.trim(),
-        message: formData.message.trim()
+        message: formData.message.trim(),
       });
 
       if (response.data.success) {
@@ -59,7 +91,7 @@ export default function Contact() {
         setFormData({
           name: "",
           email: "",
-          message: ""
+          message: "",
         });
       } else {
         toast.error(response.data.message || "Failed to send message");
@@ -79,7 +111,9 @@ export default function Contact() {
   return (
     <div className="mt-10 bg-white dark:bg-gray-900 min-h-screen py-8 transition-colors duration-200">
       {/* TITLE */}
-      <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Contact Us</h1>
+      <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
+        Contact Us
+      </h1>
       <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
         We'd love to hear from you! Reach us anytime.
       </p>
@@ -89,24 +123,44 @@ export default function Contact() {
         {/* Email */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition border border-gray-200 dark:border-gray-700">
           <FiMail className="text-blue-600 dark:text-blue-400 text-4xl mx-auto" />
-          <h3 className="text-xl font-bold text-center mt-4 text-gray-900 dark:text-white">Email Us</h3>
+          <h3 className="text-xl font-bold text-center mt-4 text-gray-900 dark:text-white">
+            Email Us
+          </h3>
           <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
-            support@bookstore.com
+            <a
+              href={`mailto:${websiteSettings.supportEmail}`}
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition"
+            >
+              {websiteSettings.supportEmail}
+            </a>
           </p>
         </div>
 
         {/* Phone */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition border border-gray-200 dark:border-gray-700">
           <FiPhone className="text-green-600 dark:text-green-400 text-4xl mx-auto" />
-          <h3 className="text-xl font-bold text-center mt-4 text-gray-900 dark:text-white">Call Us</h3>
-          <p className="text-gray-600 dark:text-gray-400 text-center mt-2">+123 456 789</p>
+          <h3 className="text-xl font-bold text-center mt-4 text-gray-900 dark:text-white">
+            Call Us
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
+            <a
+              href={`tel:${websiteSettings.phoneNumber}`}
+              className="hover:text-green-600 dark:hover:text-green-400 transition"
+            >
+              {websiteSettings.phoneNumber}
+            </a>
+          </p>
         </div>
 
         {/* Address */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition border border-gray-200 dark:border-gray-700">
           <FiMapPin className="text-red-500 dark:text-red-400 text-4xl mx-auto" />
-          <h3 className="text-xl font-bold text-center mt-4 text-gray-900 dark:text-white">Our Location</h3>
-          <p className="text-gray-600 dark:text-gray-400 text-center mt-2">Mogadishu - Somalia</p>
+          <h3 className="text-xl font-bold text-center mt-4 text-gray-900 dark:text-white">
+            Our Location
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400 text-center mt-2">
+            {websiteSettings.location}
+          </p>
         </div>
       </div>
 
@@ -114,8 +168,12 @@ export default function Contact() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-16">
         {/* CONTACT FORM */}
         <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow border border-gray-200 dark:border-gray-700">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Send us a Message</h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">We reply within 24 hours.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Send us a Message
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            We reply within 24 hours.
+          </p>
 
           <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
             <input
@@ -163,13 +221,20 @@ export default function Contact() {
         </div>
 
         {/* GOOGLE MAP */}
-        <iframe
-          title="map"
-          className="rounded-xl shadow w-full lg:p-0 md:p-0 p-6 h-[33rem]"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.828523934933!2d45.3181611742072!3d2.046934698490992!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3d58424d79c3df47%3A0x4ad75bb2745078e1!2sMogadishu!5e0!3m2!1sen!2sso!4v1705500000000"
-          allowFullScreen=""
-          loading="lazy"
-        ></iframe>
+        <div className="rounded-xl shadow overflow-hidden h-[33rem] border border-gray-200 dark:border-gray-700">
+          <iframe
+            title="Location Map"
+            className="w-full h-full"
+            src={`https://maps.google.com/maps?width=100%25&height=600&hl=en&q=${encodeURIComponent(websiteSettings.location || 'Mogadishu, Somalia')}&t=&z=15&ie=UTF8&iwloc=B&output=embed`}
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen={true}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            key={websiteSettings.location}
+          />
+        </div>
       </div>
     </div>
   );

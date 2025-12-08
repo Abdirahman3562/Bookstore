@@ -12,3 +12,4 @@ router.put("/", uploadLogo.single("logo"), updateWebsiteSettings);
 export default router;
 
 
+

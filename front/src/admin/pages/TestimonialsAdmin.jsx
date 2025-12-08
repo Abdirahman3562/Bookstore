@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { MessageSquare, RotateCcw, Edit, Trash2, Plus, CheckCircle, XCircle, Clock, User, Tag, Upload } from "lucide-react";
+import { MessageSquare, RotateCcw, Edit, Trash2, Plus, CheckCircle, XCircle, Clock, User, Tag, Upload, Star } from "lucide-react";
 import { getCurrentAdminUser, canAdd, canEdit, canDelete } from "../utils/permissions";
 
 export default function TestimonialsAdmin() {
@@ -27,6 +27,7 @@ export default function TestimonialsAdmin() {
     img: "",
     avatarFile: null,
     quote: "",
+    rating: 5,
     status: "pending"
   });
   const [deleteModal, setDeleteModal] = useState({ show: false, testimonial: null });
@@ -85,6 +86,7 @@ export default function TestimonialsAdmin() {
       formDataToSend.append('role', formData.role);
       formDataToSend.append('tag', formData.tag);
       formDataToSend.append('quote', formData.quote);
+      formDataToSend.append('rating', formData.rating);
       formDataToSend.append('status', formData.status);
 
       // Add file if uploaded
@@ -127,6 +129,7 @@ export default function TestimonialsAdmin() {
       img: "",
       avatarFile: null,
       quote: "",
+      rating: 5,
       status: "pending"
     });
     setEditingTestimonial(null);
@@ -142,6 +145,7 @@ export default function TestimonialsAdmin() {
       img: testimonial.img,
       avatarFile: null,
       quote: testimonial.quote,
+      rating: testimonial.rating || 5,
       status: testimonial.status
     });
     setShowForm(true);
@@ -427,6 +431,23 @@ export default function TestimonialsAdmin() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rating *</label>
+              <select
+                name="rating"
+                value={formData.rating}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value={5}>5 Stars ⭐⭐⭐⭐⭐</option>
+                <option value={4}>4 Stars ⭐⭐⭐⭐</option>
+                <option value={3}>3 Stars ⭐⭐⭐</option>
+                <option value={2}>2 Stars ⭐⭐</option>
+                <option value={1}>1 Star ⭐</option>
+              </select>
+            </div>
+
             {editingTestimonial && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
@@ -527,6 +548,27 @@ export default function TestimonialsAdmin() {
 
                     {/* Quote */}
                     <div className="flex-1">
+                      {/* Rating Stars */}
+                      <div className="flex items-center gap-1 mb-3">
+                        {[...Array(5)].map((_, idx) => {
+                          const rating = testimonial.rating || 5;
+                          const isFilled = idx < rating;
+                          return (
+                            <Star
+                              key={idx}
+                              className={`w-4 h-4 ${
+                                isFilled
+                                  ? 'text-yellow-400 fill-yellow-400'
+                                  : 'text-gray-300 dark:text-gray-600'
+                              }`}
+                            />
+                          );
+                        })}
+                        <span className="ml-2 text-sm text-gray-600 dark:text-gray-400 font-medium">
+                          ({testimonial.rating || 5}/5)
+                        </span>
+                      </div>
+                      
                       <blockquote className="text-gray-700 dark:text-gray-300 italic text-base leading-relaxed mb-4">
                         "{testimonial.quote}"
                       </blockquote>

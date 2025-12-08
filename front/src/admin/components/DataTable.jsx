@@ -103,13 +103,13 @@ export default function DataTable({
     <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden ${className}`}>
       {/* Table Container */}
       <div className="overflow-x-auto scrollbar-hide">
-        <table className="w-full min-w-[1040px]">
+        <table className="w-full   min-w-[1040px]">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
               {columns.map((column, index) => (
                 <th
                   key={index}
-                  className={`text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm ${
+                  className={`text-left py-3 px-4 font-semibold text-gray-900 dark:text-white text-sm whitespace-nowrap ${
                     column.className || ""
                   }`}
                   style={{ width: column.width }}

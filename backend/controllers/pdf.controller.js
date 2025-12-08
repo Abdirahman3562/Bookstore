@@ -43,6 +43,24 @@ export const getProtectedPDF = async (req, res) => {
       status: 'active'
     });
 
+    // Check if download access has been revoked for this user and book
+    const revokedAccess = await Download.findOne({
+      $or: [
+        { userId: userId?.toString() },
+        { email: userEmail?.toLowerCase() }
+      ],
+      bookId: book._id.toString(),
+      notDownloaded: true
+    });
+
+    // If access is revoked, deny access regardless of purchase status
+    if (revokedAccess) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: Your download access to this book has been revoked"
+      });
+    }
+
     // Check if user has free download access (not revoked)
     const hasDownloadAccess = await Download.findOne({
       $or: [

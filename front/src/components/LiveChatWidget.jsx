@@ -27,6 +27,11 @@ export default function LiveChatWidget() {
   const isInitialLoadRef = useRef(true); // Track if this is the first load
   const previousUnreadCountRef = useRef(0); // Track previous unread count to detect increases
   const hasPlayedLoginSoundRef = useRef(false); // Track if we've played sound on login
+  const [websiteName, setWebsiteName] = useState("Bookstore"); // Website name from settings
+  const welcomeMessageSentRef = useRef(false); // Track if welcome message has been sent
+  const [adminInfo, setAdminInfo] = useState({ name: "Support", avatar: "" }); // Admin info for welcome message
+  const [isAdminTyping, setIsAdminTyping] = useState(false); // Track if admin is typing
+  const typingTimeoutRef = useRef(null); // Timeout for typing indicator
 
   // Check if user is logged in
   const isUserLoggedIn = () => {
@@ -58,6 +63,126 @@ export default function LiveChatWidget() {
       });
     } catch (error) {
       console.log("Could not play notification sound:", error);
+    }
+  };
+
+  // Fetch website settings to get website name
+  const fetchWebsiteSettings = async () => {
+    try {
+      const response = await axios.get("http://localhost:3000/api/website-settings");
+      if (response.data.success) {
+        const websiteName = response.data.data?.websiteName || "Bookstore";
+        setWebsiteName(websiteName);
+      }
+    } catch (error) {
+      console.error("Error fetching website settings:", error);
+      // Keep default "Bookstore" if fetch fails
+    }
+  };
+
+  // Fetch admin info for welcome message
+  const fetchAdminInfo = async () => {
+    try {
+      // Try to get admin from admins API
+      const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+      if (adminsResponse.data.success) {
+        const admins = adminsResponse.data.data || [];
+        if (admins.length > 0) {
+          // Use the first admin or find one with reply permission
+          const admin = admins.find(a => a.permissions?.liveChat?.canReply) || admins[0];
+          setAdminInfo({
+            name: admin.name || admin.email?.split('@')[0] || "Support",
+            avatar: admin.avatar || ""
+          });
+          return;
+        }
+      }
+    } catch (error) {
+      console.log("Admins API not available, using default");
+    }
+    
+    // Fallback: Try to get admin info from recent admin messages
+    try {
+      const conversationsResponse = await axios.get("http://localhost:3000/api/chat/conversations");
+      if (conversationsResponse.data.success) {
+        const conversations = conversationsResponse.data.data || [];
+        // Find a conversation with admin messages
+        for (const conv of conversations) {
+          if (conv.lastMessage?.sender === "admin") {
+            const messagesResponse = await axios.get(`http://localhost:3000/api/chat/messages/${conv.userId}`);
+            if (messagesResponse.data.success) {
+              const messages = messagesResponse.data.data || [];
+              const adminMsg = messages.find(m => m.sender === "admin" && m.adminName);
+              if (adminMsg) {
+                setAdminInfo({
+                  name: adminMsg.adminName || "Support",
+                  avatar: adminMsg.adminAvatar || ""
+                });
+                return;
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log("Could not get admin info from messages");
+    }
+    
+    // Default fallback
+    setAdminInfo({ name: "Support", avatar: "" });
+  };
+
+  // Send automatic welcome message when user first opens chat
+  const sendWelcomeMessage = async () => {
+    if (!userId || welcomeMessageSentRef.current) return;
+    
+    try {
+      // Check if user already has messages
+      const response = await axios.get(`http://localhost:3000/api/chat/messages/${userId}`);
+      if (response.data.success) {
+        const existingMessages = response.data.data || [];
+        
+        // Only send welcome message if user has no messages (first time opening chat)
+        if (existingMessages.length === 0) {
+          const welcomeText = `Welcome to ${websiteName}! How can I help you today?`;
+          
+          try {
+            // Send welcome message with admin info
+            await axios.post("http://localhost:3000/api/chat/send", {
+              userId: userId,
+              message: welcomeText,
+              sender: "admin",
+              adminId: adminInfo.name.toLowerCase().replace(/\s+/g, '_'),
+              adminName: adminInfo.name,
+              adminAvatar: adminInfo.avatar
+            });
+            
+            console.log("Welcome message sent successfully with admin:", adminInfo.name);
+            welcomeMessageSentRef.current = true;
+          } catch (sendError) {
+            console.error("Error sending welcome message:", sendError);
+            // If it fails, try with default admin info
+            try {
+              await axios.post("http://localhost:3000/api/chat/send", {
+                userId: userId,
+                message: welcomeText,
+                sender: "admin",
+                adminId: "system",
+                adminName: adminInfo.name || "Support",
+                adminAvatar: adminInfo.avatar || ""
+              });
+              welcomeMessageSentRef.current = true;
+            } catch (retryError) {
+              console.error("Error sending welcome message with retry:", retryError);
+            }
+          }
+        } else {
+          // User already has messages, mark as sent so we don't check again
+          welcomeMessageSentRef.current = true;
+        }
+      }
+    } catch (error) {
+      console.error("Error checking/sending welcome message:", error);
     }
   };
 
@@ -153,6 +278,18 @@ export default function LiveChatWidget() {
       playNotificationSound();
       
       setNewMessage("");
+      
+      // Stop typing indicator when sending
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (userId) {
+        axios.post("http://localhost:3000/api/chat/typing", {
+          userId: userId,
+          isTyping: false
+        }).catch(() => {});
+      }
+      
       await fetchMessages();
       
       // Auto-scroll to bottom after sending message
@@ -247,10 +384,20 @@ export default function LiveChatWidget() {
     }
   }, [userId]);
 
+  // Fetch website settings and admin info on mount
+  useEffect(() => {
+    fetchWebsiteSettings();
+    fetchAdminInfo();
+  }, []);
+
   useEffect(() => {
     if (isOpen && userId) {
       setLoading(true);
-      fetchMessages().finally(() => setLoading(false));
+      
+      // Send welcome message if this is first time opening chat
+      sendWelcomeMessage().then(() => {
+        fetchMessages().finally(() => setLoading(false));
+      });
       
       // Mark admin messages as read when chat is opened
       const markAdminMessagesAsRead = async () => {
@@ -273,10 +420,32 @@ export default function LiveChatWidget() {
       // Real-time: Refresh messages every 2 seconds when open
       const interval = setInterval(() => {
         fetchMessages();
-      }, 2000);
-      return () => clearInterval(interval);
+        // Check if admin is typing
+        if (userId) {
+          axios.get(`http://localhost:3000/api/chat/typing/${userId}`)
+            .then(res => {
+              if (res.data.success) {
+                const typingData = res.data.data;
+                // Only show typing if admin is typing (not user)
+                const adminIsTyping = typingData?.isTyping && typingData?.sender === "admin";
+                setIsAdminTyping(adminIsTyping);
+                console.log("📖 Admin typing status:", adminIsTyping, typingData);
+              }
+            })
+            .catch((err) => {
+              console.error("❌ Error checking admin typing status:", err);
+            });
+        }
+      }, 1000); // Check every 1 second for more responsive typing indicator
+      return () => {
+        clearInterval(interval);
+        // Clean up typing timeout
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+      };
     }
-  }, [isOpen, userId]);
+  }, [isOpen, userId, websiteName, adminInfo]);
 
   // Auto-scroll to bottom when messages change (only if user is at bottom)
   useEffect(() => {
@@ -421,15 +590,16 @@ export default function LiveChatWidget() {
                       <p className="text-xs text-gray-500 dark:text-gray-400">Send us a message and we'll get back to you!</p>
                     </div>
                   ) : (
-                    messages.map((msg, index) => {
-                      const showAvatar = msg.sender === "admin" || 
-                        (index === 0 || messages[index - 1].sender !== msg.sender);
-                      
-                      return (
-                        <div
-                          key={msg._id}
-                          className={`flex gap-2 ${msg.sender === "admin" ? "justify-start" : "justify-end"}`}
-                        >
+                    <>
+                      {messages.map((msg, index) => {
+                        const showAvatar = msg.sender === "admin" || 
+                          (index === 0 || messages[index - 1].sender !== msg.sender);
+                        
+                        return (
+                          <div
+                            key={msg._id}
+                            className={`flex gap-2 ${msg.sender === "admin" ? "justify-start" : "justify-end"}`}
+                          >
                           {msg.sender === "admin" && (
                             <>
                               <div className="flex-shrink-0">
@@ -513,9 +683,44 @@ export default function LiveChatWidget() {
                               </div>
                             </>
                           )}
+                          </div>
+                        );
+                      })}
+                      {/* Admin Typing Indicator */}
+                      {isAdminTyping && (
+                        <div className="flex gap-2 justify-start">
+                          <div className="flex-shrink-0">
+                            {adminInfo.avatar ? (
+                              <img
+                                src={adminInfo.avatar}
+                                alt={adminInfo.name || "Admin"}
+                                className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                <span className="text-white text-xs font-semibold">
+                                  {(adminInfo.name || "Admin")[0]?.toUpperCase() || "A"}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-start max-w-[75%]">
+                            <div className="rounded-2xl px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700">
+                              <div className="flex items-center gap-1">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                  {adminInfo.name || "Admin"} is typing
+                                </span>
+                                <div className="flex gap-1">
+                                  <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                                  <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                                  <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      );
-                    })
+                      )}
+                    </>
                   )}
                   <div ref={messagesEndRef} />
                 </div>
@@ -545,10 +750,60 @@ export default function LiveChatWidget() {
                         <input
                           type="text"
                           value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
+                          onChange={(e) => {
+                            setNewMessage(e.target.value);
+                            // Notify admin that user is typing
+                            if (e.target.value.trim() && userId) {
+                              // Clear previous timeout
+                              if (typingTimeoutRef.current) {
+                                clearTimeout(typingTimeoutRef.current);
+                              }
+                              
+                              // Send typing indicator to backend immediately
+                              axios.post("http://localhost:3000/api/chat/typing", {
+                                userId: userId,
+                                isTyping: true,
+                                sender: "user"
+                              }).then(() => {
+                                console.log("User typing status sent: true");
+                              }).catch((err) => {
+                                console.error("Error sending typing status:", err);
+                              });
+                              
+                              // Stop typing indicator after 2 seconds of no typing
+                              typingTimeoutRef.current = setTimeout(() => {
+                                axios.post("http://localhost:3000/api/chat/typing", {
+                                  userId: userId,
+                                  isTyping: false,
+                                  sender: "user"
+                                }).catch(() => {});
+                              }, 2000);
+                            } else if (!e.target.value.trim() && userId) {
+                              // Stop typing indicator when input is empty
+                              if (typingTimeoutRef.current) {
+                                clearTimeout(typingTimeoutRef.current);
+                              }
+                              axios.post("http://localhost:3000/api/chat/typing", {
+                                userId: userId,
+                                isTyping: false,
+                                sender: "user"
+                              }).catch(() => {});
+                            }
+                          }}
                           onKeyPress={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
+                              // Stop typing indicator when sending
+                              if (typingTimeoutRef.current) {
+                                clearTimeout(typingTimeoutRef.current);
+                              }
+                              if (userId) {
+                                axios.post("http://localhost:3000/api/chat/typing", {
+                                  userId: userId,
+                                  isTyping: false,
+                                  sender: "user"
+                                }).catch(() => {});
+                              }
                               handleSendMessage();
                             }
                           }}

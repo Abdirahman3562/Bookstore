@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { Settings, Upload, Save } from "lucide-react";
+import { Settings, Upload, Save, Mail, Phone, MapPin } from "lucide-react";
 import { getCurrentAdminUser, canEdit } from "../utils/permissions";
 
 export default function WebsiteSettings() {
   const [settings, setSettings] = useState({
     websiteName: "",
     websiteLogo: "",
+    supportEmail: "",
+    phoneNumber: "",
+    location: "",
   });
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
@@ -69,6 +72,10 @@ export default function WebsiteSettings() {
     try {
       const formData = new FormData();
       formData.append("websiteName", settings.websiteName);
+      formData.append("supportEmail", settings.supportEmail || "");
+      formData.append("phoneNumber", settings.phoneNumber || "");
+      // Save location as text to database
+      formData.append("location", settings.location ? String(settings.location).trim() : "");
       if (logoFile) {
         formData.append("logo", logoFile);
       }
@@ -142,6 +149,69 @@ export default function WebsiteSettings() {
             />
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               This name will be used across the website and in emails
+            </p>
+          </div>
+
+          {/* Support Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <Mail className="inline w-4 h-4 mr-2" />
+              Support Email
+            </label>
+            <input
+              type="email"
+              value={settings.supportEmail}
+              onChange={(e) =>
+                setSettings({ ...settings, supportEmail: e.target.value })
+              }
+              className="w-full px-4 py-2 border focus:outline-none border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="support@bookstore.com"
+              disabled={!canEdit(currentUser, 'websiteSettings')}
+            />
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Support email address for customer inquiries
+            </p>
+          </div>
+
+          {/* Phone Number */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <Phone className="inline w-4 h-4 mr-2" />
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              value={settings.phoneNumber}
+              onChange={(e) =>
+                setSettings({ ...settings, phoneNumber: e.target.value })
+              }
+              className="w-full px-4 py-2 border focus:outline-none border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="+123 456 789"
+              disabled={!canEdit(currentUser, 'websiteSettings')}
+            />
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Contact phone number for customer support
+            </p>
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <MapPin className="inline w-4 h-4 mr-2" />
+              Location
+            </label>
+            <input
+              type="text"
+              value={settings.location || ""}
+              onChange={(e) =>
+                setSettings({ ...settings, location: e.target.value })
+              }
+              className="w-full px-4 py-2 border focus:outline-none border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="Mogadishu - Somalia"
+              disabled={!canEdit(currentUser, 'websiteSettings')}
+            />
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Enter business location address. It will be saved to database when you click "Save Settings".
             </p>
           </div>
 

@@ -11,6 +11,18 @@ const websiteSettingsSchema = new mongoose.Schema(
       type: String, // URL or path to logo image
       default: "",
     },
+    supportEmail: {
+      type: String,
+      default: "",
+    },
+    phoneNumber: {
+      type: String,
+      default: "",
+    },
+    location: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
@@ -29,5 +41,6 @@ websiteSettingsSchema.statics.getSettings = async function () {
 const WebsiteSettings = mongoose.model("WebsiteSettings", websiteSettingsSchema);
 
 export default WebsiteSettings;
+
 
 

@@ -50,6 +50,9 @@ export const getWebsiteSettings = async (req, res) => {
 // UPDATE website settings
 export const updateWebsiteSettings = async (req, res) => {
   try {
+    console.log("📝 Received form data:", req.body);
+    console.log("📍 Location from body:", req.body.location);
+    
     let settings = await WebsiteSettings.findOne();
     
     if (!settings) {
@@ -59,6 +62,22 @@ export const updateWebsiteSettings = async (req, res) => {
     // Update website name if provided
     if (req.body.websiteName) {
       settings.websiteName = req.body.websiteName;
+    }
+
+    // Update support email if provided
+    if (req.body.supportEmail !== undefined) {
+      settings.supportEmail = req.body.supportEmail;
+    }
+
+    // Update phone number if provided
+    if (req.body.phoneNumber !== undefined) {
+      settings.phoneNumber = req.body.phoneNumber;
+    }
+
+    // Update location if provided (including empty string to clear it)
+    if (req.body.location !== undefined) {
+      settings.location = req.body.location || "";
+      console.log("📍 Location updated:", req.body.location || "(empty)");
     }
 
     // Update logo if file is uploaded
@@ -92,5 +111,6 @@ export const updateWebsiteSettings = async (req, res) => {
     });
   }
 };
+
 
 

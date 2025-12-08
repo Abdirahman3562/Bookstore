@@ -47,7 +47,9 @@ export default function PurchasedAdmin() {
 
       // Calculate stats
       const items = data;
-      const totalSales = items.reduce((sum, item) => sum + (item.price || 0), 0);
+      const totalSales = items
+        .filter(item => item.status === 'active')
+        .reduce((sum, item) => sum + (item.price || 0), 0);
       const totalOrders = items.length;
       const pendingOrders = items.filter(item => item.status === 'pending').length;
       const approvedOrders = items.filter(item => item.status === 'approved' || item.status === 'active').length;

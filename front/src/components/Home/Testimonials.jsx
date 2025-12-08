@@ -141,9 +141,16 @@ export default function Testimonials() {
               >
                 {/* Stars */}
                 <div className="flex gap-1 text-blue-600 dark:text-blue-400 mb-3">
-                  {[...Array(5)].map((_, idx) => (
-                    <FaStar key={idx} />
-                  ))}
+                  {[...Array(5)].map((_, idx) => {
+                    const rating = t.rating || 5;
+                    const isFilled = idx < rating;
+                    return (
+                      <FaStar 
+                        key={idx} 
+                        className={isFilled ? 'text-blue-600 dark:text-blue-400' : 'text-gray-300 dark:text-gray-600'} 
+                      />
+                    );
+                  })}
                 </div>
 
                 {/* Tag */}

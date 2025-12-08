@@ -28,7 +28,6 @@ export default function CommentList({
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   const [openReplies, setOpenReplies] = useState({});
-  const [expanded, setExpanded] = useState({});
 
   const startEditing = (comment) => {
     setEditingId(comment.id);
@@ -121,7 +120,7 @@ export default function CommentList({
 
       {comments.map((c) => (
         <div key={c.id} className="py-4 px-4 lg:px-0 md:px-0 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex gap-3">
+          <div className="flex gap-3 w-full">
             {/* Avatar */}
             {c.avatar ? (
               <img
@@ -134,7 +133,7 @@ export default function CommentList({
               </div>
             )}
 
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               {/* Name + Comment */}
               <p className="font-semibold text-gray-900 dark:text-white">{c.username}</p>
 
@@ -165,50 +164,24 @@ export default function CommentList({
                 </>
               ) : (
                 <>
-                  {/* Comment text with clamp */}
+                  {/* Comment text - full height, no restrictions */}
                   <div
-                    className="text-gray-800 dark:text-gray-200 mt-1 overflow-hidden transition-all duration-300 break-words"
+                    className="text-gray-800 dark:text-gray-200 mt-1 break-words whitespace-normal"
                     style={{
-                      maxHeight: expanded[c.id] ? "none" : "80px",
                       wordBreak: "break-word",
-                      overflowWrap: "anywhere",
-                      maxWidth: "80%",
+                      overflowWrap: "break-word",
+                      wordWrap: "break-word",
                     }}
                   >
                     {c.comment}
                   </div>
-
-                  {/* Read more / Show less */}
-                  {c.comment.length > 200 && (
-                    <button
-                      onClick={() =>
-                        setExpanded((prev) => ({
-                          ...prev,
-                          [c.id]: !prev[c.id],
-                        }))
-                      }
-                      className="text-blue-600 dark:text-blue-400 text-sm mt-1 flex items-center gap-1 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                    >
-                      {expanded[c.id] ? (
-                        <>
-                          <IoIosArrowUp className="text-lg" />
-                          Show less
-                        </>
-                      ) : (
-                        <>
-                          <IoIosArrowDown className="text-lg" />
-                          Read more
-                        </>
-                      )}
-                    </button>
-                  )}
                 </>
               )}
 
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{timeAgo(c.date)}</p>
 
               {/* Action buttons */}
-              <div className="flex gap-4 text-sm mt-2 text-blue-600 dark:text-blue-400">
+              <div className="flex flex-wrap gap-4 text-sm mt-2 text-blue-600 dark:text-blue-400">
                 {user && (user._id || user.id)?.toString() !== c.userId?.toString() && (
                   <button
                     className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
