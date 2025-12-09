@@ -2,6 +2,7 @@ import express from "express";
 import {
   getAllUsers,
   getUserById,
+  updateUser,
   updateUserStatus,
   deleteUser,
   createUser,
@@ -41,6 +42,9 @@ router.get("/", getAllUsers);
 
 // GET /api/users/:id - Get single user (must be last to avoid conflicts)
 router.get("/:id", getUserById);
+
+// PUT /api/users/:id - Update user
+router.put("/:id", updateUser);
 
 // PATCH /api/users/:id/status - Update user status
 router.patch("/:id/status", updateUserStatus);

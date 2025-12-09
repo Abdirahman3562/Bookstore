@@ -601,14 +601,28 @@ export default function LiveChatAdmin() {
                           className={`w-12 h-12 md:w-14 md:h-14 rounded-full object-cover ${
                             showMessengerStyle ? "ring-2 ring-blue-400/50" : ""
                           }`}
+                          onError={(e) => {
+                            // If image fails to load, replace with default avatar
+                            e.target.style.display = 'none';
+                            const fallback = e.target.nextElementSibling;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center ${
+                      ) : null}
+                      <div 
+                        className={`w-12 h-12 md:w-14 md:h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center ${
                           showMessengerStyle ? "ring-2 ring-blue-400/50" : ""
-                        }`}>
+                        }`}
+                        style={{ display: conv.userAvatar ? 'none' : 'flex' }}
+                      >
+                        {conv.userName ? (
+                          <span className="text-blue-600 dark:text-blue-400 text-sm md:text-base font-semibold">
+                            {conv.userName[0]?.toUpperCase() || "U"}
+                          </span>
+                        ) : (
                           <User className="w-6 h-6 md:w-7 md:h-7 text-blue-600 dark:text-blue-400" />
-                        </div>
-                      )}
+                        )}
+                      </div>
                       {/* Online Indicator - Only show if user is logged in and online */}
                       {isUserOnline(conv.lastActivity, conv.userId) && (
                         <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>

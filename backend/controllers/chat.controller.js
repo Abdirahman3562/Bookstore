@@ -45,18 +45,46 @@ export const getAllConversations = async (req, res) => {
       { $sort: { lastMessage: -1 } }
     ]);
 
-    // Get last message for each conversation
+    // Get last message for each conversation and fetch user's current avatar
     const conversationsWithLastMessage = await Promise.all(
       conversations.map(async (conv) => {
         const lastMsg = await ChatMessage.findOne({ userId: conv._id })
           .sort({ createdAt: -1 })
           .limit(1);
         
+        // Fetch user's current avatar from User model if not in messages
+        let userAvatar = conv.userAvatar;
+        if (!userAvatar) {
+          try {
+            const user = await User.findById(conv._id);
+            if (user && user.avatar) {
+              userAvatar = user.avatar;
+            }
+          } catch (error) {
+            console.log("Error fetching user avatar:", error);
+          }
+        }
+        
+        // Also get user's name and email from User model if available
+        let userName = conv.userName;
+        let userEmail = conv.userEmail;
+        try {
+          const user = await User.findById(conv._id);
+          if (user) {
+            if (!userName && user.name) userName = user.name;
+            if (!userEmail && user.email) userEmail = user.email;
+            // Always use the latest avatar from User model if available
+            if (user.avatar) userAvatar = user.avatar;
+          }
+        } catch (error) {
+          console.log("Error fetching user info:", error);
+        }
+        
         return {
           userId: conv._id,
-          userName: conv.userName,
-          userEmail: conv.userEmail,
-          userAvatar: conv.userAvatar,
+          userName: userName || "User",
+          userEmail: userEmail || "",
+          userAvatar: userAvatar || "",
           unreadCount: conv.unreadCount,
           lastMessage: lastMsg ? {
             message: lastMsg.message,
