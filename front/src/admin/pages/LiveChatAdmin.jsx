@@ -26,6 +26,23 @@ export default function LiveChatAdmin() {
   const [isUserTyping, setIsUserTyping] = useState(false); // Track if selected user is typing
   const [typingUsers, setTypingUsers] = useState(new Map()); // Track typing status for all users: userId -> { isTyping: boolean, userName: string, userAvatar: string }
   const typingTimeoutRef = useRef(null); // Timeout for typing indicator
+  const [hasAIMessages, setHasAIMessages] = useState(false); // Track if conversation has AI messages
+
+  // Set admin online status
+  const setAdminOnline = async (isOnline) => {
+    try {
+      const adminUser = await getCurrentAdminUser();
+      if (adminUser && adminUser.email) {
+        await axios.post("http://localhost:3000/api/chat/admin/online", {
+          adminId: adminUser.email,
+          isOnline: isOnline
+        });
+        console.log(`👤 Admin ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+      }
+    } catch (error) {
+      console.error("Error setting admin online status:", error);
+    }
+  };
 
   // Fetch current admin info
   const fetchCurrentAdmin = async () => {
@@ -47,6 +64,11 @@ export default function LiveChatAdmin() {
         // Check if admin has permission to send messages (reply permission)
         const hasReplyPermission = canReplyLiveChat(adminUser);
         setCanSendMessages(hasReplyPermission);
+        
+        // Set admin as online when they open the chat page
+        if (hasReplyPermission) {
+          setAdminOnline(true);
+        }
       } else {
         const adminEmail = localStorage.getItem("admin_email");
         if (adminEmail) {
@@ -239,6 +261,10 @@ export default function LiveChatAdmin() {
         // Check for new messages (for auto-scroll only, no sound here)
         const hasNewMessages = newCount > previousCount && previousCount >= 0;
         
+        // Check if conversation has AI messages (not taken over yet)
+        const hasAI = newMessages.some(msg => msg.sender === "ai" && !msg.takenOverBy);
+        setHasAIMessages(hasAI);
+        
         setMessages(newMessages);
         
         // Auto-scroll to bottom when new messages arrive
@@ -377,6 +403,19 @@ export default function LiveChatAdmin() {
     fetchConversations();
     fetchUnreadCount();
     
+    // Set admin online when component mounts (admin opens chat page)
+    const setAdminOnlineOnMount = async () => {
+      const adminUser = await getCurrentAdminUser();
+      if (adminUser) {
+        const hasReplyPermission = canReplyLiveChat(adminUser);
+        if (hasReplyPermission) {
+          setAdminOnline(true);
+          console.log("✅ Admin set to ONLINE on mount");
+        }
+      }
+    };
+    setAdminOnlineOnMount();
+    
     // Don't play sound when admin enters - only play when opening conversations with unread messages
     
     // Real-time: Refresh every 2 seconds
@@ -435,6 +474,8 @@ export default function LiveChatAdmin() {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+      // Set admin offline when component unmounts
+      setAdminOnline(false);
     };
   }, [selectedConversation]);
   
@@ -685,6 +726,40 @@ export default function LiveChatAdmin() {
                     </div>
                   </div>
                   
+                  {/* Take Over Button - Show if conversation has AI messages */}
+                  {hasAIMessages && (
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const adminUser = await getCurrentAdminUser();
+                            const adminId = adminUser?.email || currentAdmin.email;
+                            const adminName = adminUser?.name || currentAdmin.name;
+                            const adminAvatar = adminUser?.avatar || currentAdmin.avatar;
+                            
+                            await axios.post("http://localhost:3000/api/chat/takeover", {
+                              userId: selectedConversation.userId,
+                              adminId: adminId,
+                              adminName: adminName,
+                              adminAvatar: adminAvatar
+                            });
+                            
+                            toast.success("You have taken over the chat!");
+                            fetchMessages(selectedConversation.userId);
+                            setHasAIMessages(false);
+                          } catch (error) {
+                            console.error("Error taking over chat:", error);
+                            toast.error("Failed to take over chat");
+                          }
+                        }}
+                        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Take Over Chat
+                      </button>
+                    </div>
+                  )}
+                  
                   {/* Admin Info with Online Indicator - Hidden on mobile */}
                   <div className="hidden lg:flex items-center gap-2">
                     <div className="text-right">
@@ -715,18 +790,22 @@ export default function LiveChatAdmin() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto scrollbar-hide p-3 md:p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6">
                 {messages.map((msg, index) => {
                   const showAvatar = index === 0 || messages[index - 1].sender !== msg.sender;
                   const isAdmin = msg.sender === "admin";
+                  const isAI = msg.sender === "ai";
+                  const isRightSide = isAdmin || isAI;
+                  const prevMsg = index > 0 ? messages[index - 1] : null;
+                  const isSameSender = prevMsg && prevMsg.sender === msg.sender;
                   
                   return (
                     <div
                       key={msg._id}
-                      className={`flex gap-2 ${isAdmin ? "justify-end" : "justify-start"}`}
+                      className={`flex mb-5 ${isRightSide ? "justify-end gap-4" : "justify-start gap-4"}`}
                     >
                       {/* User Messages - Left Side */}
-                      {!isAdmin && (
+                      {!isAdmin && msg.sender === "user" && (
                         <>
                           <div className="flex-shrink-0">
                             {showAvatar ? (
@@ -735,35 +814,72 @@ export default function LiveChatAdmin() {
                                   <img
                                     src={msg.userAvatar}
                                     alt={msg.userName}
-                                    className="w-8 h-8 rounded-full object-cover"
+                                    className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
                                   />
                                 ) : (
-                                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                    <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                                    <User className="w-5 h-5 text-white" />
                                   </div>
                                 )}
                                 {/* Online Indicator - Show if user is online */}
                                 {isUserOnline(selectedConversation?.lastActivity, selectedConversation?.userId) && (
-                                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
                                 )}
                               </div>
                             ) : (
-                              <div className="w-8"></div>
+                              <div className="w-10"></div>
                             )}
                           </div>
                           
-                          <div className="flex flex-col items-start max-w-[75%] md:max-w-[70%]">
+                          <div className="flex flex-col items-start max-w-[65%] md:max-w-[60%]">
                             {showAvatar && (
-                              <span className="text-xs text-gray-600 dark:text-gray-400 mb-1 px-1">
-                                {msg.userName}
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5 px-1">
+                                {msg.userName || "User"}
                               </span>
                             )}
-                            <div className="rounded-lg px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white break-words">
-                              <p className="text-sm whitespace-pre-wrap break-words word-break break-all">{msg.message}</p>
-                              <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
+                            <div className="rounded-2xl rounded-tl-md px-4 py-3 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow break-words">
+                              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed text-left">{msg.message}</p>
+                              <p className="text-xs mt-2 text-gray-500 dark:text-gray-400 text-left">
                                 {formatDate(msg.createdAt)}
                               </p>
                             </div>
+                          </div>
+                          <div className="flex-shrink-0 w-8 md:w-12"></div>
+                        </>
+                      )}
+
+                      {/* AI Messages - Right Side (Response to User) */}
+                      {msg.sender === "ai" && (
+                        <>
+                          <div className="flex-shrink-0 w-8 md:w-12"></div>
+                          <div className="flex flex-col items-end max-w-[65%] md:max-w-[60%]">
+                            {showAvatar && (
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5 px-1 flex items-center gap-1 justify-end">
+                                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-semibold shadow-sm">AI Assistance</span>
+                                {msg.takenOverBy && (
+                                  <span className="text-xs text-gray-500">(Taken over)</span>
+                                )}
+                              </span>
+                            )}
+                            <div className="rounded-2xl rounded-tr-md px-4 py-3 bg-gradient-to-br from-purple-500 to-pink-500 text-white border border-purple-400 dark:border-purple-600 shadow-lg hover:shadow-xl transition-shadow break-words">
+                              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed text-right">{msg.message}</p>
+                              <p className="text-xs mt-2 text-purple-100 text-right">
+                                {formatDate(msg.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0">
+                            {showAvatar ? (
+                              <div className="relative">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
+                                  <span className="text-white text-xs font-semibold">AI</span>
+                                </div>
+                                {/* AI Online Indicator - AI is always available */}
+                                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                              </div>
+                            ) : (
+                              <div className="w-10"></div>
+                            )}
                           </div>
                         </>
                       )}
@@ -771,15 +887,16 @@ export default function LiveChatAdmin() {
                       {/* Admin Messages - Right Side */}
                       {isAdmin && (
                         <>
-                          <div className="flex flex-col items-end max-w-[75%] md:max-w-[70%]">
+                          <div className="flex-shrink-0 w-8 md:w-12"></div>
+                          <div className="flex flex-col items-end max-w-[65%] md:max-w-[60%]">
                             {showAvatar && (
-                              <span className="text-xs text-gray-600 dark:text-gray-400 mb-1 px-1">
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5 px-1">
                                 {msg.adminName || currentAdmin.name}
                               </span>
                             )}
-                            <div className="rounded-lg px-4 py-2 bg-blue-600 text-white break-words">
-                              <p className="text-sm whitespace-pre-wrap break-words word-break break-all">{msg.message}</p>
-                              <p className="text-xs mt-1 text-blue-100">
+                            <div className="rounded-2xl rounded-tr-md px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg hover:shadow-xl transition-shadow break-words">
+                              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed text-right">{msg.message}</p>
+                              <p className="text-xs mt-2 text-blue-100 text-right">
                                 {formatDate(msg.createdAt)}
                               </p>
                             </div>
@@ -792,22 +909,22 @@ export default function LiveChatAdmin() {
                                   <img
                                     src={msg.adminAvatar || currentAdmin.avatar}
                                     alt={msg.adminName || currentAdmin.name}
-                                    className="w-8 h-8 rounded-full object-cover"
+                                    className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
                                   />
                                 ) : (
-                                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                                    <span className="text-white text-xs font-semibold">
+                                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                                    <span className="text-white text-sm font-semibold">
                                       {(msg.adminName || currentAdmin.name)[0]?.toUpperCase() || "A"}
                                     </span>
                                   </div>
                                 )}
                                 {/* Admin Online Indicator - Show if admin is logged in */}
                                 {isAdminLoggedIn() && (
-                                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
                                 )}
                               </div>
                             ) : (
-                              <div className="w-8"></div>
+                              <div className="w-10"></div>
                             )}
                           </div>
                         </>
@@ -817,36 +934,37 @@ export default function LiveChatAdmin() {
                 })}
                 {/* User Typing Indicator */}
                 {isUserTyping && selectedConversation && (
-                  <div className="flex gap-2 justify-start">
+                  <div className="flex justify-start gap-4 mb-5">
                     <div className="flex-shrink-0">
                       {selectedConversation.userAvatar ? (
                         <img
                           src={selectedConversation.userAvatar}
                           alt={selectedConversation.userName || "User"}
-                          className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800"
+                          className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-lg"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                          <span className="text-blue-600 dark:text-blue-400 text-xs font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shadow-lg">
+                          <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold">
                             {(selectedConversation.userName || "User")[0]?.toUpperCase() || "U"}
                           </span>
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-col items-start max-w-[75%] md:max-w-[70%]">
-                      <div className="rounded-lg px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <div className="flex flex-col items-start max-w-[65%] md:max-w-[60%]">
+                      <div className="rounded-2xl rounded-tl-md px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white shadow-lg">
                         <div className="flex items-center gap-1">
                           <span className="text-sm text-gray-500 dark:text-gray-400">
                             {selectedConversation.userName || "User"} is typing
                           </span>
                           <div className="flex gap-1">
-                            <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                            <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                            <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                           </div>
                         </div>
                       </div>
                     </div>
+                    <div className="flex-shrink-0 w-8 md:w-12"></div>
                   </div>
                 )}
                 <div ref={messagesEndRef} />

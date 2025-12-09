@@ -105,6 +105,17 @@ export default function AuthPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Helper function to safely parse JSON response
+  const parseJSONResponse = async (response, errorMessage = "Server error. Please try again later.") => {
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await response.text();
+      console.error("Non-JSON response:", text);
+      throw new Error(errorMessage);
+    }
+    return await response.json();
+  };
+
   // HANDLE SIGNUP
  const handleSignup = async () => {
     if (!signupData.name || !signupData.email || !signupData.password) {
@@ -137,7 +148,7 @@ export default function AuthPage() {
         }),
       });
 
-      const responseData = await response.json();
+      const responseData = await parseJSONResponse(response);
 
       setIsSigningUp(false);
 
@@ -162,9 +173,9 @@ export default function AuthPage() {
           
           // Show info message after a short delay to avoid overlapping
           setTimeout(() => {
-            toast.info(
+            toast(
               "You must verify your email before you can login.",
-              { duration: 5000 }
+              { duration: 5000, icon: "ℹ️" }
             );
           }, 1000);
         } else {
@@ -177,9 +188,9 @@ export default function AuthPage() {
               { duration: 5000 }
             );
             setTimeout(() => {
-              toast.info(
+              toast(
                 `Please use this link to verify: ${verificationUrl}`,
-                { duration: 10000 }
+                { duration: 10000, icon: "ℹ️" }
               );
             }, 1000);
             console.log("Verification URL:", verificationUrl);
@@ -228,7 +239,7 @@ export default function AuthPage() {
         }),
       });
 
-      const responseData = await response.json();
+      const responseData = await parseJSONResponse(response, "Server error. Please try again later.");
 
       if (response.ok && responseData.success) {
         // Check if 2-step verification is required
@@ -285,7 +296,7 @@ export default function AuthPage() {
         }),
       });
 
-      const responseData = await response.json();
+      const responseData = await parseJSONResponse(response);
 
       if (response.ok && responseData.success) {
         setIsSendingOTP(false);
@@ -325,7 +336,7 @@ export default function AuthPage() {
         }),
       });
 
-      const responseData = await response.json();
+      const responseData = await parseJSONResponse(response);
 
       if (response.ok && responseData.success) {
         setForgotPasswordStep(3);
@@ -369,7 +380,7 @@ export default function AuthPage() {
         }),
       });
 
-      const responseData = await response.json();
+      const responseData = await parseJSONResponse(response);
 
       if (response.ok && responseData.success) {
         setIsResettingPassword(false);
@@ -412,7 +423,7 @@ export default function AuthPage() {
         }),
       });
 
-      const responseData = await response.json();
+      const responseData = await parseJSONResponse(response, "Server error. Please try again later.");
 
       if (response.ok && responseData.success) {
         if (responseData.data) {

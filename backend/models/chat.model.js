@@ -24,8 +24,20 @@ const chatMessageSchema = new mongoose.Schema({
   },
   sender: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'ai'],
     required: true
+  },
+  isAIChat: {
+    type: Boolean,
+    default: false
+  },
+  takenOverBy: {
+    type: String, // adminId who took over
+    default: null
+  },
+  takenOverAt: {
+    type: Date,
+    default: null
   },
   adminId: {
     type: String,

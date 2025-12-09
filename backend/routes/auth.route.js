@@ -1,5 +1,5 @@
 import express from "express";
-import { loginAdmin, verifyLoginCode } from "../controllers/auth.controller.js";
+import { loginAdmin, verifyLoginCode, logoutAdmin } from "../controllers/auth.controller.js";
 import { sendOTP, verifyOTP, resetPassword } from "../controllers/otp.controller.js";
 import { transporter } from "../utils/email.js";
 
@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post("/login", loginAdmin);
 router.post("/verify-login-code", verifyLoginCode);
+router.post("/logout", logoutAdmin);
 router.post("/send-otp", sendOTP);
 router.post("/verify-otp", verifyOTP);
 router.post("/reset-password", resetPassword);

@@ -6,7 +6,11 @@ import {
   markAsRead,
   getUnreadCount,
   setTypingStatus,
-  getTypingStatus
+  getTypingStatus,
+  setAdminOnlineStatus,
+  getAdminOnlineStatus,
+  takeOverChat,
+  sendAIGreeting
 } from "../controllers/chat.controller.js";
 
 const router = express.Router();
@@ -31,6 +35,18 @@ router.post("/typing", setTypingStatus);
 
 // GET typing status
 router.get("/typing/:userId", getTypingStatus);
+
+// SET admin online status
+router.post("/admin/online", setAdminOnlineStatus);
+
+// GET admin online status
+router.get("/admin/online", getAdminOnlineStatus);
+
+// TAKE OVER chat from AI
+router.post("/takeover", takeOverChat);
+
+// SEND automatic AI greeting when user comes online
+router.post("/ai-greeting/:userId", sendAIGreeting);
 
 export default router;
 

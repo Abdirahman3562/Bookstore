@@ -133,7 +133,7 @@ export default function LiveChatWidget() {
     setAdminInfo({ name: "Support", avatar: "" });
   };
 
-  // Send automatic welcome message when user first opens chat
+  // Send automatic AI welcome message when user first comes online
   const sendWelcomeMessage = async () => {
     if (!userId || welcomeMessageSentRef.current) return;
     
@@ -143,39 +143,17 @@ export default function LiveChatWidget() {
       if (response.data.success) {
         const existingMessages = response.data.data || [];
         
-        // Only send welcome message if user has no messages (first time opening chat)
+        // Only send welcome message if user has no messages (first time coming online)
         if (existingMessages.length === 0) {
-          const welcomeText = `Welcome to ${websiteName}! How can I help you today?`;
-          
           try {
-            // Send welcome message with admin info
-            await axios.post("http://localhost:3000/api/chat/send", {
-              userId: userId,
-              message: welcomeText,
-              sender: "admin",
-              adminId: adminInfo.name.toLowerCase().replace(/\s+/g, '_'),
-              adminName: adminInfo.name,
-              adminAvatar: adminInfo.avatar
-            });
+            // Call the AI greeting endpoint to automatically send AI greeting
+            await axios.post(`http://localhost:3000/api/chat/ai-greeting/${userId}`);
             
-            console.log("Welcome message sent successfully with admin:", adminInfo.name);
+            console.log("✅ Automatic AI greeting sent to user");
             welcomeMessageSentRef.current = true;
           } catch (sendError) {
-            console.error("Error sending welcome message:", sendError);
-            // If it fails, try with default admin info
-            try {
-              await axios.post("http://localhost:3000/api/chat/send", {
-                userId: userId,
-                message: welcomeText,
-                sender: "admin",
-                adminId: "system",
-                adminName: adminInfo.name || "Support",
-                adminAvatar: adminInfo.avatar || ""
-              });
-              welcomeMessageSentRef.current = true;
-            } catch (retryError) {
-              console.error("Error sending welcome message with retry:", retryError);
-            }
+            console.error("Error sending AI greeting:", sendError);
+            welcomeMessageSentRef.current = true; // Mark as sent to avoid retry loops
           }
         } else {
           // User already has messages, mark as sent so we don't check again
@@ -372,6 +350,9 @@ export default function LiveChatWidget() {
       
       checkUnreadMessages();
       
+      // Send automatic AI greeting when user logs in (if they have no messages)
+      sendWelcomeMessage();
+      
       // Also check periodically when user is logged in (even if chat is closed)
       const interval = setInterval(() => {
         checkUnreadMessages();
@@ -421,6 +402,14 @@ export default function LiveChatWidget() {
       // Real-time: Refresh messages every 2 seconds when open
       const interval = setInterval(() => {
         fetchMessages();
+        // Check admin online status
+        axios.get("http://localhost:3000/api/chat/admin/online")
+          .then(res => {
+            if (res.data.success) {
+              setAdminOnline(res.data.data.isOnline);
+            }
+          })
+          .catch(() => {});
         // Check if admin is typing
         if (userId) {
           axios.get(`http://localhost:3000/api/chat/typing/${userId}`)
@@ -540,12 +529,26 @@ export default function LiveChatWidget() {
         </div>
       )}
 
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+      
+      <div className={`fixed z-50 ${
+        isOpen 
+          ? "inset-0 md:inset-auto md:bottom-6 md:right-6 flex items-center justify-center md:block p-4 md:p-0" 
+          : "bottom-6 right-6"
+      }`}>
       {/* Chat Window */}
       {isOpen && (
         <div
           className={`bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ${
-            isMinimized ? "w-80 h-14" : "w-96 h-[600px]"
+            isMinimized 
+              ? "w-80 h-14" 
+              : "w-full md:w-96 h-full md:h-[600px] max-w-md"
           }`}
         >
           {/* Header - Professional Design */}
@@ -600,14 +603,47 @@ export default function LiveChatWidget() {
                   ) : (
                     <>
                       {messages.map((msg, index) => {
-                        const showAvatar = msg.sender === "admin" || 
+                        const showAvatar = msg.sender === "admin" || msg.sender === "ai" || 
                           (index === 0 || messages[index - 1].sender !== msg.sender);
                         
                         return (
                           <div
                             key={msg._id}
-                            className={`flex gap-2 ${msg.sender === "admin" ? "justify-start" : "justify-end"}`}
+                            className={`flex gap-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                           >
+                          {/* AI Messages */}
+                          {msg.sender === "ai" && (
+                            <>
+                              <div className="flex-shrink-0">
+                                {showAvatar ? (
+                                  <div className="relative">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-md">
+                                      <span className="text-white text-xs font-semibold">AI</span>
+                                    </div>
+                                    {/* AI Online Indicator - AI is always available */}
+                                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                                  </div>
+                                ) : (
+                                  <div className="w-8"></div>
+                                )}
+                              </div>
+                              <div className="flex flex-col items-start max-w-[75%]">
+                                {showAvatar && (
+                                  <span className="text-xs text-gray-600 dark:text-gray-400 mb-1 px-1 flex items-center gap-1">
+                                    <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-semibold shadow-sm">AI Assistance</span>
+                                  </span>
+                                )}
+                                <div className="rounded-2xl px-4 py-2.5 break-words bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/20 text-gray-900 dark:text-white shadow-md hover:shadow-lg transition-shadow border border-purple-200 dark:border-purple-800">
+                                  <p className="text-sm whitespace-pre-wrap break-words leading-relaxed text-left">{msg.message}</p>
+                                  <p className="text-xs mt-1.5 text-gray-500 dark:text-gray-400 text-left">
+                                    {formatDate(msg.createdAt)}
+                                  </p>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                          
+                          {/* Admin Messages */}
                           {msg.sender === "admin" && (
                             <>
                               <div className="flex-shrink-0">
@@ -617,10 +653,10 @@ export default function LiveChatWidget() {
                                       <img
                                         src={msg.adminAvatar}
                                         alt={msg.adminName || "Admin"}
-                                        className="w-8 h-8 rounded-full object-cover"
+                                        className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-md"
                                       />
                                     ) : (
-                                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
                                         <User className="w-4 h-4 text-white" />
                                       </div>
                                     )}
@@ -639,7 +675,7 @@ export default function LiveChatWidget() {
                                     {msg.adminName || "Support"}
                                   </span>
                                 )}
-                                <div className="rounded-2xl px-4 py-2.5 break-words bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-700">
+                                <div className="rounded-2xl px-4 py-2.5 break-words bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 text-gray-900 dark:text-white shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700">
                                   <p className="text-sm whitespace-pre-wrap break-words word-break break-all leading-relaxed">{msg.message}</p>
                                   <p className="text-xs mt-1.5 text-gray-500 dark:text-gray-400">
                                     {formatDate(msg.createdAt)}
@@ -657,7 +693,7 @@ export default function LiveChatWidget() {
                                     {msg.userName || user?.name}
                                   </span>
                                 )}
-                                <div className="rounded-2xl px-4 py-2.5 break-words bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md">
+                                <div className="rounded-2xl px-4 py-2.5 break-words bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:shadow-lg transition-shadow">
                                   <p className="text-sm whitespace-pre-wrap break-words word-break break-all leading-relaxed">{msg.message}</p>
                                   <p className="text-xs mt-1.5 text-blue-100">
                                     {formatDate(msg.createdAt)}
@@ -671,10 +707,10 @@ export default function LiveChatWidget() {
                                       <img
                                         src={msg.userAvatar || user.avatar}
                                         alt={msg.userName || user?.name || "User"}
-                                        className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800"
+                                        className="w-8 h-8 rounded-full object-cover border-2 border-white dark:border-gray-800 shadow-md"
                                       />
                                     ) : (
-                                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
                                         <span className="text-white text-xs font-semibold">
                                           {(msg.userName || user?.name)?.[0]?.toUpperCase() || "U"}
                                         </span>

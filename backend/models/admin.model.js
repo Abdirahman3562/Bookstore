@@ -111,6 +111,10 @@ const adminSchema = new mongoose.Schema({
   twoStepVerification: {
     type: Boolean,
     default: false
+  },
+  loggedInStatus: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

@@ -218,16 +218,40 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const menuItems = getFilteredMenuItems();
 
-  const handleLogout = () => {
-    // Save dark mode preference to main darkMode key before logout
-    const adminDarkMode = localStorage.getItem('admin_dark_mode');
-    if (adminDarkMode) {
-      localStorage.setItem('darkMode', adminDarkMode);
+  const handleLogout = async () => {
+    try {
+      // Get admin token before clearing localStorage
+      const adminToken = localStorage.getItem("admin_token");
+      
+      // Call logout endpoint to set loggedInStatus to false
+      if (adminToken) {
+        try {
+          await axios.post("http://localhost:3000/api/auth/logout", {
+            token: adminToken
+          }, {
+            headers: {
+              Authorization: `Bearer ${adminToken}`
+            }
+          });
+          console.log("✅ Admin loggedInStatus set to FALSE");
+        } catch (error) {
+          console.error("Error calling logout endpoint:", error);
+          // Continue with logout even if API call fails
+        }
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+    } finally {
+      // Save dark mode preference to main darkMode key before logout
+      const adminDarkMode = localStorage.getItem('admin_dark_mode');
+      if (adminDarkMode) {
+        localStorage.setItem('darkMode', adminDarkMode);
+      }
+      
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_email");
+      window.location.href = "/admin";
     }
-    
-    localStorage.removeItem("admin_token");
-    localStorage.removeItem("admin_email");
-    window.location.href = "/admin";
   };
 
   return (

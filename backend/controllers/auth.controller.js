@@ -23,13 +23,15 @@ export const loginAdmin = async (req, res) => {
       });
     }
 
-    // First check Admin model - don't use .lean() to ensure password is accessible
+    // First check Admin model - don't use .lean() to ensure password is accessible and we can update
     let admin = await Admin.findOne({ email });
     let isFromUserModel = false;
+    let adminDocument = null; // Keep reference to document for updates
     
     console.log("Admin model check:", admin ? "Found" : "Not found");
     if (admin) {
       console.log("Admin password type:", admin.password ? (admin.password.startsWith('$2a$') || admin.password.startsWith('$2b$') ? "Hashed" : "Plain text") : "No password");
+      adminDocument = admin; // Keep document reference
       // Convert to plain object for easier handling
       admin = admin.toObject();
     }
@@ -151,6 +153,20 @@ export const loginAdmin = async (req, res) => {
     }
 
     // If 2-step verification is disabled, proceed with normal login
+    // Update loggedInStatus to true when admin logs in
+    if (!isFromUserModel && adminDocument) {
+      // Update Admin model directly
+      adminDocument.loggedInStatus = true;
+      await adminDocument.save();
+      console.log(`✅ Admin ${admin.email} loggedInStatus set to TRUE`);
+    } else if (isFromUserModel) {
+      // Update User model (if admin is from User model)
+      await User.findByIdAndUpdate(admin._id, { 
+        loggedInStatus: true 
+      });
+      console.log(`✅ Admin (User model) ${admin.email} loggedInStatus set to TRUE`);
+    }
+
     const token = jwt.sign(
       { id: admin._id, email: admin.email, adminRole: admin.adminRole, permissions: admin.permissions },
       process.env.JWT_SECRET || "fallback_secret_key_change_in_production",
@@ -167,7 +183,8 @@ export const loginAdmin = async (req, res) => {
         name: admin.name,
         email: admin.email,
         adminRole: admin.adminRole,
-        permissions: admin.permissions
+        permissions: admin.permissions,
+        loggedInStatus: true
       }
     });
 
@@ -203,11 +220,15 @@ export const verifyLoginCode = async (req, res) => {
       });
     }
 
-    // Find admin/user
-    let admin = await Admin.findOne({ email }).lean();
+    // Find admin/user - don't use .lean() for Admin to allow updates
+    let admin = await Admin.findOne({ email });
     let isFromUserModel = false;
+    let adminDocument = null; // Keep reference to document for updates
 
-    if (!admin) {
+    if (admin) {
+      adminDocument = admin; // Keep document reference
+      admin = admin.toObject(); // Convert to object for response
+    } else {
       const user = await User.findOne({
         email,
         adminRole: { $in: ['admin', 'author'] }
@@ -242,6 +263,20 @@ export const verifyLoginCode = async (req, res) => {
     // Clear verification code after successful login
     clearOTP(email);
 
+    // Update loggedInStatus to true when admin completes 2-step verification
+    if (!isFromUserModel && adminDocument) {
+      // Update Admin model directly
+      adminDocument.loggedInStatus = true;
+      await adminDocument.save();
+      console.log(`✅ Admin ${admin.email} loggedInStatus set to TRUE (2-step verification)`);
+    } else if (isFromUserModel) {
+      // Update User model (if admin is from User model)
+      await User.findByIdAndUpdate(admin._id, { 
+        loggedInStatus: true 
+      });
+      console.log(`✅ Admin (User model) ${admin.email} loggedInStatus set to TRUE (2-step verification)`);
+    }
+
     console.log("2-step verification successful, token generated");
 
     res.status(200).json({
@@ -252,12 +287,123 @@ export const verifyLoginCode = async (req, res) => {
         name: admin.name,
         email: admin.email,
         adminRole: admin.adminRole,
-        permissions: admin.permissions
+        permissions: admin.permissions,
+        loggedInStatus: true
       }
     });
 
   } catch (err) {
     console.error("Verify login code error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
+  }
+};
+
+// Admin logout - Set loggedInStatus to false
+export const logoutAdmin = async (req, res) => {
+  try {
+    // Get token from Authorization header or request body
+    const authHeader = req.headers.authorization;
+    let token = null;
+    let adminId = null;
+    let adminEmail = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.body.token) {
+      token = req.body.token;
+    }
+
+    // Decode token to get admin ID
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key_change_in_production");
+        adminId = decoded.id;
+        adminEmail = decoded.email;
+      } catch (tokenError) {
+        console.log("Token decode error:", tokenError);
+        // If token is invalid, try to get from body
+        adminId = req.body.adminId;
+        adminEmail = req.body.email;
+      }
+    } else {
+      // Fallback: get from request body
+      adminId = req.body.adminId;
+      adminEmail = req.body.email;
+    }
+
+    if (!adminId && !adminEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Admin ID or email is required"
+      });
+    }
+
+    // Try Admin model first
+    let admin = null;
+    let isFromUserModel = false;
+
+    if (adminId) {
+      admin = await Admin.findById(adminId);
+      if (!admin) {
+        const user = await User.findOne({
+          _id: adminId,
+          adminRole: { $in: ['admin', 'author'] }
+        });
+        if (user) {
+          admin = user;
+          isFromUserModel = true;
+        }
+      }
+    } else if (adminEmail) {
+      admin = await Admin.findOne({ email: adminEmail });
+      if (!admin) {
+        const user = await User.findOne({
+          email: adminEmail,
+          adminRole: { $in: ['admin', 'author'] }
+        });
+        if (user) {
+          admin = user;
+          isFromUserModel = true;
+        }
+      }
+    }
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found"
+      });
+    }
+
+    // Set loggedInStatus to false when admin logs out
+    if (!isFromUserModel) {
+      // Update Admin model
+      await Admin.findByIdAndUpdate(admin._id, { 
+        loggedInStatus: false 
+      });
+      console.log(`✅ Admin ${admin.email} loggedInStatus set to FALSE (logged out)`);
+    } else {
+      // Update User model
+      await User.findByIdAndUpdate(admin._id, { 
+        loggedInStatus: false 
+      });
+      console.log(`✅ Admin (User model) ${admin.email} loggedInStatus set to FALSE (logged out)`);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Logout successful",
+      data: {
+        _id: admin._id,
+        loggedInStatus: false
+      }
+    });
+  } catch (err) {
+    console.error("Logout error:", err);
     res.status(500).json({
       success: false,
       message: "Server error",
