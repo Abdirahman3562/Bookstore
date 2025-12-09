@@ -740,40 +740,6 @@ export default function LiveChatAdmin() {
                     </div>
                   </div>
                   
-                  {/* Take Over Button - Show if conversation has AI messages */}
-                  {hasAIMessages && (
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20">
-                      <button
-                        onClick={async () => {
-                          try {
-                            const adminUser = await getCurrentAdminUser();
-                            const adminId = adminUser?.email || currentAdmin.email;
-                            const adminName = adminUser?.name || currentAdmin.name;
-                            const adminAvatar = adminUser?.avatar || currentAdmin.avatar;
-                            
-                            await axios.post("http://localhost:3000/api/chat/takeover", {
-                              userId: selectedConversation.userId,
-                              adminId: adminId,
-                              adminName: adminName,
-                              adminAvatar: adminAvatar
-                            });
-                            
-                            toast.success("You have taken over the chat!");
-                            fetchMessages(selectedConversation.userId);
-                            setHasAIMessages(false);
-                          } catch (error) {
-                            console.error("Error taking over chat:", error);
-                            toast.error("Failed to take over chat");
-                          }
-                        }}
-                        className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        Take Over Chat
-                      </button>
-                    </div>
-                  )}
-                  
                   {/* Admin Info with Online Indicator - Hidden on mobile */}
                   <div className="hidden lg:flex items-center gap-2">
                     <div className="text-right">
@@ -802,6 +768,56 @@ export default function LiveChatAdmin() {
                   </div>
                 </div>
               </div>
+
+              {/* Take Over Button - Show if conversation has AI messages - Below header for mobile visibility */}
+              {hasAIMessages && (
+                <div className="px-3 md:px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-yellow-50 dark:bg-gray-800">
+                  <button
+                    onClick={async () => {
+                      if (!canSendMessages) {
+                        toast.error("You don't have permission to take over chats. Contact an administrator to grant reply permissions.");
+                        return;
+                      }
+                      
+                      try {
+                        const adminUser = await getCurrentAdminUser();
+                        const adminId = adminUser?.email || currentAdmin.email;
+                        const adminName = adminUser?.name || currentAdmin.name;
+                        const adminAvatar = adminUser?.avatar || currentAdmin.avatar;
+                        
+                        await axios.post("http://localhost:3000/api/chat/takeover", {
+                          userId: selectedConversation.userId,
+                          adminId: adminId,
+                          adminName: adminName,
+                          adminAvatar: adminAvatar
+                        });
+                        
+                        toast.success("You have taken over the chat!");
+                        fetchMessages(selectedConversation.userId);
+                        setHasAIMessages(false);
+                      } catch (error) {
+                        console.error("Error taking over chat:", error);
+                        toast.error("Failed to take over chat");
+                      }
+                    }}
+                    disabled={!canSendMessages}
+                    className={`w-full px-3 md:px-4 py-2 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
+                      canSendMessages
+                        ? "bg-blue-600 hover:bg-blue-700 text-white"
+                        : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-60"
+                    }`}
+                    title={!canSendMessages ? "You don't have permission to take over chats. Contact an administrator to grant reply permissions." : "Take over this chat from AI"}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-sm md:text-base">Take Over Chat</span>
+                  </button>
+                  {!canSendMessages && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
+                      You need reply permission to take over chats
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6">
