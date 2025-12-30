@@ -30,7 +30,15 @@ export default function UsersAdmin() {
         console.log("🔄 Fetching users from database...");
       }
 
-      const response = await axios.get("http://localhost:3000/api/users");
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/users", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const allData = response.data.data || [];
       
       // Filter out admin users (users with adminRole)
@@ -83,8 +91,16 @@ export default function UsersAdmin() {
       // Toggle between active and inactive
       const newStatus = user.status === 'active' ? 'inactive' : 'active';
 
-      await axios.patch(`http://localhost:3000/api/users/${userId}/status`, { 
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      await axios.patch(`http://localhost:3000/api/users/${userId}/status`, {
         status: newStatus
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       toast.success(newStatus === 'inactive' 

@@ -11,6 +11,7 @@ import {
   FaInstagram,
   FaCheckCircle,
 } from "react-icons/fa";
+import { getTenantUrl, getTenantHeaders } from "../utils/tenantUtils";
 
 function AuthorPage() {
   const { username } = useParams();
@@ -53,7 +54,9 @@ function AuthorPage() {
         setLoading(true);
 
         // 1️⃣ Fetch all authors
-        const aRes = await fetch("http://localhost:3000/api/authors");
+        const authorsUrl = getTenantUrl("http://localhost:3000/api/authors");
+        const headers = getTenantHeaders();
+        const aRes = await fetch(authorsUrl, { headers });
         if (!aRes.ok) throw new Error("Failed to load authors");
         const aResponse = await aRes.json();
         const aData = aResponse.data || [];
@@ -100,7 +103,8 @@ function AuthorPage() {
         });
 
         // 2️⃣ Fetch blogs and filter by authorId
-        const pRes = await fetch("http://localhost:3000/api/blogs");
+        const blogsUrl = getTenantUrl("http://localhost:3000/api/blogs");
+        const pRes = await fetch(blogsUrl, { headers });
         if (!pRes.ok) throw new Error("Failed to load blogs");
         const blogsResponse = await pRes.json();
         const blogs = blogsResponse.data || [];

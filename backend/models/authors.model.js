@@ -1,10 +1,16 @@
 import mongoose from "mongoose";
 
 const authorSchema = new mongoose.Schema({
+  // Multi-tenant support: every author belongs to a tenant
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+    index: true
+  },
   username: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
     lowercase: true
   },
@@ -73,6 +79,10 @@ const authorSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Compound index for tenant-scoped username uniqueness
+authorSchema.index({ tenantId: 1, username: 1 }, { unique: true });
+authorSchema.index({ tenantId: 1, status: 1 });
 
 const Author = mongoose.model("Author", authorSchema, "authors");
 

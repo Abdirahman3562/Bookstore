@@ -4,7 +4,7 @@ import User from "../models/users.model.js";
 // GET ALL DOWNLOADS
 export const getAllDownloads = async (req, res) => {
   try {
-    const downloads = await Download.find({}).sort({ createdAt: -1 });
+    const downloads = await Download.find({ tenantId: req.tenantId }).sort({ createdAt: -1 });
     
     // Fetch user avatars for each download
     const downloadsWithAvatars = await Promise.all(
@@ -38,7 +38,7 @@ export const getAllDownloads = async (req, res) => {
 // GET SINGLE DOWNLOAD
 export const getDownloadById = async (req, res) => {
   try {
-    const download = await Download.findById(req.params.id);
+    const download = await Download.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!download) {
       return res.status(404).json({ success: false, message: "Download not found" });
     }
@@ -62,6 +62,7 @@ export const createDownload = async (req, res) => {
     // Check if download record already exists for this user and book
     // Match by userId AND (bookId OR title) to prevent duplicates
     const query = {
+      tenantId: req.tenantId, // Add tenantId filter
       userId: userId?.toString()
     };
 
@@ -109,6 +110,7 @@ export const createDownload = async (req, res) => {
     const price = req.body.price || 0;
     const downloadData = {
       ...req.body,
+      tenantId: req.tenantId, // Add tenantId from middleware
       price: price,
       isFree: price === 0, // Always set isFree based on price, not source
       id: Date.now().toString() // Generate unique ID
@@ -132,8 +134,8 @@ export const createDownload = async (req, res) => {
 // UPDATE DOWNLOAD
 export const updateDownload = async (req, res) => {
   try {
-    const updated = await Download.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Download.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       req.body,
       { new: true, runValidators: true }
     );
@@ -158,8 +160,8 @@ export const updateDownloadAccess = async (req, res) => {
   try {
     const { notDownloaded } = req.body;
 
-    const updated = await Download.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Download.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       { notDownloaded: notDownloaded },
       { new: true, runValidators: true }
     );
@@ -182,7 +184,7 @@ export const updateDownloadAccess = async (req, res) => {
 // DELETE DOWNLOAD (Keep for complete removal if needed)
 export const deleteDownload = async (req, res) => {
   try {
-    const deleted = await Download.findByIdAndDelete(req.params.id);
+    const deleted = await Download.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
 
     if (!deleted) {
       return res.status(404).json({ success: false, message: "Download not found" });

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { FaCalendarAlt, FaCheckCircle } from "react-icons/fa";
 import { FiBook, FiSearch } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import { getTenantUrl, getTenantHeaders } from "../utils/tenantUtils";
 
 function BlogPage() {
   const [search, setSearch] = useState("");
@@ -27,11 +28,16 @@ function BlogPage() {
 
   // 🧠 Fetch blogs & authors oo isku dar
   useEffect(() => {
-    Promise.all([
-      fetch("http://localhost:3000/api/blogs").then((r) => r.json()),
-      fetch("http://localhost:3000/api/authors").then((r) => r.json()).catch(() => ({ data: [] })),
-    ])
-      .then(([blogsResponse, authorsResponse]) => {
+    const fetchBlogsAndAuthors = async () => {
+      try {
+        const blogsUrl = getTenantUrl("http://localhost:3000/api/blogs");
+        const authorsUrl = getTenantUrl("http://localhost:3000/api/authors");
+        const headers = getTenantHeaders();
+
+        const [blogsResponse, authorsResponse] = await Promise.all([
+          fetch(blogsUrl, { headers }).then((r) => r.json()),
+          fetch(authorsUrl, { headers }).then((r) => r.json()).catch(() => ({ data: [] })),
+        ]);
         const blogsData = blogsResponse.data || [];
         const authorsData = authorsResponse.data || [];
         
@@ -114,9 +120,14 @@ function BlogPage() {
           };
         });
         setArticles(merged);
-      })
-      .catch((e) => console.error("Error loading data:", e))
-      .finally(() => setLoading(false));
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlogsAndAuthors();
   }, []);
 
   // Get unique categories from articles

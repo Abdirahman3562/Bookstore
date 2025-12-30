@@ -4,6 +4,7 @@ import Download from "../models/downloads.model.js";
 import WebsiteSettings from "../models/websiteSettings.model.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
 import { transporter, sendVerificationCode, sendOTPEmail } from "../utils/email.js";
@@ -12,7 +13,7 @@ import { createOTP, verifyOTP as verifyOTPCode, clearOTP, isVerified } from "../
 // GET ALL USERS with purchase and download statistics
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).sort({ createdAt: -1 });
+    const users = await User.find({ tenantId: req.tenantId }).sort({ createdAt: -1 });
     
     // Get statistics for each user
     const usersWithStats = await Promise.all(
@@ -23,6 +24,7 @@ export const getAllUsers = async (req, res) => {
         
         // Get downloads from Downloads collection - try both ObjectId and string
         const downloads = await Download.find({
+          tenantId: req.tenantId,
           $or: [
             { userId: userIdString },
             { userId: userIdObjectId }
@@ -32,6 +34,7 @@ export const getAllUsers = async (req, res) => {
         
         // Get purchases from Purchased collection - try both ObjectId and string
         const purchases = await Purchased.find({
+          tenantId: req.tenantId,
           $or: [
             { userId: userIdString },
             { userId: userIdObjectId }
@@ -76,7 +79,7 @@ export const getAllUsers = async (req, res) => {
 // GET SINGLE USER
 export const getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
@@ -87,6 +90,7 @@ export const getUserById = async (req, res) => {
     
     // Get downloads from Downloads collection - try both ObjectId and string
     const downloads = await Download.find({
+      tenantId: req.tenantId,
       $or: [
         { userId: userIdString },
         { userId: userIdObjectId }
@@ -96,6 +100,7 @@ export const getUserById = async (req, res) => {
     
     // Get purchases from Purchased collection - try both ObjectId and string
     const purchases = await Purchased.find({
+      tenantId: req.tenantId,
       $or: [
         { userId: userIdString },
         { userId: userIdObjectId }
@@ -127,7 +132,7 @@ export const updateUser = async (req, res) => {
   try {
     const { name, email, password, avatar, currentPassword } = req.body;
 
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
@@ -167,8 +172,8 @@ export const updateUser = async (req, res) => {
     if (avatar !== undefined) updateData.avatar = avatar;
     if (req.body.twoStepVerification !== undefined) updateData.twoStepVerification = req.body.twoStepVerification;
 
-    const updated = await User.findByIdAndUpdate(
-      req.params.id,
+    const updated = await User.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       updateData,
       { new: true, runValidators: true }
     );
@@ -279,10 +284,25 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // If 2-step verification is disabled, return user data for login
+    // Generate JWT token for user authentication
+    const tokenPayload = {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId ? user.tenantId.toString() : null
+    };
+
+    const token = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET || "fallback_secret_key_change_in_production",
+      { expiresIn: "7d" } // 7 days for regular users
+    );
+
+    // If 2-step verification is disabled, return user data and token for login
     res.status(200).json({
       success: true,
       message: "Login successful",
+      token: token,
       data: {
         _id: user._id,
         id: user._id,
@@ -291,7 +311,8 @@ export const loginUser = async (req, res) => {
         avatar: user.avatar,
         role: user.role,
         status: user.status,
-        twoStepVerification: user.twoStepVerification
+        twoStepVerification: user.twoStepVerification,
+        tenantId: user.tenantId
       }
     });
 
@@ -348,11 +369,26 @@ export const verifyUserLoginCode = async (req, res) => {
     // Clear verification code after successful login
     clearOTP(email.toLowerCase());
 
+    // Generate JWT token for user authentication
+    const tokenPayload = {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId ? user.tenantId.toString() : null
+    };
+
+    const token = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET || "fallback_secret_key_change_in_production",
+      { expiresIn: "7d" } // 7 days for regular users
+    );
+
     console.log("2-step verification successful for user:", email);
 
     res.status(200).json({
       success: true,
       message: "Login successful",
+      token: token,
       data: {
         _id: user._id,
         id: user._id,
@@ -361,7 +397,8 @@ export const verifyUserLoginCode = async (req, res) => {
         avatar: user.avatar,
         role: user.role,
         status: user.status,
-        twoStepVerification: user.twoStepVerification
+        twoStepVerification: user.twoStepVerification,
+        tenantId: user.tenantId
       }
     });
 
@@ -387,16 +424,16 @@ export const updateUserStatus = async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
     // Direct status update: set the status as requested and mark as manually set
     // This ensures the status is tracked and won't be auto-updated
-    const updated = await User.findByIdAndUpdate(
-      req.params.id,
-      { 
+    const updated = await User.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
+      {
         status: status,
         statusManuallySet: true // Mark as manually set so it won't be auto-updated
       },
@@ -440,6 +477,7 @@ export const createUser = async (req, res) => {
     if (adminRole) {
       // Admin user creation - include all fields
       userData = {
+        tenantId: req.tenantId, // Add tenantId from middleware
         name,
         email,
         password,
@@ -458,6 +496,7 @@ export const createUser = async (req, res) => {
       // Regular user signup - only essential fields, explicitly exclude admin fields
       // Status starts as 'inactive' until email is verified
       userData = {
+        tenantId: req.tenantId, // Add tenantId from middleware
         name,
         email,
         password,
@@ -570,7 +609,7 @@ export const createUser = async (req, res) => {
 // DELETE USER
 export const deleteUser = async (req, res) => {
   try {
-    const deleted = await User.findByIdAndDelete(req.params.id);
+    const deleted = await User.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
 
     if (!deleted) {
       return res.status(404).json({ success: false, message: "User not found" });

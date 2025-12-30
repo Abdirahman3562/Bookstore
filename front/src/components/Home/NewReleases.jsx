@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { getTenantUrl, getTenantHeaders } from "../../utils/tenantUtils";
 
 export default function NewReleases() {
   const [booksData, setBooksData] = useState([]);
@@ -13,9 +14,14 @@ export default function NewReleases() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/books")
-      .then((response) => response.json())
-      .then((responseData) => {
+    const fetchBooks = async () => {
+      try {
+        const url = getTenantUrl("http://localhost:3000/api/books");
+        const headers = getTenantHeaders();
+
+        const response = await fetch(url, { headers });
+        const responseData = await response.json();
+
         const data = responseData.data || [];
         if (Array.isArray(data)) {
           setBooksData(data);
@@ -23,11 +29,13 @@ export default function NewReleases() {
           setBooksData(data.books);
         }
         setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching books:", error);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchBooks();
   }, []);
 
   if (loading) {

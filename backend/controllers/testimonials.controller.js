@@ -3,7 +3,7 @@ import Testimonial from "../models/testimonials.model.js";
 // GET ALL TESTIMONIALS
 export const getAllTestimonials = async (req, res) => {
   try {
-    const testimonials = await Testimonial.find({}).sort({ createdAt: -1 });
+    const testimonials = await Testimonial.find({ tenantId: req.tenantId }).sort({ createdAt: -1 });
     res.status(200).json({
       success: true,
       message: "Testimonials fetched successfully",
@@ -19,7 +19,7 @@ export const getAllTestimonials = async (req, res) => {
 // GET SINGLE TESTIMONIAL
 export const getTestimonialById = async (req, res) => {
   try {
-    const testimonial = await Testimonial.findById(req.params.id);
+    const testimonial = await Testimonial.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!testimonial) {
       return res.status(404).json({ success: false, message: "Testimonial not found" });
     }
@@ -40,6 +40,7 @@ export const createTestimonial = async (req, res) => {
   try {
     const testimonialData = {
       ...req.body,
+      tenantId: req.tenantId, // Add tenantId from middleware
       id: Date.now().toString() // Generate unique ID
     };
 
@@ -72,8 +73,8 @@ export const updateTestimonial = async (req, res) => {
       testimonialData.img = `/uploads/${req.file.filename}`;
     }
 
-    const updated = await Testimonial.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Testimonial.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       testimonialData,
       { new: true, runValidators: true }
     );
@@ -105,8 +106,8 @@ export const updateTestimonialStatus = async (req, res) => {
       });
     }
 
-    const updated = await Testimonial.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Testimonial.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       { status },
       { new: true, runValidators: true }
     );
@@ -129,7 +130,7 @@ export const updateTestimonialStatus = async (req, res) => {
 // DELETE TESTIMONIAL
 export const deleteTestimonial = async (req, res) => {
   try {
-    const deleted = await Testimonial.findByIdAndDelete(req.params.id);
+    const deleted = await Testimonial.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
 
     if (!deleted) {
       return res.status(404).json({ success: false, message: "Testimonial not found" });

@@ -16,8 +16,8 @@ const routePermissions = {
   "/admin/blogs": "blogs",
   "/admin/contacts": "contacts",
   "/admin/website-settings": "websiteSettings",
-  "/admin/add-admin-user": "addAdminUser",
-  "/admin/admin-users": "addAdminUser"
+  "/admin/add-author-user": "addAdminUser",
+  "/admin/author-users": "addAdminUser"
 };
 
 // Routes that don't require specific permissions (accessible to all logged-in admins)

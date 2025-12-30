@@ -7,8 +7,14 @@ import {
   updateAuthorStatus,
   deleteAuthor
 } from "../controllers/authors.controller.js";
+import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
 
 const router = express.Router();
+
+// Apply tenant middleware to all author routes
+router.use(resolveTenant);
+router.use(requireTenant);
+router.use(checkTenantAccess);
 
 // GET /api/authors - Get all authors
 router.get("/", getAllAuthors);

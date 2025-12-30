@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { getTenantUrl, getTenantHeaders } from "../../utils/tenantUtils";
 
 export default function BookCarousel() {
   const slugify = (text) =>
@@ -16,18 +17,25 @@ export default function BookCarousel() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/books")
-      .then((res) => res.json())
-      .then((responseData) => {
+    const fetchBooks = async () => {
+      try {
+        const url = getTenantUrl("http://localhost:3000/api/books");
+        const headers = getTenantHeaders();
+
+        const response = await fetch(url, { headers });
+        const responseData = await response.json();
+
         const data = responseData.data || [];
         setBooksData(data.slice(0, 10));
         setAllBooksData(data);
         setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching books:", error);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchBooks();
   }, []);
 
   const visibleBooks = 5;

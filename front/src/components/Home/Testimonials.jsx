@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaQuoteRight, FaStar, FaExclamationTriangle } from "react-icons/fa";
+import { getTenantUrl, getTenantHeaders } from "../../utils/tenantUtils";
 
 export default function Testimonials() {
   const [testimonials, setTestimonials] = useState([]);
@@ -7,23 +8,30 @@ export default function Testimonials() {
   const [error, setError] = useState(false);
 
  useEffect(() => {
-  fetch("http://localhost:3000/api/testimonials")
-    .then((res) => res.json())
-    .then((responseData) => {
+  const fetchTestimonials = async () => {
+    try {
+      const url = getTenantUrl("http://localhost:3000/api/testimonials");
+      const headers = getTenantHeaders();
+
+      const response = await fetch(url, { headers });
+      const responseData = await response.json();
+
       // Handle backend response structure
       const data = responseData.data || [];
-      
+
       // Filter only approved testimonials
       const approvedTestimonials = data.filter(t => t.status === 'approved');
-      
+
       setTestimonials(approvedTestimonials);
       setLoading(false);
-    })
-    .catch((err) => {
+    } catch (err) {
       console.error("Error fetching testimonials:", err);
       setError(true);
       setLoading(false);
-    });
+    }
+  };
+
+  fetchTestimonials();
 }, []);
 
 

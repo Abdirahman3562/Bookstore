@@ -30,7 +30,15 @@ export default function WebsiteSettings() {
   const fetchSettings = async () => {
     try {
       setFetching(true);
-      const response = await axios.get("http://localhost:3000/api/website-settings");
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/website-settings", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (response.data.success) {
         setSettings(response.data.data);
         if (response.data.data.websiteLogo) {
@@ -80,12 +88,20 @@ export default function WebsiteSettings() {
         formData.append("logo", logoFile);
       }
 
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        setLoading(false);
+        return;
+      }
+
       const response = await axios.put(
         "http://localhost:3000/api/website-settings",
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            "Authorization": `Bearer ${token}`,
           },
         }
       );

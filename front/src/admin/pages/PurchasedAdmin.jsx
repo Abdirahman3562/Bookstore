@@ -31,7 +31,15 @@ export default function PurchasedAdmin() {
         console.log("🔄 Fetching purchased items from database...");
       }
 
-      const response = await axios.get("http://localhost:3000/api/purchased");
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/purchased", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = response.data.data || [];
       console.log(`✅ Fetched ${data.length} purchased items from database`);
 
@@ -90,8 +98,16 @@ export default function PurchasedAdmin() {
 
       console.log(`📝 Frontend: Current status: ${currentOrder?.status} → New status: ${newStatus}`);
 
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
       const response = await axios.put(`http://localhost:3000/api/purchased/${orderId}/status`, {
         status: newStatus
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       console.log(`✅ Frontend: Backend response:`, response.data);
@@ -125,7 +141,15 @@ export default function PurchasedAdmin() {
   // Confirm delete
   const confirmDelete = async () => {
     try {
-      await axios.delete(`http://localhost:3000/api/purchased/${deleteModal.order._id}`);
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      await axios.delete(`http://localhost:3000/api/purchased/${deleteModal.order._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success("Order deleted successfully!");
       await fetchPurchased();
       hideDeleteModal();

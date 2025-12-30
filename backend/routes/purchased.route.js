@@ -7,8 +7,14 @@ import {
   deletePurchased,
   updateOrderStatus
 } from "../controllers/purchased.controller.js";
+import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
 
 const router = express.Router();
+
+// Apply tenant middleware to all purchased routes
+router.use(resolveTenant);
+router.use(requireTenant);
+router.use(checkTenantAccess);
 
 // GET /api/purchased - Get all purchased items
 router.get("/", getAllPurchased);

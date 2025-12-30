@@ -3,8 +3,8 @@ import Blog from "../models/blogs.model.js";
 // GET ALL BLOGS
 export const getAllBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find({}).populate('authorId', 'name username avatar verified bio social').sort({ createdAt: -1 });
-    
+    const blogs = await Blog.find({ tenantId: req.tenantId }).populate('authorId', 'name username avatar verified bio social').sort({ createdAt: -1 });
+
     res.status(200).json({
       success: true,
       message: "Blogs fetched successfully",
@@ -20,7 +20,7 @@ export const getAllBlogs = async (req, res) => {
 // GET SINGLE BLOG
 export const getBlogById = async (req, res) => {
   try {
-    const blog = await Blog.findById(req.params.id).populate('authorId', 'name username avatar verified bio social');
+    const blog = await Blog.findOne({ _id: req.params.id, tenantId: req.tenantId }).populate('authorId', 'name username avatar verified bio social');
     if (!blog) {
       return res.status(404).json({ success: false, message: "Blog not found" });
     }
@@ -51,6 +51,7 @@ export const createBlog = async (req, res) => {
     } = req.body;
 
     const newBlog = new Blog({
+      tenantId: req.tenantId, // Add tenantId from middleware
       title,
       category,
       authorId,
@@ -95,7 +96,7 @@ export const updateBlog = async (req, res) => {
       status
     } = req.body;
 
-    const blog = await Blog.findById(req.params.id);
+    const blog = await Blog.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!blog) {
       return res.status(404).json({ success: false, message: "Blog not found" });
     }
@@ -115,8 +116,8 @@ export const updateBlog = async (req, res) => {
       updateData.thumbnail = thumbnail;
     }
 
-    const updated = await Blog.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Blog.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       updateData,
       { new: true, runValidators: true }
     );
@@ -151,13 +152,13 @@ export const updateBlogStatus = async (req, res) => {
       });
     }
 
-    const blog = await Blog.findById(req.params.id);
+    const blog = await Blog.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!blog) {
       return res.status(404).json({ success: false, message: "Blog not found" });
     }
 
-    const updated = await Blog.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Blog.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       { status: status },
       { new: true, runValidators: true }
     );
@@ -176,7 +177,7 @@ export const updateBlogStatus = async (req, res) => {
 // DELETE BLOG
 export const deleteBlog = async (req, res) => {
   try {
-    const deleted = await Blog.findByIdAndDelete(req.params.id);
+    const deleted = await Blog.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
 
     if (!deleted) {
       return res.status(404).json({ success: false, message: "Blog not found" });
@@ -197,7 +198,7 @@ export const deleteComment = async (req, res) => {
   try {
     const { blogId, commentId, replyId } = req.params;
 
-    const blog = await Blog.findById(blogId);
+    const blog = await Blog.findOne({ _id: blogId, tenantId: req.tenantId });
     if (!blog) {
       return res.status(404).json({ success: false, message: "Blog not found" });
     }
@@ -276,7 +277,7 @@ export const deleteComment = async (req, res) => {
     await blog.save();
 
     // Fetch updated blog
-    const updatedBlog = await Blog.findById(blogId);
+    const updatedBlog = await Blog.findOne({ _id: blogId, tenantId: req.tenantId });
 
     res.status(200).json({
       success: true,

@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
 const downloadSchema = new mongoose.Schema({
+  // Multi-tenant support: every download belongs to a tenant
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+    index: true
+  },
   userId: {
     type: String,
     required: true
@@ -57,6 +64,11 @@ const downloadSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Indexes for efficient tenant-scoped queries
+downloadSchema.index({ tenantId: 1, userId: 1 });
+downloadSchema.index({ tenantId: 1, bookId: 1 });
+downloadSchema.index({ tenantId: 1, createdAt: -1 });
 
 const Download = mongoose.model("Download", downloadSchema, "downloads");
 

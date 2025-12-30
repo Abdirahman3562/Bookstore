@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { UserPlus, X, Shield, Check, Eye, EyeOff } from "lucide-react";
 import { getCurrentAdminUser, canView, canAdd } from "../utils/permissions";
 
-export default function AddAdminUser() {
+export default function AddAuthorUser() {
+  // This component only creates author users, not admin users
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -87,22 +88,13 @@ export default function AddAdminUser() {
     loadCurrentUser();
   }, [navigate]);
 
-  // Handle role change - don't auto-set permissions, let user select manually
+  // Handle role change - only author role is available
   const handleRoleChange = (role) => {
-    if (role === "admin") {
-      setFormData((prev) => ({
-        ...prev,
-        adminRole: role,
-        authorId: "" // Clear authorId for admin
-        // Keep existing permissions - don't auto-set
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        adminRole: role
-        // Keep existing permissions - don't auto-set
-      }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      adminRole: role
+      // Keep existing permissions - don't auto-set
+    }));
   };
 
   const handlePermissionChange = (section, action) => {
@@ -122,8 +114,8 @@ export default function AddAdminUser() {
     e.preventDefault();
     
     // Check permission before submitting
-    if (!canAdd(currentUser, 'addAdminUser')) {
-      toast.error("You don't have permission to add admin users");
+      if (!canAdd(currentUser, 'addAdminUser')) {
+      toast.error("You don't have permission to add author users");
       return;
     }
     
@@ -140,21 +132,21 @@ export default function AddAdminUser() {
         permissions: formData.permissions
       };
       
-      console.log("Submitting admin user data:", submitData);
+      console.log("Submitting author user data:", submitData);
       
       const response = await axios.post("http://localhost:3000/api/admins", submitData);
 
       if (response.data.success) {
-        toast.success("Admin user created successfully!");
+        toast.success("Author user created successfully!");
         navigate("/admin/admin-users");
       }
     } catch (error) {
-      console.error("Error creating admin user:", error);
+      console.error("Error creating author user:", error);
       console.error("Error response:", error.response?.data);
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
-        toast.error("Failed to create admin user");
+        toast.error("Failed to create author user");
       }
     } finally {
       setLoading(false);
@@ -173,7 +165,7 @@ export default function AddAdminUser() {
     blogComments: "Blog Comments",
     contacts: "Contacts",
     websiteSettings: "Website Settings",
-    addAdminUser: "Add Admin User",
+    addAdminUser: "Add Author User",
     liveChat: "Live Chat"
   };
 
@@ -199,7 +191,7 @@ export default function AddAdminUser() {
     blogComments: ["view", "reply", "delete"], // Blog Comments has view, reply, delete (no add)
     contacts: ["view", "edit", "delete"], // Contacts has view, edit (reply, mark as read), delete (no add)
     websiteSettings: ["view", "edit"], // Website Settings has view and edit (no add/delete)
-    addAdminUser: ["view", "add", "edit", "delete"], // Add Admin User has all actions
+    addAdminUser: ["view", "add", "edit", "delete"], // Add Author User has all actions
     liveChat: ["view", "reply"] // Live Chat has view and reply (send messages to users)
   };
 
@@ -210,11 +202,11 @@ export default function AddAdminUser() {
         <div className="flex items-center gap-3 mb-4">
           <UserPlus className="w-8 h-8 text-blue-600 dark:text-blue-500" />
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-            Add Admin User
+            Add Author User
           </h1>
         </div>
         <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
-          Create a new admin user with specific role and permissions
+          Create a new author user with specific permissions
         </p>
       </div>
 
@@ -228,7 +220,7 @@ export default function AddAdminUser() {
                 View Only Mode
               </h3>
               <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                You have view permission but cannot add admin users. All form fields are disabled.
+                You have view permission but cannot add author users. All form fields are disabled.
               </p>
             </div>
           </div>
@@ -302,7 +294,7 @@ export default function AddAdminUser() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Admin Role *
+                  Role *
                 </label>
                 <select
                   required
@@ -312,12 +304,9 @@ export default function AddAdminUser() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="author">Author</option>
-                  <option value="admin">Admin</option>
                 </select>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {formData.adminRole === "admin"
-                    ? "Admin can see all sections"
-                    : "Author can only see selected sections"}
+                  Author role with limited access based on selected permissions
                 </p>
               </div>
             </div>
@@ -517,7 +506,7 @@ export default function AddAdminUser() {
               type="submit"
               disabled={loading || !canAdd(currentUser, 'addAdminUser')}
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-              title={!canAdd(currentUser, 'addAdminUser') ? "You don't have permission to add admin users" : "Create Admin User"}
+              title={!canAdd(currentUser, 'addAdminUser') ? "You don't have permission to add author users" : "Create Author User"}
             >
               {loading ? (
                 <>
@@ -527,7 +516,7 @@ export default function AddAdminUser() {
               ) : (
                 <>
                   <UserPlus className="w-4 h-4" />
-                  Create Admin User
+                  Create Author User
                 </>
               )}
             </button>

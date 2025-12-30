@@ -8,8 +8,14 @@ import {
   deleteBlog,
   deleteComment
 } from "../controllers/blogs.controller.js";
+import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
 
 const router = express.Router();
+
+// Apply tenant middleware to all blog routes
+router.use(resolveTenant);
+router.use(requireTenant);
+router.use(checkTenantAccess);
 
 // GET /api/blogs - Get all blogs
 router.get("/", getAllBlogs);

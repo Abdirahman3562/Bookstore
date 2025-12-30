@@ -7,8 +7,14 @@ import {
   deleteContact,
   sendReplyEmail
 } from "../controllers/contact.controller.js";
+import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
 
 const router = express.Router();
+
+// Apply tenant middleware to all contact routes
+router.use(resolveTenant);
+router.use(requireTenant);
+router.use(checkTenantAccess);
 
 // POST /api/contacts - Create new contact message (requires login)
 router.post("/", createContact);

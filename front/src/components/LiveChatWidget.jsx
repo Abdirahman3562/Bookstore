@@ -17,8 +17,39 @@ export default function LiveChatWidget() {
   const shouldAutoScrollRef = useRef(true); // Track if we should auto-scroll
   const navigate = useNavigate();
 
+  // Helper function to extract userId from user object (handles MongoDB ObjectId format)
+  const extractUserId = (user) => {
+    if (!user) return null;
+    
+    // Try _id first
+    let userId = user._id;
+    
+    // If _id is an object with $oid (MongoDB format)
+    if (userId && typeof userId === 'object') {
+      userId = userId.$oid || userId.toString();
+    }
+    
+    // If still no userId, try id field
+    if (!userId) {
+      userId = user.id;
+      if (userId && typeof userId === 'object') {
+        userId = userId.$oid || userId.toString();
+      }
+    }
+    
+    // Convert to string if it's still an object
+    if (userId && typeof userId === 'object') {
+      userId = userId.toString();
+    }
+    
+    return userId || null;
+  };
+
+  // Note: These are only used for initial render. Always check localStorage directly in functions.
   const user = JSON.parse(localStorage.getItem("user") || "null");
-  const userId = user?._id || user?.id;
+  const userId = user ? extractUserId(user) : null;
+  const token = localStorage.getItem("token");
+  const isAuthenticated = !!(user && userId && token);
   const [adminOnline, setAdminOnline] = useState(false);
   const [lastActivity, setLastActivity] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0); // Unread count for admin messages
@@ -33,10 +64,40 @@ export default function LiveChatWidget() {
   const [isAdminTyping, setIsAdminTyping] = useState(false); // Track if admin is typing
   const [typingAdminInfo, setTypingAdminInfo] = useState({ name: "Admin", avatar: "" }); // Admin info for typing indicator
   const typingTimeoutRef = useRef(null); // Timeout for typing indicator
+  const chatIntervalRef = useRef(null); // Ref to track the chat polling interval
+  const unreadIntervalRef = useRef(null); // Ref to track the unread messages interval
 
-  // Check if user is logged in
+  // Check if user is logged in (check localStorage directly to avoid stale state)
   const isUserLoggedIn = () => {
-    return !!user && !!userId;
+    try {
+      const userStr = localStorage.getItem("user");
+      if (!userStr || userStr === "null") {
+        console.log("❌ No user in localStorage");
+        return false;
+      }
+      
+      const currentUser = JSON.parse(userStr);
+      const currentUserId = extractUserId(currentUser);
+      const currentToken = localStorage.getItem("token");
+      
+      const isLoggedIn = !!(currentUser && currentUserId && currentToken);
+      
+      if (!isLoggedIn) {
+        console.log("❌ isUserLoggedIn check failed:", {
+          hasUser: !!currentUser,
+          userId: currentUserId,
+          hasToken: !!currentToken,
+          userKeys: currentUser ? Object.keys(currentUser) : [],
+          _idType: typeof currentUser?._id,
+          _idValue: currentUser?._id
+        });
+      }
+      
+      return isLoggedIn;
+    } catch (error) {
+      console.error("❌ Error checking login status:", error);
+      return false;
+    }
   };
 
   // Check if admin is online (logged in)
@@ -52,6 +113,40 @@ export default function LiveChatWidget() {
     const now = new Date();
     const diffInMinutes = Math.floor((now - lastActiveDate) / 1000 / 60);
     return diffInMinutes < 5; // Online if active within last 5 minutes
+  };
+
+  // Validate authentication and redirect if invalid
+  const validateAuthentication = async () => {
+    const currentToken = localStorage.getItem("token");
+    const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+    const currentUserId = extractUserId(currentUser);
+    
+    if (!currentToken || !currentUserId) {
+      console.log("User not authenticated, skipping chat initialization");
+      return false;
+    }
+
+    try {
+      // Test token validity with a simple API call
+      await axios.get("http://localhost:3000/api/users/profile", {
+        headers: { Authorization: `Bearer ${currentToken}` }
+      });
+      return true;
+    } catch (error) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.error("Token expired or invalid, redirecting to login");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        toast.error("Session expired. Please login again.");
+        window.location.href = "/auth";
+        return false;
+      }
+      // For 500 or other server errors, still allow chat but log the error
+      if (error.response?.status === 500) {
+        console.warn("Server error during authentication check, continuing anyway");
+      }
+      return true; // Other errors don't prevent chat initialization
+    }
   };
 
   // Play notification sound
@@ -70,7 +165,10 @@ export default function LiveChatWidget() {
   // Fetch website settings to get website name
   const fetchWebsiteSettings = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/website-settings");
+      const token = localStorage.getItem("token");
+      const response = await axios.get("http://localhost:3000/api/website-settings", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (response.data.success) {
         const websiteName = response.data.data?.websiteName || "Bookstore";
         setWebsiteName(websiteName);
@@ -85,7 +183,10 @@ export default function LiveChatWidget() {
   const fetchAdminInfo = async () => {
     try {
       // Try to get admin from admins API
-      const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+      const token = localStorage.getItem("token");
+      const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (adminsResponse.data.success) {
         const admins = adminsResponse.data.data || [];
         if (admins.length > 0) {
@@ -104,13 +205,19 @@ export default function LiveChatWidget() {
     
     // Fallback: Try to get admin info from recent admin messages
     try {
-      const conversationsResponse = await axios.get("http://localhost:3000/api/chat/conversations");
+      const token = localStorage.getItem("token");
+      const conversationsResponse = await axios.get("http://localhost:3000/api/chat/conversations", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       if (conversationsResponse.data.success) {
         const conversations = conversationsResponse.data.data || [];
         // Find a conversation with admin messages
         for (const conv of conversations) {
           if (conv.lastMessage?.sender === "admin") {
-            const messagesResponse = await axios.get(`http://localhost:3000/api/chat/messages/${conv.userId}`);
+            const token = localStorage.getItem("token");
+            const messagesResponse = await axios.get(`http://localhost:3000/api/chat/messages/${conv.userId}`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
             if (messagesResponse.data.success) {
               const messages = messagesResponse.data.data || [];
               const adminMsg = messages.find(m => m.sender === "admin" && m.adminName);
@@ -135,11 +242,22 @@ export default function LiveChatWidget() {
 
   // Send automatic AI welcome message when user first comes online
   const sendWelcomeMessage = async () => {
-    if (!userId || welcomeMessageSentRef.current) return;
+    const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+    const currentUserId = extractUserId(currentUser);
+    const token = localStorage.getItem("token");
+    
+    if (!currentUserId || welcomeMessageSentRef.current) return;
+    
+    if (!token) {
+      // No token, skip welcome message
+      return;
+    }
     
     try {
       // Check if user already has messages
-      const response = await axios.get(`http://localhost:3000/api/chat/messages/${userId}`);
+      const response = await axios.get(`http://localhost:3000/api/chat/messages/${currentUserId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (response.data.success) {
         const existingMessages = response.data.data || [];
         
@@ -147,12 +265,19 @@ export default function LiveChatWidget() {
         if (existingMessages.length === 0) {
           try {
             // Call the AI greeting endpoint to automatically send AI greeting
-            await axios.post(`http://localhost:3000/api/chat/ai-greeting/${userId}`);
+            await axios.post(`http://localhost:3000/api/chat/ai-greeting/${currentUserId}`, {}, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
             
             console.log("✅ Automatic AI greeting sent to user");
             welcomeMessageSentRef.current = true;
           } catch (sendError) {
-            console.error("Error sending AI greeting:", sendError);
+            // Handle 401 errors silently
+            if (sendError.response?.status === 401) {
+              console.log("Authentication failed, skipping welcome message");
+            } else {
+              console.error("Error sending AI greeting:", sendError);
+            }
             welcomeMessageSentRef.current = true; // Mark as sent to avoid retry loops
           }
         } else {
@@ -161,16 +286,31 @@ export default function LiveChatWidget() {
         }
       }
     } catch (error) {
-      console.error("Error checking/sending welcome message:", error);
+      // Handle 401 errors silently
+      if (error.response?.status === 401) {
+        console.log("Authentication failed, skipping welcome message");
+      } else {
+        console.error("Error checking/sending welcome message:", error);
+      }
     }
   };
 
   // Fetch messages when chat opens
   const fetchMessages = async () => {
-    if (!userId) return;
+    const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+    const currentUserId = extractUserId(currentUser);
+    const token = localStorage.getItem("token");
+
+    // Check if user and token exist
+    if (!currentUserId || !token) {
+      // Silently return if no token or userId (user may not be authenticated)
+      return;
+    }
 
     try {
-      const response = await axios.get(`http://localhost:3000/api/chat/messages/${userId}`);
+      const response = await axios.get(`http://localhost:3000/api/chat/messages/${currentUserId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (response.data.success) {
         const newMessages = response.data.data || [];
         const previousMessages = previousMessagesRef.current;
@@ -229,7 +369,22 @@ export default function LiveChatWidget() {
         }
       }
     } catch (error) {
-      console.error("Error fetching messages:", error);
+      // Handle authentication errors
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.log("Authentication failed - token expired");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        setIsOpen(false);
+        // Stop the interval if it's running
+        if (chatIntervalRef.current) {
+          clearInterval(chatIntervalRef.current);
+          chatIntervalRef.current = null;
+        }
+        // Don't redirect automatically to avoid interrupting user experience
+      } else {
+        // Only log non-auth errors
+        console.error("Error fetching messages:", error);
+      }
     }
   };
 
@@ -247,37 +402,65 @@ export default function LiveChatWidget() {
 
     setSending(true);
     try {
+      const token = localStorage.getItem("token");
+      const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+      const currentUserId = extractUserId(currentUser);
+
+      // Check if token and userId exist
+      if (!token || !currentUserId) {
+        toast.error("Session expired. Please login again.");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        setIsOpen(false);
+        window.location.href = "/auth";
+        return;
+      }
+
       await axios.post("http://localhost:3000/api/chat/send", {
-        userId: userId,
+        userId: currentUserId,
         message: newMessage.trim(),
         sender: "user"
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       // Play sound after message is successfully saved to database
       playNotificationSound();
-      
+
       setNewMessage("");
-      
+
       // Stop typing indicator when sending
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      if (userId) {
+      if (currentUserId) {
         axios.post("http://localhost:3000/api/chat/typing", {
-          userId: userId,
+          userId: currentUserId,
           isTyping: false
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         }).catch(() => {});
       }
-      
+
       await fetchMessages();
-      
+
       // Auto-scroll to bottom after sending message
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 200);
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Failed to send message");
+
+      // Handle authentication errors
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        setIsOpen(false);
+        window.location.href = "/auth";
+      } else {
+        toast.error("Failed to send message");
+      }
     } finally {
       setSending(false);
     }
@@ -302,64 +485,127 @@ export default function LiveChatWidget() {
 
   // Check for unread messages when user logs in
   useEffect(() => {
-    if (userId) {
+    if (userId && isAuthenticated) {
       // Reset flags when userId changes (user logs in)
       hasPlayedLoginSoundRef.current = false;
       previousUnreadCountRef.current = 0;
-      
-      // Fetch messages to check for unread count
-      const checkUnreadMessages = async () => {
-        try {
-          const response = await axios.get(`http://localhost:3000/api/chat/messages/${userId}`);
-          if (response.data.success) {
-            const allMessages = response.data.data || [];
-            const unreadAdminMessages = allMessages.filter(
-              msg => msg.sender === "admin" && (msg.isRead === false || !msg.isRead)
-            );
-            
-            // Debug: Log unread messages if needed
-            // console.log("Unread admin messages:", unreadAdminMessages);
-            
-            const currentUnreadCount = unreadAdminMessages.length;
-            const previousCount = previousUnreadCountRef.current;
-            
-            // Update unread count
-            setUnreadCount(currentUnreadCount);
-            
-            // Play sound only when:
-            // 1. User just logged in and there are unread messages (first check)
-            // 2. Unread count increases (new admin message arrived)
-            if (currentUnreadCount > 0) {
-              if (!hasPlayedLoginSoundRef.current) {
-                // First time checking after login - play sound if there are unread messages
-                playNotificationSound();
-                hasPlayedLoginSoundRef.current = true;
-              } else if (currentUnreadCount > previousCount) {
-                // Unread count increased - new message arrived
-                playNotificationSound();
+
+      // Validate authentication before proceeding
+      validateAuthentication().then(isValid => {
+        if (!isValid) return;
+
+        // Fetch messages to check for unread count
+        const checkUnreadMessages = async () => {
+          try {
+            const token = localStorage.getItem("token");
+            const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+            const currentUserId = extractUserId(currentUser);
+
+            // Skip if no token or userId (user not authenticated)
+            if (!token || !currentUserId) {
+              // Stop the interval if not authenticated
+              if (unreadIntervalRef.current) {
+                clearInterval(unreadIntervalRef.current);
+                unreadIntervalRef.current = null;
               }
+              setUnreadCount(0);
+              return;
             }
-            
-            // Update previous count
-            previousUnreadCountRef.current = currentUnreadCount;
+
+            const response = await axios.get(`http://localhost:3000/api/chat/messages/${currentUserId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.data.success) {
+              const allMessages = response.data.data || [];
+              const unreadAdminMessages = allMessages.filter(
+                msg => msg.sender === "admin" && (msg.isRead === false || !msg.isRead)
+              );
+
+              // Debug: Log unread messages if needed
+              // console.log("Unread admin messages:", unreadAdminMessages);
+
+              const currentUnreadCount = unreadAdminMessages.length;
+              const previousCount = previousUnreadCountRef.current;
+
+              // Update unread count
+              setUnreadCount(currentUnreadCount);
+
+              // Play sound only when:
+              // 1. User just logged in and there are unread messages (first check)
+              // 2. Unread count increases (new admin message arrived)
+              if (currentUnreadCount > 0) {
+                if (!hasPlayedLoginSoundRef.current) {
+                  // First time checking after login - play sound if there are unread messages
+                  playNotificationSound();
+                  hasPlayedLoginSoundRef.current = true;
+                } else if (currentUnreadCount > previousCount) {
+                  // Unread count increased - new message arrived
+                  playNotificationSound();
+                }
+              }
+
+              // Update previous count
+              previousUnreadCountRef.current = currentUnreadCount;
+            }
+          } catch (error) {
+            // Handle authentication errors by stopping the interval
+            if (error.response?.status === 401 || error.response?.status === 403) {
+              // Clear invalid token and user
+              localStorage.removeItem("user");
+              localStorage.removeItem("token");
+              // Stop the interval immediately
+              if (unreadIntervalRef.current) {
+                clearInterval(unreadIntervalRef.current);
+                unreadIntervalRef.current = null;
+              }
+              setUnreadCount(0);
+              return;
+            }
+            // Only log non-auth errors
+            if (error.response?.status !== 401 && error.response?.status !== 403) {
+              console.error("Error checking unread messages:", error);
+            }
           }
-        } catch (error) {
-          console.error("Error checking unread messages:", error);
-        }
-      };
-      
-      checkUnreadMessages();
-      
-      // Send automatic AI greeting when user logs in (if they have no messages)
-      sendWelcomeMessage();
-      
-      // Also check periodically when user is logged in (even if chat is closed)
-      const interval = setInterval(() => {
+        };
+
         checkUnreadMessages();
-      }, 3000); // Check every 3 seconds
-      
-      return () => clearInterval(interval);
+
+        // Send automatic AI greeting when user logs in (if they have no messages)
+        sendWelcomeMessage();
+
+        // Also check periodically when user is logged in (even if chat is closed)
+        unreadIntervalRef.current = setInterval(() => {
+          // Check authentication before making API call
+          const token = localStorage.getItem("token");
+          const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+          const currentUserId = extractUserId(currentUser);
+          
+          if (!token || !currentUserId) {
+            // User is not authenticated, stop the interval
+            if (unreadIntervalRef.current) {
+              clearInterval(unreadIntervalRef.current);
+              unreadIntervalRef.current = null;
+            }
+            setUnreadCount(0);
+            return;
+          }
+          
+          checkUnreadMessages();
+        }, 3000); // Check every 3 seconds
+
+        return () => {
+          if (unreadIntervalRef.current) {
+            clearInterval(unreadIntervalRef.current);
+            unreadIntervalRef.current = null;
+          }
+        };
+      });
     } else {
+      // Clear interval if user is not authenticated
+      if (unreadIntervalRef.current) {
+        clearInterval(unreadIntervalRef.current);
+        unreadIntervalRef.current = null;
+      }
       setUnreadCount(0);
       previousUnreadCountRef.current = 0;
       hasPlayedLoginSoundRef.current = false;
@@ -373,22 +619,45 @@ export default function LiveChatWidget() {
   }, []);
 
   useEffect(() => {
-    if (isOpen && userId) {
-      setLoading(true);
-      
-      // Send welcome message if this is first time opening chat
-      sendWelcomeMessage().then(() => {
-        fetchMessages().finally(() => setLoading(false));
-      });
+    if (isOpen && userId && isAuthenticated) {
+      // Validate authentication before opening chat
+      validateAuthentication().then(isValid => {
+        if (!isValid) {
+          setIsOpen(false);
+          return;
+        }
+
+        setLoading(true);
+
+        // Send welcome message if this is first time opening chat
+        sendWelcomeMessage().then(() => {
+          fetchMessages().finally(() => setLoading(false));
+        });
       
       // Mark admin messages as read when chat is opened
       const markAdminMessagesAsRead = async () => {
         try {
-          await axios.patch(`http://localhost:3000/api/chat/read/${userId}?sender=admin`);
+          const token = localStorage.getItem("token");
+          const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+          const currentUserId = extractUserId(currentUser);
+          
+          // Only proceed if authenticated
+          if (!token || !currentUserId) {
+            return;
+          }
+          
+          await axios.patch(`http://localhost:3000/api/chat/read/${currentUserId}?sender=admin`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           // Refresh unread count after marking as read
           fetchMessages();
         } catch (error) {
-          console.error("Error marking admin messages as read:", error);
+          // Handle 401 errors silently
+          if (error.response?.status === 401 || error.response?.status === 403) {
+            console.log("Authentication failed, skipping mark as read");
+          } else {
+            console.error("Error marking admin messages as read:", error);
+          }
         }
       };
       markAdminMessagesAsRead();
@@ -400,19 +669,53 @@ export default function LiveChatWidget() {
       }, 300);
       
       // Real-time: Refresh messages every 2 seconds when open
-      const interval = setInterval(() => {
+      chatIntervalRef.current = setInterval(() => {
+        // Check authentication before making any API calls
+        const token = localStorage.getItem("token");
+        const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+        const currentUserId = extractUserId(currentUser);
+        
+        // Only make API calls if user is authenticated
+        if (!token || !currentUserId) {
+          // User is not authenticated, stop the interval
+          if (chatIntervalRef.current) {
+            clearInterval(chatIntervalRef.current);
+            chatIntervalRef.current = null;
+          }
+          setIsOpen(false);
+          return;
+        }
+        
         fetchMessages();
+        
         // Check admin online status
-        axios.get("http://localhost:3000/api/chat/admin/online")
+        axios.get("http://localhost:3000/api/chat/admin/online", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
           .then(res => {
             if (res.data.success) {
               setAdminOnline(res.data.data.isOnline);
             }
           })
-          .catch(() => {});
+          .catch((err) => {
+            // Handle 401 errors by stopping the interval
+            if (err.response?.status === 401) {
+              if (chatIntervalRef.current) {
+                clearInterval(chatIntervalRef.current);
+                chatIntervalRef.current = null;
+              }
+              setIsOpen(false);
+            } else if (err.response?.status !== 401) {
+              // Only log if it's not a 401 (unauthorized) error
+              console.error("Error checking admin online status:", err);
+            }
+          });
+        
         // Check if admin is typing
-        if (userId) {
-          axios.get(`http://localhost:3000/api/chat/typing/${userId}`)
+        if (currentUserId) {
+          axios.get(`http://localhost:3000/api/chat/typing/${currentUserId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
             .then(res => {
               if (res.data.success) {
                 const typingData = res.data.data;
@@ -430,17 +733,31 @@ export default function LiveChatWidget() {
               }
             })
             .catch((err) => {
-              console.error("❌ Error checking admin typing status:", err);
+              // Handle 401 errors by stopping the interval
+              if (err.response?.status === 401) {
+                if (chatIntervalRef.current) {
+                  clearInterval(chatIntervalRef.current);
+                  chatIntervalRef.current = null;
+                }
+                setIsOpen(false);
+              } else if (err.response?.status !== 401) {
+                // Only log if it's not a 401 (unauthorized) error
+                console.error("❌ Error checking admin typing status:", err);
+              }
             });
         }
       }, 1000); // Check every 1 second for more responsive typing indicator
       return () => {
-        clearInterval(interval);
+        if (chatIntervalRef.current) {
+          clearInterval(chatIntervalRef.current);
+          chatIntervalRef.current = null;
+        }
         // Clean up typing timeout
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
         }
       };
+      });
     }
   }, [isOpen, userId, websiteName, adminInfo]);
 
@@ -469,12 +786,54 @@ export default function LiveChatWidget() {
   }, [isOpen]);
 
   const handleOpenChat = () => {
-    if (!userId) {
+    // Check authentication directly from localStorage (not from stale component state)
+    try {
+      const userStr = localStorage.getItem("user");
+      const tokenStr = localStorage.getItem("token");
+      
+      // Debug: Log what we found
+      console.log("🔍 Opening chat - Checking localStorage:", {
+        hasUserString: !!userStr,
+        hasTokenString: !!tokenStr,
+        userString: userStr ? userStr.substring(0, 100) + "..." : null
+      });
+      
+      if (!userStr || userStr === "null" || !tokenStr) {
+        console.log("❌ Missing user or token - showing login modal");
+        setShowLoginModal(true);
+        return;
+      }
+      
+      const currentUser = JSON.parse(userStr);
+      const currentUserId = extractUserId(currentUser);
+      const currentToken = tokenStr;
+      
+      // Debug: Log authentication status
+      console.log("🔍 Opening chat - User check:", {
+        hasUser: !!currentUser,
+        userId: currentUserId,
+        hasToken: !!currentToken,
+        userKeys: currentUser ? Object.keys(currentUser) : [],
+        _idType: typeof currentUser?._id,
+        _idValue: currentUser?._id
+      });
+      
+      if (!currentUserId || !currentToken) {
+        console.log("❌ Not authenticated - showing login modal. Missing:", {
+          missingUserId: !currentUserId,
+          missingToken: !currentToken
+        });
+        setShowLoginModal(true);
+        return;
+      }
+      
+      console.log("✅ Authenticated - opening chat");
+      setIsOpen(true);
+      setIsMinimized(false);
+    } catch (error) {
+      console.error("❌ Error checking authentication:", error);
       setShowLoginModal(true);
-      return;
     }
-    setIsOpen(true);
-    setIsMinimized(false);
   };
 
   const handleGoToLogin = () => {
@@ -797,7 +1156,11 @@ export default function LiveChatWidget() {
                           onChange={(e) => {
                             setNewMessage(e.target.value);
                             // Notify admin that user is typing
-                            if (e.target.value.trim() && userId) {
+                            const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+                            const currentUserId = extractUserId(currentUser);
+                            const token = localStorage.getItem("token");
+                            
+                            if (e.target.value.trim() && currentUserId && token) {
                               // Clear previous timeout
                               if (typingTimeoutRef.current) {
                                 clearTimeout(typingTimeoutRef.current);
@@ -805,32 +1168,46 @@ export default function LiveChatWidget() {
                               
                               // Send typing indicator to backend immediately
                               axios.post("http://localhost:3000/api/chat/typing", {
-                                userId: userId,
+                                userId: currentUserId,
                                 isTyping: true,
                                 sender: "user"
+                              }, {
+                                headers: { Authorization: `Bearer ${token}` }
                               }).then(() => {
                                 console.log("User typing status sent: true");
                               }).catch((err) => {
-                                console.error("Error sending typing status:", err);
+                                // Silently handle auth errors
+                                if (err.response?.status !== 401 && err.response?.status !== 403) {
+                                  console.error("Error sending typing status:", err);
+                                }
                               });
                               
                               // Stop typing indicator after 2 seconds of no typing
                               typingTimeoutRef.current = setTimeout(() => {
-                                axios.post("http://localhost:3000/api/chat/typing", {
-                                  userId: userId,
-                                  isTyping: false,
-                                  sender: "user"
-                                }).catch(() => {});
+                                const currentToken = localStorage.getItem("token");
+                                const currentUser2 = JSON.parse(localStorage.getItem("user") || "null");
+                                const currentUserId2 = extractUserId(currentUser2);
+                                if (currentToken && currentUserId2) {
+                                  axios.post("http://localhost:3000/api/chat/typing", {
+                                    userId: currentUserId2,
+                                    isTyping: false,
+                                    sender: "user"
+                                  }, {
+                                    headers: { Authorization: `Bearer ${currentToken}` }
+                                  }).catch(() => {});
+                                }
                               }, 2000);
-                            } else if (!e.target.value.trim() && userId) {
+                            } else if (!e.target.value.trim() && currentUserId && token) {
                               // Stop typing indicator when input is empty
                               if (typingTimeoutRef.current) {
                                 clearTimeout(typingTimeoutRef.current);
                               }
                               axios.post("http://localhost:3000/api/chat/typing", {
-                                userId: userId,
+                                userId: currentUserId,
                                 isTyping: false,
                                 sender: "user"
+                              }, {
+                                headers: { Authorization: `Bearer ${token}` }
                               }).catch(() => {});
                             }
                           }}
@@ -841,11 +1218,16 @@ export default function LiveChatWidget() {
                               if (typingTimeoutRef.current) {
                                 clearTimeout(typingTimeoutRef.current);
                               }
-                              if (userId) {
+                              const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+                              const currentUserId = extractUserId(currentUser);
+                              const token = localStorage.getItem("token");
+                              if (currentUserId && token) {
                                 axios.post("http://localhost:3000/api/chat/typing", {
-                                  userId: userId,
+                                  userId: currentUserId,
                                   isTyping: false,
                                   sender: "user"
+                                }, {
+                                  headers: { Authorization: `Bearer ${token}` }
                                 }).catch(() => {});
                               }
                               handleSendMessage();

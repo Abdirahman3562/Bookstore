@@ -5,13 +5,14 @@ export const getUserNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const notifications = await Notification.find({ userId })
+    const notifications = await Notification.find({ userId, tenantId: req.tenantId })
       .sort({ createdAt: -1 })
       .limit(100); // Limit to last 100 notifications
 
-    const unreadCount = await Notification.countDocuments({ 
-      userId, 
-      isRead: false 
+    const unreadCount = await Notification.countDocuments({
+      userId,
+      tenantId: req.tenantId,
+      isRead: false
     });
 
     res.status(200).json({
@@ -36,7 +37,7 @@ export const markAsRead = async (req, res) => {
     const { id } = req.params;
     const { userId } = req.body;
 
-    const notification = await Notification.findById(id);
+    const notification = await Notification.findOne({ _id: id, tenantId: req.tenantId });
     
     if (!notification) {
       return res.status(404).json({ 
@@ -78,7 +79,7 @@ export const markAllAsRead = async (req, res) => {
     const { userId } = req.body;
 
     await Notification.updateMany(
-      { userId, isRead: false },
+      { userId, tenantId: req.tenantId, isRead: false },
       { 
         isRead: true, 
         readAt: new Date() 
@@ -105,7 +106,7 @@ export const deleteNotification = async (req, res) => {
     const { id } = req.params;
     const { userId } = req.body;
 
-    const notification = await Notification.findById(id);
+    const notification = await Notification.findOne({ _id: id, tenantId: req.tenantId });
     
     if (!notification) {
       return res.status(404).json({ 
@@ -143,7 +144,7 @@ export const deleteAllNotifications = async (req, res) => {
   try {
     const { userId } = req.body;
 
-    await Notification.deleteMany({ userId });
+    await Notification.deleteMany({ userId, tenantId: req.tenantId });
 
     res.status(200).json({
       success: true,

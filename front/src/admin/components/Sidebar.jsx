@@ -13,7 +13,11 @@ import {
   FileText,
   Settings,
   Mail,
-  MessageCircle
+  MessageCircle,
+  Crown,
+  Calendar,
+  TrendingUp,
+  Building2
 } from "lucide-react";
 import axios from "axios";
 
@@ -29,7 +33,12 @@ export default function Sidebar({ isOpen, onClose }) {
   useEffect(() => {
     const fetchWebsiteSettings = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/website-settings");
+        const token = localStorage.getItem("admin_token");
+        if (!token) return;
+
+        const response = await axios.get("http://localhost:3000/api/website-settings", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         if (response.data.success) {
           setWebsiteSettings({
             websiteName: response.data.data.websiteName || "Admin Panel",
@@ -65,7 +74,9 @@ export default function Sidebar({ isOpen, onClose }) {
           if (adminEmail) {
             // Try to find in Admin model first
             try {
-              const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+              const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
+                headers: { Authorization: `Bearer ${token}` }
+              });
               const admins = adminsResponse.data.data || [];
               const admin = admins.find(a => a.email === adminEmail);
               if (admin) {
@@ -77,7 +88,9 @@ export default function Sidebar({ isOpen, onClose }) {
             }
 
             // Fallback to User model
-            const usersResponse = await axios.get("http://localhost:3000/api/users");
+            const usersResponse = await axios.get("http://localhost:3000/api/users", {
+              headers: { Authorization: `Bearer ${token}` }
+            });
             const users = usersResponse.data.data || [];
             const user = users.find(u => u.email === adminEmail);
             if (user) {
@@ -143,7 +156,12 @@ export default function Sidebar({ isOpen, onClose }) {
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/chat/unread-count");
+        const token = localStorage.getItem("admin_token");
+        if (!token) return;
+
+        const response = await axios.get("http://localhost:3000/api/chat/unread-count", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         if (response.data.success) {
           setUnreadCount(response.data.data.unreadCount || 0);
           console.log(response.data.data.unreadCount);
@@ -178,11 +196,26 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/admin/website-settings", label: "Website Settings", icon: Settings, permission: "websiteSettings", adminOnly: true },
   ];
 
+  // Super Admin menu items
+  const superAdminMenuItems = [
+    { path: "/superadmin/dashboard", label: "Super Dashboard", icon: Crown, permission: "superadmin" },
+    { path: "/superadmin/tenants", label: "Manage Tenants", icon: Building2, permission: "superadmin" },
+    { path: "/superadmin/subscriptions", label: "Subscriptions", icon: Calendar, permission: "superadmin" },
+    { path: "/superadmin/plans", label: "Plan Management", icon: Settings, permission: "superadmin" },
+    { path: "/superadmin/analytics", label: "Analytics", icon: TrendingUp, permission: "superadmin" },
+    { path: "/superadmin/admins", label: "Admin Users", icon: Users, permission: "superadmin" },
+  ];
+
   // Filter menu items based on user permissions
   const getFilteredMenuItems = () => {
     if (!currentUser) {
       // If no user data, show all (fallback)
       return allMenuItems;
+    }
+
+    // If SUPER_ADMIN, show Super Admin menu
+    if (currentUser.adminRole === "SUPER_ADMIN") {
+      return superAdminMenuItems;
     }
 
     // Always check granular permissions, even for admin role
@@ -317,11 +350,11 @@ export default function Sidebar({ isOpen, onClose }) {
           );
         })}
 
-        {/* Admin Users Management - Only visible if user has view permission */}
-        {currentUser && canView(currentUser, 'addAdminUser') && (
+        {/* Author Users Management - Only visible if user has view permission (not for SUPER_ADMIN) */}
+        {currentUser && currentUser.adminRole !== "SUPER_ADMIN" && canView(currentUser, 'addAdminUser') && (
           <>
             <Link
-              to="/admin/admin-users"
+              to="/admin/author-users"
               onClick={onClose}
               className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition mt-2
                 ${location.pathname === "/admin/admin-users"
@@ -330,10 +363,10 @@ export default function Sidebar({ isOpen, onClose }) {
                 }`}
             >
               <Shield size={18} />
-              Admin Users List
+              Author Users List
             </Link>
             <Link
-              to="/admin/add-admin-user"
+              to="/admin/add-author-user"
               onClick={onClose}
               className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition
                 ${location.pathname === "/admin/add-admin-user"
@@ -342,7 +375,25 @@ export default function Sidebar({ isOpen, onClose }) {
                 }`}
             >
               <UserPlus size={18} />
-              Add Admin User
+              Add Author User
+            </Link>
+          </>
+        )}
+
+        {/* Super Admin Actions */}
+        {currentUser && currentUser.adminRole === "SUPER_ADMIN" && (
+          <>
+            <Link
+              to="/superadmin/admins/create"
+              onClick={onClose}
+              className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition mt-2
+                ${location.pathname === "/superadmin/admins/create"
+                  ? "bg-blue-600 dark:bg-blue-700 text-white"
+                  : "text-gray-300 dark:text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-700 hover:text-white"
+                }`}
+            >
+              <UserPlus size={18} />
+              Create Admin
             </Link>
           </>
         )}

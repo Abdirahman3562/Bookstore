@@ -11,6 +11,7 @@ import {
   FaFacebook,
   FaInstagram,
 } from "react-icons/fa";
+import { getTenantUrl, getTenantHeaders } from "../utils/tenantUtils";
 import RelatedArticles from "../components/Blog/RelatedArticles";
 import CommentSection from "../components/Blog/CommentSection";
 
@@ -41,7 +42,9 @@ function SinglePostPage() {
     const loadBlogs = async () => {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:3000/api/blogs");
+        const blogsUrl = getTenantUrl("http://localhost:3000/api/blogs");
+        const headers = getTenantHeaders();
+        const res = await fetch(blogsUrl, { headers });
         if (!res.ok) throw new Error("Failed to load blogs");
         const response = await res.json();
         const data = response.data || [];
@@ -165,7 +168,8 @@ function SinglePostPage() {
           });
         } else {
           // Fetch authors and find matching one
-          const res = await fetch("http://localhost:3000/api/authors");
+          const authorsUrl = getTenantUrl("http://localhost:3000/api/authors");
+          const res = await fetch(authorsUrl, { headers });
           if (!res.ok) throw new Error("Failed to load authors");
           const response = await res.json();
           const authors = response.data || [];

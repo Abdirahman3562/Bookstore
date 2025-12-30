@@ -6,7 +6,7 @@ import { sendOrderActiveEmail } from "../utils/email.js";
 // GET ALL PURCHASED ITEMS
 export const getAllPurchased = async (req, res) => {
   try {
-    const purchased = await Purchased.find({}).sort({ createdAt: -1 });
+    const purchased = await Purchased.find({ tenantId: req.tenantId }).sort({ createdAt: -1 });
     
     // Fetch user avatars for each purchased item
     const purchasedWithAvatars = await Promise.all(
@@ -40,7 +40,7 @@ export const getAllPurchased = async (req, res) => {
 // GET SINGLE PURCHASED ITEM
 export const getPurchasedById = async (req, res) => {
   try {
-    const purchased = await Purchased.findById(req.params.id);
+    const purchased = await Purchased.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!purchased) {
       return res.status(404).json({ success: false, message: "Purchased item not found" });
     }
@@ -61,6 +61,7 @@ export const createPurchased = async (req, res) => {
   try {
     const purchasedData = {
       ...req.body,
+      tenantId: req.tenantId, // Add tenantId from middleware
       id: Date.now().toString() // Generate unique ID
     };
 
@@ -81,8 +82,8 @@ export const createPurchased = async (req, res) => {
 // UPDATE PURCHASED ITEM
 export const updatePurchased = async (req, res) => {
   try {
-    const updated = await Purchased.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Purchased.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       req.body,
       { new: true, runValidators: true }
     );
@@ -118,15 +119,15 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     // First, find the current order to log the change
-    const currentOrder = await Purchased.findById(id);
+    const currentOrder = await Purchased.findOne({ _id: id, tenantId: req.tenantId });
     if (!currentOrder) {
       return res.status(404).json({ success: false, message: "Purchased item not found" });
     }
 
     console.log(`📝 Current status: ${currentOrder.status} → New status: ${status}`);
 
-    const updated = await Purchased.findByIdAndUpdate(
-      id,
+    const updated = await Purchased.findOneAndUpdate(
+      { _id: id, tenantId: req.tenantId },
       { status, updatedAt: new Date() },
       { new: true, runValidators: true }
     );
@@ -185,7 +186,7 @@ export const updateOrderStatus = async (req, res) => {
 // DELETE PURCHASED ITEM
 export const deletePurchased = async (req, res) => {
   try {
-    const deleted = await Purchased.findByIdAndDelete(req.params.id);
+    const deleted = await Purchased.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
 
     if (!deleted) {
       return res.status(404).json({ success: false, message: "Purchased item not found" });

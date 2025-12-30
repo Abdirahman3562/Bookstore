@@ -72,13 +72,24 @@ export default function Dashboard() {
         console.log("📊 Fetching dashboard data...");
       }
 
+      // Get authentication token
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const authHeaders = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+
       // Fetch data from multiple endpoints
       const [booksRes, downloadsRes, purchasesRes, usersRes, adminsRes] = await Promise.all([
-        axios.get("http://localhost:3000/api/books"),
-        axios.get("http://localhost:3000/api/downloads"),
-        axios.get("http://localhost:3000/api/purchased"),
-        axios.get("http://localhost:3000/api/users"),
-        axios.get("http://localhost:3000/api/admins")
+        axios.get("http://localhost:3000/api/books", authHeaders),
+        axios.get("http://localhost:3000/api/downloads", authHeaders),
+        axios.get("http://localhost:3000/api/purchased", authHeaders),
+        axios.get("http://localhost:3000/api/users", authHeaders),
+        axios.get("http://localhost:3000/api/admins", authHeaders)
       ]);
 
       const books = booksRes.data.data || [];

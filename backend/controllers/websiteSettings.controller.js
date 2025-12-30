@@ -33,7 +33,7 @@ export const uploadLogo = multer({
 // GET website settings
 export const getWebsiteSettings = async (req, res) => {
   try {
-    const settings = await WebsiteSettings.getSettings();
+    const settings = await WebsiteSettings.getSettings(req.tenantId);
     res.status(200).json({
       success: true,
       data: settings,
@@ -53,10 +53,10 @@ export const updateWebsiteSettings = async (req, res) => {
     console.log("📝 Received form data:", req.body);
     console.log("📍 Location from body:", req.body.location);
     
-    let settings = await WebsiteSettings.findOne();
-    
+    let settings = await WebsiteSettings.findOne({ tenantId: req.tenantId });
+
     if (!settings) {
-      settings = new WebsiteSettings({});
+      settings = new WebsiteSettings({ tenantId: req.tenantId });
     }
 
     // Update website name if provided

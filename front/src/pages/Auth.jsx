@@ -258,6 +258,10 @@ export default function AuthPage() {
         // Normal login (no 2-step verification)
         if (responseData.data) {
           localStorage.setItem("user", JSON.stringify(responseData.data));
+          // Store token if available
+          if (responseData.token) {
+            localStorage.setItem("token", responseData.token);
+          }
           toast.success("Login successful!");
           setIsLoggingIn(false);
           navigate("/dashboard");
@@ -428,6 +432,10 @@ export default function AuthPage() {
       if (response.ok && responseData.success) {
         if (responseData.data) {
           localStorage.setItem("user", JSON.stringify(responseData.data));
+          // Store token if available
+          if (responseData.token) {
+            localStorage.setItem("token", responseData.token);
+          }
           toast.success("Login successful!");
           setRequiresOTP(false);
           setOtpCode("");

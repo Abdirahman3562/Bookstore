@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
 const adminSchema = new mongoose.Schema({
+  // Multi-tenant support: tenant_id is null for SUPER_ADMIN, required for ADMIN
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    default: null, // null = SUPER_ADMIN (platform owner)
+    index: true
+  },
   name: {
     type: String,
     required: true,
@@ -9,7 +16,6 @@ const adminSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
     lowercase: true
   },
@@ -23,7 +29,7 @@ const adminSchema = new mongoose.Schema({
   },
   adminRole: {
     type: String,
-    enum: ['admin', 'author'],
+    enum: ['SUPER_ADMIN', 'admin', 'author'], // SUPER_ADMIN = platform owner
     default: 'admin'
   },
   permissions: {
@@ -115,10 +121,19 @@ const adminSchema = new mongoose.Schema({
   loggedInStatus: {
     type: Boolean,
     default: false
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Admin",
+    default: null
   }
 }, {
   timestamps: true
 });
+
+// Compound index for tenant-scoped email uniqueness
+adminSchema.index({ tenantId: 1, email: 1 }, { unique: true, sparse: true });
+adminSchema.index({ adminRole: 1 });
 
 const Admin = mongoose.model("Admin", adminSchema);
 export default Admin;

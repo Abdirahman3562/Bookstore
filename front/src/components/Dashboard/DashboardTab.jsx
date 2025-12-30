@@ -15,7 +15,9 @@
         const userEmail = user.email?.toLowerCase(); // Normalize email
 
         // Fetch Orders
-        fetch("http://localhost:3000/api/purchased")
+        const token = localStorage.getItem("token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        fetch("http://localhost:3000/api/purchased", { headers })
         .then((res) => res.json())
         .then((responseData) => {
             const data = responseData.data || [];
@@ -43,7 +45,7 @@
         });
 
         // Fetch Downloads
-        fetch("http://localhost:3000/api/downloads")
+        fetch("http://localhost:3000/api/downloads", { headers })
         .then((res) => res.json())
         .then((responseData) => {
             const data = responseData.data || [];

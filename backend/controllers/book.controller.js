@@ -3,7 +3,7 @@ import Book from "../models/books.model.js";
 // GET ALL
 export const getAllBooks = async (req, res) => {
   try {
-    const books = await Book.find({});
+    const books = await Book.find({ tenantId: req.tenantId });
     res.status(200).json({
       success: true,
       message: "Books fetched",
@@ -17,7 +17,7 @@ export const getAllBooks = async (req, res) => {
 // GET ONE
 export const getBookById = async (req, res) => {
   try {
-    const book = await Book.findById(req.params.id);
+    const book = await Book.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!book)
       return res.status(404).json({ success: false, message: "Not found" });
 
@@ -36,6 +36,7 @@ export const createBook = async (req, res) => {
   try {
     const bookData = {
       ...req.body,
+      tenantId: req.tenantId, // Add tenantId from middleware
       cover: req.files.cover ? `/uploads/${req.files.cover[0].filename}` : req.body.cover,
       pdfUrl: req.files.pdfFile ? `/uploads/${req.files.pdfFile[0].filename}` : req.body.pdfUrl
     };
@@ -63,8 +64,8 @@ export const updateBook = async (req, res) => {
       ...(req.files?.pdfFile && { pdfUrl: `/uploads/${req.files.pdfFile[0].filename}` })
     };
 
-    const updated = await Book.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Book.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       updateData,
       { new: true, runValidators: true }
     );
@@ -86,7 +87,7 @@ export const updateBook = async (req, res) => {
 // DELETE
 export const deleteBook = async (req, res) => {
   try {
-    const deleted = await Book.findByIdAndDelete(req.params.id);
+    const deleted = await Book.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
 
     if (!deleted)
       return res.status(404).json({ success: false, message: "Not found" });

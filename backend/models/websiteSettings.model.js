@@ -2,6 +2,14 @@ import mongoose from "mongoose";
 
 const websiteSettingsSchema = new mongoose.Schema(
   {
+    // Multi-tenant support: each tenant has their own website settings
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      required: true,
+      unique: true,
+      index: true
+    },
     websiteName: {
       type: String,
       default: "Bookstore",
@@ -29,11 +37,11 @@ const websiteSettingsSchema = new mongoose.Schema(
   }
 );
 
-// Ensure only one settings document exists
-websiteSettingsSchema.statics.getSettings = async function () {
-  let settings = await this.findOne();
+// Get settings for a specific tenant
+websiteSettingsSchema.statics.getSettings = async function (tenantId) {
+  let settings = await this.findOne({ tenantId });
   if (!settings) {
-    settings = await this.create({});
+    settings = await this.create({ tenantId });
   }
   return settings;
 };

@@ -35,7 +35,12 @@ export default function Notifications() {
       if (adminEmail) {
         // Try admins API first
         try {
-          const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+          const token = localStorage.getItem("admin_token");
+          if (!token) return;
+
+          const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           const admins = adminsResponse.data.data || [];
           const admin = admins.find(a => a.email === adminEmail);
           if (admin) {
@@ -47,7 +52,9 @@ export default function Notifications() {
         }
 
         // Fallback to users API
-        const usersResponse = await axios.get("http://localhost:3000/api/users");
+        const usersResponse = await axios.get("http://localhost:3000/api/users", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const users = usersResponse.data.data || [];
         const user = users.find(u => u.email === adminEmail);
         if (user) {
@@ -68,7 +75,9 @@ export default function Notifications() {
       if (currentUser?.adminRole === "admin") {
         // Get pending purchases (only pending, not active)
         try {
-          const purchasesResponse = await axios.get("http://localhost:3000/api/purchased");
+          const purchasesResponse = await axios.get("http://localhost:3000/api/purchased", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           const purchases = purchasesResponse.data.data || [];
           const pendingPurchases = purchases.filter(p => p.status === "pending");
           
@@ -95,7 +104,9 @@ export default function Notifications() {
 
         // Get recent blog comments
         try {
-          const blogsResponse = await axios.get("http://localhost:3000/api/blogs");
+          const blogsResponse = await axios.get("http://localhost:3000/api/blogs", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           const blogs = blogsResponse.data.data || [];
           
           blogs.forEach(blog => {
@@ -136,7 +147,9 @@ export default function Notifications() {
       if (currentUser?.adminRole === "author") {
         // Get comments on their blogs
         try {
-          const blogsResponse = await axios.get("http://localhost:3000/api/blogs");
+          const blogsResponse = await axios.get("http://localhost:3000/api/blogs", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           const blogs = blogsResponse.data.data || [];
           
           // Get the authorId from admin user record (this links admin user to author profile)
@@ -148,7 +161,9 @@ export default function Notifications() {
           } else {
             // Fallback: Try to find author by email or name
             try {
-              const authorsResponse = await axios.get("http://localhost:3000/api/authors");
+              const authorsResponse = await axios.get("http://localhost:3000/api/authors", {
+                headers: { Authorization: `Bearer ${token}` }
+              });
               const authors = authorsResponse.data.data || [];
               
               // Try to match by email first

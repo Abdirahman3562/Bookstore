@@ -4,6 +4,7 @@ import cors from "cors";
 import multer from "multer";
 import path from "path";
 import { connectDB } from "./config/db.js";
+import realtimeMonitor from "./utils/realtimeSubscriptionMonitor.js";
 import bookRoutes from "./routes/book.route.js";
 import authRoutes from "./routes/auth.route.js";
 import purchasedRoutes from "./routes/purchased.route.js";
@@ -18,6 +19,9 @@ import websiteSettingsRoutes from "./routes/websiteSettings.route.js";
 import contactRoutes from "./routes/contact.route.js";
 import notificationsRoutes from "./routes/notifications.route.js";
 import chatRoutes from "./routes/chat.route.js";
+import tenantsRoutes from "./routes/tenants.route.js";
+import subscriptionsRoutes from "./routes/subscriptions.route.js";
+import superadminRoutes from "./routes/superadmin.route.js";
 
 dotenv.config();
 const app = express();
@@ -98,9 +102,44 @@ app.use("/api/website-settings", websiteSettingsRoutes);
 app.use("/api/contacts", contactRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/chat", chatRoutes);
+// Super Admin routes
+app.use("/api/superadmin", superadminRoutes);
+app.use("/api/superadmin/tenants", tenantsRoutes);
+app.use("/api/superadmin/subscriptions", subscriptionsRoutes);
 
 // start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🔥 Server running at http://localhost:${PORT}`);
+const startServer = async () => {
+  try {
+    // Wait for database connection
+    await connectDB();
+
+    // Start real-time subscription monitor
+    realtimeMonitor.start();
+
+    // Start the server
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+      console.log(`🔥 Server running at http://localhost:${PORT}`);
+      console.log(`📊 Real-time subscription monitor is active`);
+    });
+
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+// Handle graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\n🛑 Received SIGINT, shutting down gracefully...');
+  realtimeMonitor.stop();
+  process.exit(0);
 });
+
+process.on('SIGTERM', () => {
+  console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
+  realtimeMonitor.stop();
+  process.exit(0);
+});
+
+startServer();

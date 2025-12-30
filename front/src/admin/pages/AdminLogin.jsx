@@ -72,6 +72,15 @@ export default function AdminLogin() {
         const permissions = adminData?.permissions || {};
         const adminRole = adminData?.adminRole;
         
+        // Check if SUPER_ADMIN - redirect to Super Admin Dashboard
+        if (adminRole === "SUPER_ADMIN") {
+          toast.success("Login successful 🎉");
+          setTimeout(() => {
+            navigate("/superadmin/dashboard");
+          }, 100);
+          return;
+        }
+        
         // Determine redirect path based on permissions
         let redirectPath = "/admin/dashboard"; // Default
         
@@ -332,6 +341,15 @@ export default function AdminLogin() {
         const adminData = response.data.admin;
         const permissions = adminData?.permissions || {};
         const adminRole = adminData?.adminRole;
+        
+        // Check if SUPER_ADMIN - redirect to Super Admin Dashboard
+        if (adminRole === "SUPER_ADMIN") {
+          toast.success("Login successful 🎉");
+          setTimeout(() => {
+            navigate("/superadmin/dashboard");
+          }, 100);
+          return;
+        }
         
         let redirectPath = "/admin/dashboard";
         

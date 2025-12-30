@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { FiShoppingCart, FiDownload, FiArrowLeft, FiCalendar, FiUser, FiDollarSign, FiBookOpen } from "react-icons/fi";
 import { BookOpen, Download, ShoppingCart, ArrowLeft, Calendar, User, DollarSign } from "lucide-react";
 import toast from "react-hot-toast";
+import { getTenantUrl, getTenantHeaders } from "../utils/tenantUtils";
 
 function slugify(text) {
   return text
@@ -20,18 +21,25 @@ export default function BookDetails() {
   const [showFullDescription, setShowFullDescription] = useState(false);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/books`)
-      .then((res) => res.json())
-      .then((responseData) => {
+    const fetchBookDetails = async () => {
+      try {
+        const url = getTenantUrl("http://localhost:3000/api/books");
+        const headers = getTenantHeaders();
+
+        const response = await fetch(url, { headers });
+        const responseData = await response.json();
+
         const data = responseData.data || [];
         const found = data.find((b) => slugify(b.title) === title);
         setBook(found);
         setLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching book:", error);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchBookDetails();
   }, [title]);
 
   const handleAddToCart = () => {

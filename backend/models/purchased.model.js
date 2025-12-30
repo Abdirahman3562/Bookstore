@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
 const purchasedSchema = new mongoose.Schema({
+  // Multi-tenant support: every purchase belongs to a tenant
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+    index: true
+  },
   userId: {
     type: String,
     required: true
@@ -62,6 +69,11 @@ const purchasedSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Indexes for efficient tenant-scoped queries
+purchasedSchema.index({ tenantId: 1, userId: 1 });
+purchasedSchema.index({ tenantId: 1, status: 1 });
+purchasedSchema.index({ tenantId: 1, createdAt: -1 });
 
 const Purchased = mongoose.model("Purchased", purchasedSchema, "purchased");
 

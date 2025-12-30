@@ -1,5 +1,7 @@
 import Admin from "../models/admin.model.js";
 import User from "../models/users.model.js";
+import Tenant from "../models/tenant.model.js";
+import Subscription from "../models/subscription.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { sendVerificationCode } from "../utils/email.js";
@@ -128,6 +130,44 @@ export const loginAdmin = async (req, res) => {
       }
     }
 
+    // Check tenant subscription status for regular admins (not SUPER_ADMIN)
+    if (admin.adminRole !== 'SUPER_ADMIN' && admin.tenantId) {
+      try {
+        const Tenant = (await import("../models/tenant.model.js")).default;
+        const tenant = await Tenant.findById(admin.tenantId);
+
+        if (tenant && (tenant.status === 'expired' || tenant.status === 'inactive' || tenant.status === 'suspended')) {
+          const statusMessage = tenant.status === 'inactive' ? 'been cancelled' : tenant.status;
+          return res.status(403).json({
+            success: false,
+            message: `Your tenant subscription has ${statusMessage}. Please contact the platform administrator to renew your subscription.`,
+          });
+        }
+      } catch (tenantError) {
+        console.error("Error checking tenant status:", tenantError);
+        // Continue with login if tenant check fails
+      }
+    }
+
+    // Check tenant subscription status for regular admins (not SUPER_ADMIN)
+    if (admin.adminRole !== 'SUPER_ADMIN' && admin.tenantId) {
+      try {
+        const Tenant = (await import("../models/tenant.model.js")).default;
+        const tenant = await Tenant.findById(admin.tenantId);
+
+        if (tenant && (tenant.status === 'expired' || tenant.status === 'inactive' || tenant.status === 'suspended')) {
+          const statusMessage = tenant.status === 'inactive' ? 'been cancelled' : tenant.status;
+          return res.status(403).json({
+            success: false,
+            message: `Your tenant subscription has ${statusMessage}. Please contact the platform administrator to renew your subscription.`,
+          });
+        }
+      } catch (tenantError) {
+        console.error("Error checking tenant status:", tenantError);
+        // Continue with login if tenant check fails
+      }
+    }
+
     // Check if 2-step verification is enabled
     if (admin.twoStepVerification) {
       // Generate verification code
@@ -167,11 +207,74 @@ export const loginAdmin = async (req, res) => {
       console.log(`✅ Admin (User model) ${admin.email} loggedInStatus set to TRUE`);
     }
 
+    // Include tenantId in token for multi-tenant support
+    const tokenPayload = {
+      id: admin._id,
+      email: admin.email,
+      adminRole: admin.adminRole,
+      permissions: admin.permissions
+    };
+    
+    // Add tenantId if admin is not SUPER_ADMIN
+    if (admin.tenantId) {
+      tokenPayload.tenantId = admin.tenantId.toString();
+    } else if (admin.adminRole !== 'SUPER_ADMIN' && !isFromUserModel && adminDocument?.tenantId) {
+      tokenPayload.tenantId = adminDocument.tenantId.toString();
+    } else if (isFromUserModel && admin.tenantId) {
+      tokenPayload.tenantId = admin.tenantId.toString();
+    }
+
     const token = jwt.sign(
-      { id: admin._id, email: admin.email, adminRole: admin.adminRole, permissions: admin.permissions },
+      tokenPayload,
       process.env.JWT_SECRET || "fallback_secret_key_change_in_production",
       { expiresIn: "1d" }
     );
+
+    // Check tenant subscription status for non-super admins
+    if (admin.adminRole !== 'SUPER_ADMIN' && admin.tenantId) {
+      try {
+        const tenant = await Tenant.findById(admin.tenantId);
+        if (tenant) {
+          // Check if tenant is suspended or expired
+          if (tenant.status === 'suspended' || tenant.status === 'expired') {
+            console.log(`🚫 Login blocked for ${email} - tenant ${tenant.name} is ${tenant.status}`);
+            return res.status(403).json({
+              success: false,
+              message: `Access denied. Your tenant account is ${tenant.status}. Please contact support.`,
+              action: "tenant_blocked"
+            });
+          }
+
+          // Check active subscription
+          const activeSubscription = await Subscription.findOne({
+            tenantId: admin.tenantId,
+            status: 'active'
+          }).sort({ endDate: -1 });
+
+          if (!activeSubscription) {
+            console.log(`🚫 Login blocked for ${email} - no active subscription found`);
+            return res.status(402).json({
+              success: false,
+              message: "No active subscription found. Please contact your administrator.",
+              action: "no_subscription"
+            });
+          }
+
+          // Check if subscription has expired
+          if (activeSubscription.endDate < new Date()) {
+            console.log(`🚫 Login blocked for ${email} - subscription expired`);
+            return res.status(402).json({
+              success: false,
+              message: "Your subscription has expired. Please renew to continue.",
+              action: "subscription_expired"
+            });
+          }
+        }
+      } catch (subscriptionError) {
+        console.error(`Error checking subscription for ${email}:`, subscriptionError);
+        // Allow login but log the error
+      }
+    }
 
     console.log("Login successful, token generated");
 
@@ -254,8 +357,25 @@ export const verifyLoginCode = async (req, res) => {
     }
 
     // Generate JWT token
+    // Include tenantId in token for multi-tenant support
+    const tokenPayload = {
+      id: admin._id,
+      email: admin.email,
+      adminRole: admin.adminRole,
+      permissions: admin.permissions
+    };
+    
+    // Add tenantId if admin is not SUPER_ADMIN
+    if (admin.tenantId) {
+      tokenPayload.tenantId = admin.tenantId.toString();
+    } else if (admin.adminRole !== 'SUPER_ADMIN' && !isFromUserModel && adminDocument?.tenantId) {
+      tokenPayload.tenantId = adminDocument.tenantId.toString();
+    } else if (isFromUserModel && admin.tenantId) {
+      tokenPayload.tenantId = admin.tenantId.toString();
+    }
+
     const token = jwt.sign(
-      { id: admin._id, email: admin.email, adminRole: admin.adminRole, permissions: admin.permissions },
+      tokenPayload,
       process.env.JWT_SECRET || "fallback_secret_key_change_in_production",
       { expiresIn: "1d" }
     );

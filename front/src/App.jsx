@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 import { Toaster } from "react-hot-toast";
+import { setupAxiosInterceptors } from "./admin/utils/apiUtils";
 
 // Pages Import
 import Home from "./pages/Home";
@@ -41,24 +42,39 @@ import TestimonialsAdmin from "./admin/pages/TestimonialsAdmin";
 import UsersAdmin from "./admin/pages/UsersAdmin";
 import AuthorsAdmin from "./admin/pages/AuthorsAdmin";
 import BlogsAdmin from "./admin/pages/BlogsAdmin";
-import AddAdminUser from "./admin/pages/AddAdminUser";
-import AdminUsersAdmin from "./admin/pages/AdminUsersAdmin";
+import AddAuthorUser from "./admin/pages/AddAuthorUser";
+import AuthorUsersAdmin from "./admin/pages/AuthorUsersAdmin";
 import MyProfile from "./admin/pages/MyProfile";
 import Notifications from "./admin/pages/Notifications";
 import WebsiteSettings from "./admin/pages/WebsiteSettings";
 import ContactsAdmin from "./admin/pages/ContactsAdmin";
 import LiveChatAdmin from "./admin/pages/LiveChatAdmin";
 import AdminProtectedRoute from "./admin/components/AdminProtectedRoute";
+import SuperAdminProtectedRoute from "./admin/components/SuperAdminProtectedRoute";
+// Super Admin
+import SuperAdminDashboard from "./admin/pages/SuperAdminDashboard";
+import SuperAdminTenants from "./admin/pages/SuperAdminTenants";
+import SuperAdminCreateAdmin from "./admin/pages/SuperAdminCreateAdmin";
+import SuperAdminSubscriptions from "./admin/pages/SuperAdminSubscriptions";
+import SuperAdminAnalytics from "./admin/pages/SuperAdminAnalytics";
+import SuperAdminAdmins from "./admin/pages/SuperAdminAdmins";
+import SuperAdminEditAdmin from "./admin/pages/SuperAdminEditAdmin";
+import SuperAdminCreateTenant from "./admin/pages/SuperAdminCreateTenant";
+import SuperAdminCreateSubscription from "./admin/pages/SuperAdminCreateSubscription";
+import SuperAdminEditSubscription from "./admin/pages/SuperAdminEditSubscription";
+import SuperAdminPlans from "./admin/pages/SuperAdminPlans";
+import SuperAdminEditTenant from "./admin/pages/SuperAdminEditTenant";
+import SuperAdminTenantDetail from "./admin/pages/SuperAdminTenantDetail";
 
 function App() {
   const location = useLocation();
 
   // check routes
   const isHomePage = location.pathname === "/";
-  const isAdminRoute = location.pathname.startsWith("/admin");
+  const isAdminRoute = location.pathname.startsWith("/admin") || location.pathname.startsWith("/superadmin");
   const isAuthRoute = location.pathname === "/auth" || location.pathname === "/verify-email";
 
-  // Initialize dark mode from localStorage on app load
+  // Initialize dark mode and axios interceptors on app load
   useEffect(() => {
     const savedDarkMode = localStorage.getItem("darkMode");
     if (savedDarkMode === "true") {
@@ -66,7 +82,12 @@ function App() {
     } else {
       document.documentElement.classList.remove("dark");
     }
-  }, []);
+
+    // Setup axios interceptors for automatic logout on subscription expiry
+    if (isAdminRoute) {
+      setupAxiosInterceptors();
+    }
+  }, [isAdminRoute]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
@@ -193,22 +214,22 @@ function App() {
           />
 
           <Route
-            path="/admin/add-admin-user"
+            path="/admin/add-author-user"
             element={
               <AdminProtectedRoute requiredPermission="addAdminUser">
                 <AdminLayout>
-                  <AddAdminUser />
+                  <AddAuthorUser />
                 </AdminLayout>
               </AdminProtectedRoute>
             }
           />
 
           <Route
-            path="/admin/admin-users"
+            path="/admin/author-users"
             element={
               <AdminProtectedRoute requiredPermission="addAdminUser">
                 <AdminLayout>
-                  <AdminUsersAdmin />
+                  <AuthorUsersAdmin />
                 </AdminLayout>
               </AdminProtectedRoute>
             }
@@ -266,6 +287,163 @@ function App() {
                   <LiveChatAdmin />
                 </AdminLayout>
               </AdminProtectedRoute>
+            }
+          />
+
+          {/* ================= Super Admin Pages ================= */}
+          <Route
+            path="/superadmin/dashboard"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminDashboard />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/tenants"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminTenants />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/admins/create"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminCreateAdmin />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/subscriptions"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminSubscriptions />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/analytics"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminAnalytics />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/plans"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminPlans />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/admins"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminAdmins />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/admins/:id/edit"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminEditAdmin />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          {/* Tenant Management */}
+          <Route
+            path="/superadmin/tenants/new"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminCreateTenant />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/tenants/:id"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminTenantDetail />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/tenants/:id/edit"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminEditTenant />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/tenants/:id/create-admin"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminCreateAdmin />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          {/* Subscription Management */}
+          <Route
+            path="/superadmin/subscriptions/create"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminCreateSubscription />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/superadmin/subscriptions/:id/edit"
+            element={
+              <SuperAdminProtectedRoute>
+                <AdminLayout>
+                  <SuperAdminEditSubscription />
+                </AdminLayout>
+              </SuperAdminProtectedRoute>
             }
           />
 

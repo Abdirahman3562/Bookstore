@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
 const contactSchema = new mongoose.Schema({
+  // Multi-tenant support: every contact message belongs to a tenant
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+    index: true
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -34,6 +41,11 @@ const contactSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Indexes for efficient tenant-scoped queries
+contactSchema.index({ tenantId: 1, status: 1 });
+contactSchema.index({ tenantId: 1, userId: 1 });
+contactSchema.index({ tenantId: 1, createdAt: -1 });
 
 const Contact = mongoose.model("Contact", contactSchema, "contacts");
 

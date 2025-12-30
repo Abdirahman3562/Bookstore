@@ -9,7 +9,10 @@ export default function Footer() {
   useEffect(() => {
     const fetchWebsiteSettings = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/website-settings");
+        const token = localStorage.getItem("token");
+        const response = await axios.get("http://localhost:3000/api/website-settings", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         if (response.data.success) {
           setWebsiteName(response.data.data.websiteName || "BookStore");
         }

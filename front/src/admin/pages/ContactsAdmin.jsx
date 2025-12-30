@@ -36,7 +36,15 @@ export default function ContactsAdmin() {
         console.log("🔄 Fetching contacts from database...");
       }
 
-      const response = await axios.get("http://localhost:3000/api/contacts");
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/contacts", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = response.data.data || [];
       console.log(`✅ Fetched ${data.length} contacts from database`);
 
@@ -106,7 +114,15 @@ export default function ContactsAdmin() {
     const contactId = contactToDelete._id;
 
     try {
-      await axios.delete(`http://localhost:3000/api/contacts/${contactId}`);
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      await axios.delete(`http://localhost:3000/api/contacts/${contactId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success("Contact deleted successfully!");
       await fetchContacts();
       
@@ -137,9 +153,17 @@ export default function ContactsAdmin() {
     setSendingReply(true);
 
     try {
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
       const response = await axios.post("http://localhost:3000/api/contacts/reply", {
         contactId: selectedContact._id,
         replyMessage: replyMessage.trim()
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (response.data.success) {

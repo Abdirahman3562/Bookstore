@@ -8,8 +8,14 @@ import {
   updateBook,
   deleteBook,
 } from "../controllers/book.controller.js";
+import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
 
 const router = express.Router();
+
+// Apply tenant middleware to all book routes
+router.use(resolveTenant);
+router.use(requireTenant);
+router.use(checkTenantAccess);
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({

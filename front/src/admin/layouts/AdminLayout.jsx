@@ -21,7 +21,12 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     const fetchWebsiteSettings = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/website-settings");
+        const token = localStorage.getItem("admin_token");
+        if (!token) return;
+
+        const response = await axios.get("http://localhost:3000/api/website-settings", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         if (response.data.success) {
           setWebsiteSettings({
             websiteName: response.data.data.websiteName || "Admin Panel",

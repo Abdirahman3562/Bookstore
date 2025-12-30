@@ -9,7 +9,8 @@ import axios from "axios";
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const regularUser = JSON.parse(localStorage.getItem("user"));
+  const [adminUser, setAdminUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0); // Track cart items
   const [websiteSettings, setWebsiteSettings] = useState({
@@ -25,7 +26,50 @@ export default function Navbar() {
     return false;
   });
 
+  // Determine if we're dealing with admin or regular user
+  const isAdmin = localStorage.getItem("admin_token") && localStorage.getItem("admin_email");
+  const user = isAdmin ? adminUser : regularUser;
+
   const menuRef = useRef(null);
+
+  // Fetch admin user data if admin is logged in
+  useEffect(() => {
+    const fetchAdminUser = async () => {
+      const adminEmail = localStorage.getItem("admin_email");
+      const token = localStorage.getItem("admin_token");
+
+      if (adminEmail && token) {
+        try {
+          // Try to fetch from admins API first
+          const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+          const admins = adminsResponse.data.data || [];
+          const admin = admins.find(a => a.email === adminEmail);
+
+          if (admin) {
+            setAdminUser(admin);
+            return;
+          }
+
+          // Fallback to users API
+          const usersResponse = await axios.get("http://localhost:3000/api/users");
+          const users = usersResponse.data.data || [];
+          const user = users.find(u => u.email === adminEmail);
+
+          if (user) {
+            setAdminUser(user);
+          }
+        } catch (error) {
+          console.error("Error fetching admin user:", error);
+          // Clear admin data if fetch fails
+          setAdminUser(null);
+        }
+      } else {
+        setAdminUser(null);
+      }
+    };
+
+    fetchAdminUser();
+  }, []);
 
   // Apply dark mode to document
   useEffect(() => {
@@ -47,7 +91,10 @@ export default function Navbar() {
   useEffect(() => {
     const fetchWebsiteSettings = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/website-settings");
+        const token = localStorage.getItem("token");
+        const response = await axios.get("http://localhost:3000/api/website-settings", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         if (response.data.success) {
           setWebsiteSettings({
             websiteName: response.data.data.websiteName || "BookStore",
@@ -94,7 +141,14 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = () => {
+    // Clear regular user data
     localStorage.removeItem("user");
+
+    // Clear admin data
+    localStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_email");
+    setAdminUser(null);
+
     toast.success("Logged out!");
     navigate("/auth");
   };
@@ -245,12 +299,71 @@ export default function Navbar() {
           </>
         ) : (
           <>
-            <NavLink
-              to="/dashboard"
-              className="px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-md text-[#2563eb] dark:text-blue-400 rounded flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <MdDashboard size={22} />
-            </NavLink>
+            {/* User Profile */}
+            <div className="flex items-center gap-3">
+              {/* User Avatar */}
+              {user && user.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 flex-shrink-0"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0" style={{ display: user && user.avatar ? 'none' : 'flex' }}>
+                <div className={`w-full h-full flex items-center justify-center text-white font-semibold text-sm ${user && user.role === 'premium' ? 'bg-purple-600' : 'bg-blue-600'}`}>
+                  {user && user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+              </div>
+
+              {/* User Info */}
+              <div className="hidden lg:flex flex-col">
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {user ? user.name : 'Loading...'}
+                </span>
+                <div className="flex items-center gap-2">
+                  {user && (
+                    <>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        user.role === 'premium'
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                      }`}>
+                        {user.role === 'premium' ? 'Premium' : 'Regular'}
+                      </span>
+                      {user.adminRole && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          user.adminRole === 'SUPER_ADMIN'
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                            : user.adminRole === 'admin'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            : user.adminRole === 'author'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                        }`}>
+                          {user.adminRole === 'SUPER_ADMIN' ? 'SUPER_ADMIN' :
+                           user.adminRole === 'admin' ? 'Admin' :
+                           user.adminRole === 'author' ? 'Author' :
+                           user.adminRole}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Dashboard Link */}
+              <NavLink
+                to="/dashboard"
+                className="px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-md text-[#2563eb] dark:text-blue-400 rounded flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                title="Dashboard"
+              >
+                <MdDashboard size={22} />
+              </NavLink>
+            </div>
           </>
         )}
         {/* Cart Icon */}

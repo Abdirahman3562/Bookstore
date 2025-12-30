@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FiBookOpen, FiGift, FiShoppingCart } from "react-icons/fi";
 import { useCountUp } from "./useCountUp";
+import { getTenantUrl, getTenantHeaders } from "../../utils/tenantUtils";
 
 export default function BooksStats() {
   const [allBooks, setAllBooks] = useState(0);
@@ -10,9 +11,14 @@ export default function BooksStats() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/books")
-      .then((res) => res.json())
-      .then((responseData) => {
+    const fetchBooksStats = async () => {
+      try {
+        const url = getTenantUrl("http://localhost:3000/api/books");
+        const headers = getTenantHeaders();
+
+        const response = await fetch(url, { headers });
+        const responseData = await response.json();
+
         const data = responseData.data || [];
         const free = data.filter((b) => {
           const price = String(b.price).toLowerCase();
@@ -24,11 +30,13 @@ export default function BooksStats() {
         setBuyBooks(data.length - free);
 
         setReady(true);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching books:", error);
         setReady(true);
-      });
+      }
+    };
+
+    fetchBooksStats();
   }, []);
 
   // 👉 Animate ONLY when data is ready

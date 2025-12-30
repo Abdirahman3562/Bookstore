@@ -56,7 +56,15 @@ export default function AuthorsAdmin() {
         setRefreshing(true);
       }
 
-      const response = await axios.get("http://localhost:3000/api/authors");
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/authors", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = response.data.data || [];
       
       // Calculate stats
@@ -192,6 +200,13 @@ export default function AuthorsAdmin() {
     e.preventDefault();
     
     try {
+      // Get admin token for authentication
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
       const authorData = { ...formData };
       
       // Clean up empty social media fields
@@ -230,11 +245,15 @@ export default function AuthorsAdmin() {
 
       if (editingAuthor) {
         // Update existing author
-        const response = await axios.put(`http://localhost:3000/api/authors/${editingAuthor._id}`, authorData);
+        const response = await axios.put(`http://localhost:3000/api/authors/${editingAuthor._id}`, authorData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         toast.success("Author updated successfully!");
       } else {
         // Create new author
-        const response = await axios.post("http://localhost:3000/api/authors", authorData);
+        const response = await axios.post("http://localhost:3000/api/authors", authorData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         toast.success("Author created successfully!");
       }
 
@@ -270,7 +289,15 @@ export default function AuthorsAdmin() {
     if (!authorToDelete) return;
 
     try {
-      await axios.delete(`http://localhost:3000/api/authors/${authorToDelete._id}`);
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      await axios.delete(`http://localhost:3000/api/authors/${authorToDelete._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success("Author deleted successfully!");
       setShowDeleteModal(false);
       setAuthorToDelete(null);
@@ -284,9 +311,17 @@ export default function AuthorsAdmin() {
   // Toggle status
   const toggleStatus = async (author) => {
     try {
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
       const newStatus = author.status === 'active' ? 'inactive' : 'active';
       await axios.patch(`http://localhost:3000/api/authors/${author._id}/status`, {
         status: newStatus
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       toast.success(`Author ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`);
       await fetchAuthors();

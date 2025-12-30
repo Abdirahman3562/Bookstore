@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getTenantUrl, getTenantHeaders } from "../utils/tenantUtils";
 
 export default function AllNewReleases() {
   const [books, setBooks] = useState([]);
@@ -14,9 +15,14 @@ export default function AllNewReleases() {
 }
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/books")
-      .then((res) => res.json())
-      .then((responseData) => {
+    const fetchNewReleases = async () => {
+      try {
+        const url = getTenantUrl("http://localhost:3000/api/books");
+        const headers = getTenantHeaders();
+
+        const response = await fetch(url, { headers });
+        const responseData = await response.json();
+
         const data = responseData.data || [];
         const allBooks = Array.isArray(data) ? data : (data.books || []);
 
@@ -30,11 +36,13 @@ export default function AllNewReleases() {
 
         setBooks(latestBooks);
         setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Error:", err);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchNewReleases();
   }, []);
 
   if (loading) return <p>Loading...</p>;

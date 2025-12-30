@@ -88,7 +88,42 @@ export const sendOTPEmail = async (email, otp) => {
       from: fromField,
       to: email,
       subject: `Your OTP Code (${websiteSettings.name})`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">${logoHtml}<h2 style="color:#333;margin-top:0">Your OTP Code</h2><p style="font-size:16px;margin:20px 0">Use the following OTP to reset your password:</p><div style="background:#f0f0f0;padding:30px;text-align:center;margin:30px 0;border-radius:8px;border:2px solid #667eea"><div style="font-size:48px;font-weight:bold;letter-spacing:8px;color:#667eea;margin:0;font-family:monospace">${otp}</div></div><p style="font-size:14px;color:#333;margin:20px 0"><strong>This code expires in ${expirationMinutes} minutes.</strong></p><p style="font-size:12px;color:#666;margin-top:30px">If you didn't request this code, please ignore this email.</p><p style="font-size:12px;color:#666;margin-top:10px">Best regards,<br>${websiteSettings.name} Team</p></div>`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset OTP</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center; color: white;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: 600;">🔐 Password Reset</h1>
+            </div>
+            <div style="padding: 40px;">
+              <p style="font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #333;">Hello,</p>
+              <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 25px; margin: 25px 0;">
+                <h2 style="margin: 0 0 15px 0; font-size: 18px; font-weight: 600; color: #333;">Use this code to reset your password:</h2>
+                <div style="background: white; border: 1px solid #e9ecef; border-radius: 6px; padding: 30px; margin-top: 15px; text-align: center;">
+                  <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #667eea; margin: 0; font-family: monospace;">${otp}</div>
+                </div>
+              </div>
+              <p style="font-size: 16px; color: #666; margin: 25px 0; line-height: 1.6;">
+                <strong>This code expires in ${expirationMinutes} minutes.</strong> For security reasons, please do not share this code with anyone.
+              </p>
+              <p style="font-size: 14px; color: #999; margin: 25px 0;">
+                If you didn't request this password reset, please ignore this email. Your account remains secure.
+              </p>
+              <div style="background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #e9ecef; margin-top: 30px;">
+                <p style="margin: 5px 0;">This is an automated message. Please do not reply to this email.</p>
+                <p style="margin: 5px 0;">&copy; 2024 ${websiteSettings.name}. All rights reserved.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
       text: `Your OTP Code: ${otp}\n\nThis code expires in ${expirationMinutes} minutes.\n\nIf you didn't request this code, please ignore this email.\n\nBest regards,\n${websiteSettings.name} Team`,
     };
 
@@ -121,7 +156,73 @@ export const sendOTPEmail = async (email, otp) => {
       console.error("❌ Authentication failed. Invalid App Password");
       console.error("💡 Generate a new App Password from: https://myaccount.google.com/apppasswords");
     }
-    
+
+    throw error;
+  }
+};
+
+// Send HTML template email (for subscription notifications, etc.)
+export const sendHTMLEmail = async (email, subject, htmlContent) => {
+  try {
+    // Try to get website settings, but don't fail if database is unavailable
+    let websiteSettings = { name: "Bookstore", logo: "" };
+    try {
+      websiteSettings = await getWebsiteSettings();
+    } catch (dbError) {
+      console.log("⚠️ Database unavailable, using default website settings");
+    }
+
+    // Check if email credentials are configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.error("❌ Email credentials not configured in .env file");
+      console.error("EMAIL_USER:", process.env.EMAIL_USER ? "✅ Set" : "❌ Not set");
+      console.error("EMAIL_PASSWORD:", process.env.EMAIL_PASSWORD ? "✅ Set" : "❌ Not set");
+      throw new Error("Email credentials not configured in .env file");
+    }
+
+    // Format from field with website name
+    const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+    const fromName = websiteSettings.name || "Bookstore";
+    const fromField = `${fromName} <${fromEmail}>`;
+
+    const mailOptions = {
+      from: fromField,
+      to: email,
+      subject: subject,
+      html: htmlContent,
+      text: 'This email contains HTML content. Please view it in an HTML-compatible email client.'
+    };
+
+    console.log("📧 Attempting to send HTML email to:", email);
+    console.log("📧 Subject:", subject);
+
+    const info = await transporter.sendMail(mailOptions);
+
+    console.log("✅ HTML email sent successfully!");
+    console.log("📧 Message ID:", info.messageId);
+    console.log("📧 Response:", info.response);
+
+    return info;
+  } catch (error) {
+    console.error("❌ Error sending HTML email:", error);
+    console.error("❌ Error details:", {
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode
+    });
+
+    // Common Gmail errors
+    if (error.code === "EAUTH") {
+      console.error("❌ Authentication failed. Check your EMAIL_PASSWORD (App Password)");
+      console.error("💡 Make sure you're using a Gmail App Password, not your regular password");
+    } else if (error.code === "ECONNECTION") {
+      console.error("❌ Connection failed. Check your internet connection");
+    } else if (error.responseCode === 535) {
+      console.error("❌ Authentication failed. Invalid App Password");
+      console.error("💡 Generate a new App Password from: https://myaccount.google.com/apppasswords");
+    }
+
     throw error;
   }
 };
@@ -150,7 +251,42 @@ export const sendVerificationCode = async (email, code, name = "User") => {
       from: fromField,
       to: email,
       subject: `Your Login Verification Code (${websiteSettings.name})`,
-      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">${logoHtml}<h2 style="color:#333;margin-top:0">Login Verification Code</h2><p style="font-size:16px">Hello ${name},</p><p style="font-size:16px;margin:20px 0">You have requested to login to your admin account. Please use the following verification code:</p><div style="background:#f0f0f0;padding:30px;text-align:center;margin:30px 0;border-radius:8px;border:2px solid #667eea"><div style="font-size:48px;font-weight:bold;letter-spacing:8px;color:#667eea;margin:0;font-family:monospace">${code}</div></div><p style="font-size:14px;color:#333;margin:20px 0"><strong>This code will expire in 10 minutes.</strong></p><p style="font-size:12px;color:#666;margin-top:30px">If you didn't request this code, please ignore this email and secure your account.</p><p style="font-size:12px;color:#666;margin-top:10px">Best regards,<br>${websiteSettings.name} Team</p></div>`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Login Verification</title>
+        </head>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; background-color: #f8f9fa; padding: 20px;">
+          <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center; color: white;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: 600;">🔐 Login Verification</h1>
+            </div>
+            <div style="padding: 40px;">
+              <p style="font-size: 18px; font-weight: 500; margin-bottom: 25px; color: #333;">Hello ${name},</p>
+              <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 25px; margin: 25px 0;">
+                <h2 style="margin: 0 0 15px 0; font-size: 18px; font-weight: 600; color: #333;">Your login verification code:</h2>
+                <div style="background: white; border: 1px solid #e9ecef; border-radius: 6px; padding: 30px; margin-top: 15px; text-align: center;">
+                  <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #667eea; margin: 0; font-family: monospace;">${code}</div>
+                </div>
+              </div>
+              <p style="font-size: 16px; color: #666; margin: 25px 0; line-height: 1.6;">
+                <strong>This code will expire in 10 minutes.</strong> For security reasons, please do not share this code with anyone.
+              </p>
+              <p style="font-size: 14px; color: #999; margin: 25px 0;">
+                If you didn't request this login verification, please ignore this email and secure your account immediately.
+              </p>
+              <div style="background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; border-top: 1px solid #e9ecef; margin-top: 30px;">
+                <p style="margin: 5px 0;">This is an automated message. Please do not reply to this email.</p>
+                <p style="margin: 5px 0;">&copy; 2024 ${websiteSettings.name}. All rights reserved.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
       text: `Login Verification Code: ${code}\n\nHello ${name},\n\nYou have requested to login to your admin account. Please use the following verification code:\n\n${code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request this code, please ignore this email and secure your account.\n\nBest regards,\n${websiteSettings.name} Team`,
     };
 

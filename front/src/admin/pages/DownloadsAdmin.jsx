@@ -32,12 +32,22 @@ export default function DownloadsAdmin() {
         console.log("🔄 Fetching downloads from database...");
       }
 
-      const response = await axios.get("http://localhost:3000/api/downloads");
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/downloads", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = response.data.data || [];
       console.log(`✅ Fetched ${data.length} downloads from database`);
 
       // Fetch purchased items to check status
-      const purchasedResponse = await axios.get("http://localhost:3000/api/purchased");
+      const purchasedResponse = await axios.get("http://localhost:3000/api/purchased", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const purchasedData = purchasedResponse.data.data || [];
       
       // Create a map of active purchases: normalize IDs to strings for matching

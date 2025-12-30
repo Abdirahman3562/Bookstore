@@ -137,7 +137,15 @@ export default function BlogsAdmin() {
         setRefreshing(true);
       }
 
-      const response = await axios.get("http://localhost:3000/api/blogs");
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/blogs", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = response.data.data || [];
 
       // Calculate stats
@@ -181,20 +189,36 @@ export default function BlogsAdmin() {
   // Fetch authors for dropdown
   const fetchAuthors = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/authors");
-      const data = response.data.data || [];
+      const token = localStorage.getItem("admin_token");
+      if (!token) return;
+
+      const authorsResponse = await axios.get("http://localhost:3000/api/authors", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = authorsResponse.data.data || [];
       setAuthors(data);
     } catch (error) {
       console.error("Error fetching authors:", error);
     }
   };
 
+  // Get current user's authorId
+  const getCurrentUserAuthorId = () => {
+    if (!currentUser) return "";
+    if (currentUser.authorId) {
+      return String(currentUser.authorId._id || currentUser.authorId || "");
+    }
+    // Fallback: use admin user's _id (for backward compatibility)
+    return String(currentUser._id || currentUser.id || "");
+  };
+
   // Reset form
   const resetForm = () => {
+    const currentAuthorId = getCurrentUserAuthorId();
     setFormData({
       title: "",
       category: "",
-      authorId: "",
+      authorId: currentAuthorId, // Auto-select current user's author
       publishedDate: new Date().toISOString().split("T")[0],
       thumbnail: "",
       content: "",
@@ -319,13 +343,30 @@ export default function BlogsAdmin() {
       }
 
       if (editingBlog) {
+        const token = localStorage.getItem("admin_token");
+        if (!token) {
+          toast.error("Authentication required. Please login again.");
+          return;
+        }
+
         await axios.put(
           `http://localhost:3000/api/blogs/${editingBlog._id}`,
-          blogData
+          blogData,
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
         );
         toast.success("Blog updated successfully!");
       } else {
-        await axios.post("http://localhost:3000/api/blogs", blogData);
+        const token = localStorage.getItem("admin_token");
+        if (!token) {
+          toast.error("Authentication required. Please login again.");
+          return;
+        }
+
+        await axios.post("http://localhost:3000/api/blogs", blogData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         toast.success("Blog created successfully!");
       }
 
@@ -355,7 +396,15 @@ export default function BlogsAdmin() {
     if (!blogToDelete) return;
 
     try {
-      await axios.delete(`http://localhost:3000/api/blogs/${blogToDelete._id}`);
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      await axios.delete(`http://localhost:3000/api/blogs/${blogToDelete._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success("Blog deleted successfully!");
       setShowDeleteModal(false);
       setBlogToDelete(null);
@@ -369,9 +418,17 @@ export default function BlogsAdmin() {
   // Toggle status
   const toggleStatus = async (blog) => {
     try {
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
       const newStatus = blog.status === "published" ? "draft" : "published";
       await axios.patch(`http://localhost:3000/api/blogs/${blog._id}/status`, {
         status: newStatus,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       toast.success(
         `Blog ${
@@ -663,11 +720,14 @@ export default function BlogsAdmin() {
   const fetchCurrentUser = async () => {
     try {
       const adminEmail = localStorage.getItem("admin_email");
-      if (!adminEmail) return;
+      const token = localStorage.getItem("admin_token");
+      if (!adminEmail || !token) return;
 
       // Try admins API first
       try {
-        const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+        const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const admins = adminsResponse.data.data || [];
         const admin = admins.find(a => a.email === adminEmail);
         if (admin) {
@@ -675,7 +735,9 @@ export default function BlogsAdmin() {
           let userWithAvatar = { ...admin };
           if (admin.authorId && !admin.avatar) {
             try {
-              const authorsResponse = await axios.get("http://localhost:3000/api/authors");
+              const authorsResponse = await axios.get("http://localhost:3000/api/authors", {
+                headers: { Authorization: `Bearer ${token}` }
+              });
               const authors = authorsResponse.data.data || [];
               const authorIdStr = String(admin.authorId._id || admin.authorId || "");
               const linkedAuthor = authors.find(a => String(a._id || a.id || "") === authorIdStr);
@@ -695,7 +757,9 @@ export default function BlogsAdmin() {
       }
 
       // Fallback to users API
-      const usersResponse = await axios.get("http://localhost:3000/api/users");
+      const usersResponse = await axios.get("http://localhost:3000/api/users", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const users = usersResponse.data.data || [];
       const user = users.find(u => u.email === adminEmail);
       if (user) {
@@ -703,7 +767,9 @@ export default function BlogsAdmin() {
         let userWithAvatar = { ...user };
         if (user.authorId && !user.avatar) {
           try {
-            const authorsResponse = await axios.get("http://localhost:3000/api/authors");
+            const authorsResponse = await axios.get("http://localhost:3000/api/authors", {
+              headers: { Authorization: `Bearer ${token}` }
+            });
             const authors = authorsResponse.data.data || [];
             const authorIdStr = String(user.authorId._id || user.authorId || "");
             const linkedAuthor = authors.find(a => String(a._id || a.id || "") === authorIdStr);
@@ -776,6 +842,17 @@ export default function BlogsAdmin() {
       fetchBlogs();
     }
   }, [userRole, currentUser]);
+
+  // Auto-select current user's author when user is loaded
+  useEffect(() => {
+    if (currentUser && !editingBlog) {
+      const currentAuthorId = getCurrentUserAuthorId();
+      setFormData(prev => ({
+        ...prev,
+        authorId: currentAuthorId
+      }));
+    }
+  }, [currentUser, editingBlog]);
 
   // Update notifications count when blogs change
   useEffect(() => {

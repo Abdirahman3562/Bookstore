@@ -6,8 +6,14 @@ import {
   deleteNotification,
   deleteAllNotifications
 } from "../controllers/notifications.controller.js";
+import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
 
 const router = express.Router();
+
+// Apply tenant middleware to all notification routes
+router.use(resolveTenant);
+router.use(requireTenant);
+router.use(checkTenantAccess);
 
 // GET all notifications for a user
 router.get("/:userId", getUserNotifications);

@@ -13,11 +13,12 @@ import {
   verifyPasswordResetOTP,
   resetUserPassword
 } from "../controllers/users.controller.js";
+import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
 
 const router = express.Router();
 
-// POST /api/users - Create new user (signup)
-router.post("/", createUser);
+// Apply tenant resolution for user creation (but not require tenant since users might sign up)
+router.post("/", resolveTenant, createUser);
 
 // POST /api/users/login - User login
 router.post("/login", loginUser);
@@ -37,19 +38,28 @@ router.post("/reset-password", resetUserPassword);
 // GET /api/users/verify-email - Verify user email (must be before /:id route)
 router.get("/verify-email", verifyEmail);
 
+// Apply tenant middleware to admin routes
+const adminRoutes = express.Router();
+adminRoutes.use(resolveTenant);
+adminRoutes.use(requireTenant);
+adminRoutes.use(checkTenantAccess);
+
 // GET /api/users - Get all users
-router.get("/", getAllUsers);
+adminRoutes.get("/", getAllUsers);
 
 // GET /api/users/:id - Get single user (must be last to avoid conflicts)
-router.get("/:id", getUserById);
+adminRoutes.get("/:id", getUserById);
 
 // PUT /api/users/:id - Update user
-router.put("/:id", updateUser);
+adminRoutes.put("/:id", updateUser);
 
 // PATCH /api/users/:id/status - Update user status
-router.patch("/:id/status", updateUserStatus);
+adminRoutes.patch("/:id/status", updateUserStatus);
 
 // DELETE /api/users/:id - Delete user
-router.delete("/:id", deleteUser);
+adminRoutes.delete("/:id", deleteUser);
+
+// Mount admin routes
+router.use("/", adminRoutes);
 
 export default router;

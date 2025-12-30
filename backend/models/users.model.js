@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
+  // Multi-tenant support: every user belongs to a tenant
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+    index: true
+  },
   name: {
     type: String,
     required: true,
@@ -9,7 +16,6 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
     lowercase: true
   },
@@ -122,6 +128,10 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Compound index for tenant-scoped email uniqueness
+userSchema.index({ tenantId: 1, email: 1 }, { unique: true });
+userSchema.index({ tenantId: 1, status: 1 });
 
 const User = mongoose.model("User", userSchema, "users");
 

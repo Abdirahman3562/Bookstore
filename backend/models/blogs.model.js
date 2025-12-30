@@ -74,6 +74,13 @@ const commentSchema = new mongoose.Schema({
 }, { _id: false });
 
 const blogSchema = new mongoose.Schema({
+  // Multi-tenant support: every blog belongs to a tenant
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+    index: true
+  },
   title: {
     type: String,
     required: true,
@@ -113,6 +120,11 @@ const blogSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Indexes for efficient tenant-scoped queries
+blogSchema.index({ tenantId: 1, createdAt: -1 });
+blogSchema.index({ tenantId: 1, authorId: 1 });
+blogSchema.index({ tenantId: 1, status: 1 });
 
 const Blog = mongoose.model("Blog", blogSchema, "blogs");
 

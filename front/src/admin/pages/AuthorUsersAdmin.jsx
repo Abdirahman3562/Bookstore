@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { getCurrentAdminUser, canView, canAdd, canEdit, canDelete } from "../utils/permissions";
 import DataTable from "../components/DataTable";
 
-export default function AdminUsersAdmin() {
+export default function AuthorUsersAdmin() {
   const navigate = useNavigate();
   const [admins, setAdmins] = useState([]);
   const [authors, setAuthors] = useState([]);
@@ -45,25 +45,48 @@ export default function AdminUsersAdmin() {
   const [currentUser, setCurrentUser] = useState(null);
   const [previousAuthorId, setPreviousAuthorId] = useState(""); // Store previous authorId when switching to admin
 
-  // Fetch admins data
+  // Fetch author users created by current admin
   const fetchAdmins = async (showRefreshIndicator = false) => {
     try {
       if (showRefreshIndicator) {
         setRefreshing(true);
       }
 
-      const response = await axios.get("http://localhost:3000/api/admins");
-      const data = response.data.data || [];
+      // Get admin token for authentication
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        navigate("/admin");
+        return;
+      }
 
-      setAdmins(data);
+      // First get current admin user to filter by creator
+      const currentAdmin = await getCurrentAdminUser();
+      if (!currentAdmin) {
+        setAdmins([]);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/admins", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const allAdmins = response.data.data || [];
+
+      // Filter to only show author users created by current admin
+      const authorUsers = allAdmins.filter(admin =>
+        admin.adminRole === 'author' && admin.createdBy === currentAdmin._id
+      );
+
+      setAdmins(authorUsers);
       setLastUpdated(new Date().toLocaleString());
 
       if (showRefreshIndicator) {
-        toast.success("Admin users data refreshed!");
+        toast.success("Author users data refreshed!");
       }
     } catch (error) {
-      console.error("Error fetching admins:", error);
-      toast.error("Failed to load admin users");
+      console.error("Error fetching author users:", error);
+      toast.error("Failed to load author users");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -73,7 +96,12 @@ export default function AdminUsersAdmin() {
   // Fetch authors data
   const fetchAuthors = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/authors");
+      const token = localStorage.getItem("admin_token");
+      if (!token) return;
+
+      const response = await axios.get("http://localhost:3000/api/authors", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = response.data.data || [];
       setAuthors(data);
     } catch (error) {
@@ -81,26 +109,13 @@ export default function AdminUsersAdmin() {
     }
   };
 
-  // Handle role change in edit form - don't auto-set permissions, let user select manually
+  // Handle role change in edit form - only author role is available
   const handleRoleChange = (role) => {
-    if (role === "admin") {
-      // Store current authorId before clearing it
-      setPreviousAuthorId(editFormData.authorId || "");
-      setEditFormData((prev) => ({
-        ...prev,
-        adminRole: role,
-        authorId: "" // Clear authorId for admin
-        // Keep existing permissions - don't auto-set
-      }));
-    } else {
-      // When switching back to "author", restore previous authorId if it exists
-      setEditFormData((prev) => ({
-        ...prev,
-        adminRole: role,
-        authorId: previousAuthorId || prev.authorId || "" // Restore previous authorId
-        // Keep existing permissions - don't auto-set
-      }));
-    }
+    setEditFormData((prev) => ({
+      ...prev,
+      adminRole: role
+      // Keep existing permissions - don't auto-set
+    }));
   };
 
   // Handle permission change in edit form
@@ -247,7 +262,15 @@ export default function AdminUsersAdmin() {
     
     // Fetch the full admin data including password
     try {
-      const response = await axios.get(`http://localhost:3000/api/admins/${admin._id}`);
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        navigate("/admin");
+        return;
+      }
+
+      const response = await axios.get(`http://localhost:3000/api/admins/${admin._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const fullAdmin = response.data.data || admin;
       
       // Normalize permissions to ensure correct format
@@ -341,7 +364,15 @@ export default function AdminUsersAdmin() {
 
     setDeleting(true);
     try {
-      await axios.delete(`http://localhost:3000/api/admins/${deleteModal.admin._id}`);
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        navigate("/admin");
+        return;
+      }
+
+      await axios.delete(`http://localhost:3000/api/admins/${deleteModal.admin._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success("Admin user deleted successfully!");
       closeDeleteModal();
       await fetchAdmins();
@@ -360,6 +391,13 @@ export default function AdminUsersAdmin() {
 
     setSaving(true);
     try {
+      // Get admin token for authentication
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        navigate("/admin");
+        return;
+      }
+
       const updateData = {
         name: editFormData.name,
         email: editFormData.email,
@@ -379,7 +417,9 @@ export default function AdminUsersAdmin() {
       } else {
         // If password field is cleared, fetch current password to keep it
         try {
-          const currentAdminResponse = await axios.get(`http://localhost:3000/api/admins/${editingAdmin._id}`);
+          const currentAdminResponse = await axios.get(`http://localhost:3000/api/admins/${editingAdmin._id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           const currentAdmin = currentAdminResponse.data.data;
           if (currentAdmin && currentAdmin.password) {
             updateData.password = currentAdmin.password; // Keep current password
@@ -390,7 +430,9 @@ export default function AdminUsersAdmin() {
         }
       }
 
-      await axios.put(`http://localhost:3000/api/admins/${editingAdmin._id}`, updateData);
+      await axios.put(`http://localhost:3000/api/admins/${editingAdmin._id}`, updateData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       toast.success("Admin user updated successfully!");
       closeEditModal();
@@ -430,7 +472,7 @@ export default function AdminUsersAdmin() {
     blogComments: "Blog Comments",
     contacts: "Contacts",
     websiteSettings: "Website Settings",
-    addAdminUser: "Add Admin User",
+    addAdminUser: "Add Author User",
     liveChat: "Live Chat"
   };
 
@@ -456,7 +498,7 @@ export default function AdminUsersAdmin() {
     blogComments: ["view", "reply", "delete"], // Blog Comments has view, reply, delete (no add)
     contacts: ["view", "edit", "delete"], // Contacts has view, edit (reply, mark as read), delete (no add)
     websiteSettings: ["view", "edit"], // Website Settings has view and edit (no add/delete)
-    addAdminUser: ["view", "add", "edit", "delete"], // Add Admin User has all actions
+    addAdminUser: ["view", "add", "edit", "delete"], // Add Author User has all actions
     liveChat: ["view", "reply"] // Live Chat has view and reply (send messages to users)
   };
 
@@ -486,7 +528,7 @@ export default function AdminUsersAdmin() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 sm:gap-0">
           <div className="flex items-center gap-3">
             <Shield className="w-8 h-8 text-blue-600 dark:text-blue-500" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Admin Users Management</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Author Users Management</h1>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             {lastUpdated && (
@@ -495,26 +537,26 @@ export default function AdminUsersAdmin() {
               </span>
             )}
             <button
-              onClick={() => navigate("/admin/add-admin-user")}
+              onClick={() => navigate("/admin/add-author-user")}
               disabled={!canAdd(currentUser, 'addAdminUser')}
               className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
-              title={!canAdd(currentUser, 'addAdminUser') ? "You don't have permission to add admin users" : "Add Admin User"}
+              title={!canAdd(currentUser, 'addAdminUser') ? "You don't have permission to add author users" : "Add Author User"}
             >
               <UserPlus className="w-4 h-4" />
-              Add Admin User
+              Add Author User
             </button>
             <button
               onClick={() => fetchAdmins(true)}
               disabled={refreshing}
               className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-200 dark:disabled:bg-gray-800 disabled:cursor-not-allowed rounded-lg transition-colors text-gray-700 dark:text-gray-300 w-full sm:w-auto"
-              title="Refresh admin users data"
+              title="Refresh author users data"
             >
               <RotateCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               <span className="inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
             </button>
           </div>
         </div>
-        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Manage admin user accounts, roles, and permissions</p>
+        <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">Manage author user accounts that you have created</p>
       </div>
 
       {/* Admins Table */}
@@ -527,16 +569,16 @@ export default function AdminUsersAdmin() {
           {admins.length === 0 ? (
             <div className="text-center py-12">
               <Shield className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No admin users found</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No author users found</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">Admin user accounts will appear here when created.</p>
               <button
-                onClick={() => navigate("/admin/add-admin-user")}
+                onClick={() => navigate("/admin/add-author-user")}
                 disabled={!canAdd(currentUser, 'addAdminUser')}
                 className="px-4 py-2 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
-                title={!canAdd(currentUser, 'addAdminUser') ? "You don't have permission to add admin users" : "Add Admin User"}
+                title={!canAdd(currentUser, 'addAdminUser') ? "You don't have permission to add author users" : "Add Author User"}
               >
                 <UserPlus className="w-4 h-4" />
-                Add Admin User
+                Add Author User
               </button>
             </div>
           ) : (
@@ -643,9 +685,15 @@ export default function AdminUsersAdmin() {
                           e.stopPropagation();
                           openEditModal(admin);
                         }}
-                        disabled={!canEdit(currentUser, 'addAdminUser')}
+                        disabled={!canEdit(currentUser, 'addAdminUser') || admin.createdBy !== currentUser?._id}
                         className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
-                        title={!canEdit(currentUser, 'addAdminUser') ? "You don't have permission to edit admin users" : "Edit"}
+                        title={
+                          admin.createdBy !== currentUser?._id
+                            ? "You can only edit author users you created"
+                            : !canEdit(currentUser, 'addAdminUser')
+                            ? "You don't have permission to edit admin users"
+                            : "Edit"
+                        }
                       >
                         <Edit className="w-3 h-3" />
                         Edit
@@ -655,9 +703,15 @@ export default function AdminUsersAdmin() {
                           e.stopPropagation();
                           openDeleteModal(admin);
                         }}
-                        disabled={!canDelete(currentUser, 'addAdminUser')}
+                        disabled={!canDelete(currentUser, 'addAdminUser') || admin.createdBy !== currentUser?._id}
                         className="flex items-center gap-1 px-3 py-1.5 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600 dark:disabled:hover:bg-red-700"
-                        title={!canDelete(currentUser, 'addAdminUser') ? "You don't have permission to delete admin users" : "Delete"}
+                        title={
+                          admin.createdBy !== currentUser?._id
+                            ? "You can only delete author users you created"
+                            : !canDelete(currentUser, 'addAdminUser')
+                            ? "You don't have permission to delete admin users"
+                            : "Delete"
+                        }
                       >
                         <Trash2 className="w-3 h-3" />
                         Delete
@@ -668,7 +722,7 @@ export default function AdminUsersAdmin() {
               ]}
               data={admins}
               itemsPerPage={10}
-              emptyMessage="No admin users found"
+              emptyMessage="No author users found"
               emptyIcon={Shield}
             />
           )}
@@ -746,12 +800,9 @@ export default function AdminUsersAdmin() {
                         className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="author">Author</option>
-                        <option value="admin">Admin</option>
                       </select>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {editFormData.adminRole === "admin"
-                          ? "Admin can see all sections"
-                          : "Author can only see selected sections"}
+                        Author role with limited access based on selected permissions
                       </p>
                     </div>
 

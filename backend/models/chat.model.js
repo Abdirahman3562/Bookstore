@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
 const chatMessageSchema = new mongoose.Schema({
+  // Multi-tenant support: every chat message belongs to a tenant
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+    index: true
+  },
   userId: {
     type: String,
     required: true,
@@ -63,9 +70,10 @@ const chatMessageSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for efficient queries
-chatMessageSchema.index({ userId: 1, createdAt: -1 });
-chatMessageSchema.index({ isRead: 1, sender: 1 });
+// Indexes for efficient tenant-scoped queries
+chatMessageSchema.index({ tenantId: 1, userId: 1, createdAt: -1 });
+chatMessageSchema.index({ tenantId: 1, isRead: 1, sender: 1 });
+chatMessageSchema.index({ tenantId: 1, createdAt: -1 });
 
 const ChatMessage = mongoose.model("ChatMessage", chatMessageSchema, "chatmessages");
 

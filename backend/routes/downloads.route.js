@@ -7,8 +7,14 @@ import {
   updateDownloadAccess,
   deleteDownload
 } from "../controllers/downloads.controller.js";
+import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
 
 const router = express.Router();
+
+// Apply tenant middleware to all download routes
+router.use(resolveTenant);
+router.use(requireTenant);
+router.use(checkTenantAccess);
 
 // GET /api/downloads - Get all downloads
 router.get("/", getAllDownloads);

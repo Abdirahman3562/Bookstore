@@ -3,8 +3,8 @@ import Author from "../models/authors.model.js";
 // GET ALL AUTHORS
 export const getAllAuthors = async (req, res) => {
   try {
-    const authors = await Author.find({}).sort({ createdAt: -1 });
-    
+    const authors = await Author.find({ tenantId: req.tenantId }).sort({ createdAt: -1 });
+
     res.status(200).json({
       success: true,
       message: "Authors fetched successfully",
@@ -20,7 +20,7 @@ export const getAllAuthors = async (req, res) => {
 // GET SINGLE AUTHOR
 export const getAuthorById = async (req, res) => {
   try {
-    const author = await Author.findById(req.params.id);
+    const author = await Author.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!author) {
       return res.status(404).json({ success: false, message: "Author not found" });
     }
@@ -52,8 +52,8 @@ export const createAuthor = async (req, res) => {
       status
     } = req.body;
 
-    // Check if username already exists
-    const existingAuthor = await Author.findOne({ username: username.toLowerCase() });
+    // Check if username already exists within this tenant
+    const existingAuthor = await Author.findOne({ username: username.toLowerCase(), tenantId: req.tenantId });
     if (existingAuthor) {
       return res.status(400).json({
         success: false,
@@ -61,8 +61,8 @@ export const createAuthor = async (req, res) => {
       });
     }
 
-    // Check if email already exists
-    const existingEmail = await Author.findOne({ email: email.toLowerCase() });
+    // Check if email already exists within this tenant
+    const existingEmail = await Author.findOne({ email: email.toLowerCase(), tenantId: req.tenantId });
     if (existingEmail) {
       return res.status(400).json({
         success: false,
@@ -71,6 +71,7 @@ export const createAuthor = async (req, res) => {
     }
 
     const newAuthor = new Author({
+      tenantId: req.tenantId, // Add tenantId from middleware
       username: username.toLowerCase(),
       name,
       avatar: avatar || "",
@@ -126,14 +127,14 @@ export const updateAuthor = async (req, res) => {
       status
     } = req.body;
 
-    const author = await Author.findById(req.params.id);
+    const author = await Author.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!author) {
       return res.status(404).json({ success: false, message: "Author not found" });
     }
 
-    // Check if username is being changed and if it already exists
+    // Check if username is being changed and if it already exists within this tenant
     if (username && username.toLowerCase() !== author.username) {
-      const existingAuthor = await Author.findOne({ username: username.toLowerCase() });
+      const existingAuthor = await Author.findOne({ username: username.toLowerCase(), tenantId: req.tenantId });
       if (existingAuthor) {
         return res.status(400).json({
           success: false,
@@ -142,9 +143,9 @@ export const updateAuthor = async (req, res) => {
       }
     }
 
-    // Check if email is being changed and if it already exists
+    // Check if email is being changed and if it already exists within this tenant
     if (email && email.toLowerCase() !== author.email) {
-      const existingEmail = await Author.findOne({ email: email.toLowerCase() });
+      const existingEmail = await Author.findOne({ email: email.toLowerCase(), tenantId: req.tenantId });
       if (existingEmail) {
         return res.status(400).json({
           success: false,
@@ -177,8 +178,8 @@ export const updateAuthor = async (req, res) => {
       updateData.avatar = avatar;
     }
 
-    const updated = await Author.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Author.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       updateData,
       { new: true, runValidators: true }
     );
@@ -213,13 +214,13 @@ export const updateAuthorStatus = async (req, res) => {
       });
     }
 
-    const author = await Author.findById(req.params.id);
+    const author = await Author.findOne({ _id: req.params.id, tenantId: req.tenantId });
     if (!author) {
       return res.status(404).json({ success: false, message: "Author not found" });
     }
 
-    const updated = await Author.findByIdAndUpdate(
-      req.params.id,
+    const updated = await Author.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       { status: status },
       { new: true, runValidators: true }
     );
@@ -238,7 +239,7 @@ export const updateAuthorStatus = async (req, res) => {
 // DELETE AUTHOR
 export const deleteAuthor = async (req, res) => {
   try {
-    const deleted = await Author.findByIdAndDelete(req.params.id);
+    const deleted = await Author.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
 
     if (!deleted) {
       return res.status(404).json({ success: false, message: "Author not found" });

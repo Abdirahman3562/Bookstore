@@ -47,6 +47,24 @@ export const updateAdmin = async (req, res) => {
       return res.status(404).json({ success: false, message: "Admin not found" });
     }
 
+    // Check ownership: only allow editing author users created by the current admin
+    if (admin.adminRole === 'author' && admin.createdBy && req.admin) {
+      if (admin.createdBy.toString() !== req.admin._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only edit author users you created"
+        });
+      }
+    }
+
+    // Prevent changing roles for author users (only allow editing author users as authors)
+    if (admin.adminRole === 'author' && adminRole && adminRole !== 'author') {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot change role of author users"
+      });
+    }
+
     // If password is being changed and currentPassword is provided, verify it
     // If currentPassword is not provided, allow password change (admin editing another admin)
     if (password && currentPassword) {
@@ -126,6 +144,16 @@ export const deleteAdmin = async (req, res) => {
       return res.status(404).json({ success: false, message: "Admin not found" });
     }
 
+    // Check ownership: only allow deleting author users created by the current admin
+    if (admin.adminRole === 'author' && admin.createdBy && req.admin) {
+      if (admin.createdBy.toString() !== req.admin._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only delete author users you created"
+        });
+      }
+    }
+
     await Admin.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
@@ -152,13 +180,39 @@ export const createAdmin = async (req, res) => {
       });
     }
 
+    // Get the creator (current logged in admin)
+    const createdBy = req.admin ? req.admin._id : null;
+    const creatorTenantId = req.admin ? req.admin.tenantId : null;
+
+    // Determine tenantId for the new user
+    // - SUPER_ADMIN (tenantId: null) can create users with any tenantId
+    // - Regular admins can only create users in their own tenant
+    // - Author users inherit tenantId from their creator
+    let tenantId = null;
+    if (adminRole === 'SUPER_ADMIN') {
+      tenantId = null; // SUPER_ADMIN has no tenant
+    } else if (adminRole === 'admin' || adminRole === 'author') {
+      // Regular admins and authors should have tenantId set
+      // If creator is SUPER_ADMIN, they can specify tenantId (or use null for platform-wide)
+      // If creator is regular admin, use their tenantId
+      if (req.admin && req.admin.adminRole === 'SUPER_ADMIN') {
+        tenantId = creatorTenantId || null; // SUPER_ADMIN can create platform-wide users or tenant-specific
+      } else if (req.admin) {
+        tenantId = creatorTenantId; // Regular admin can only create users in their tenant
+      } else {
+        tenantId = null; // Fallback if no creator (shouldn't happen in normal flow)
+      }
+    }
+
     // Store password as plain text (not encrypted)
     const newAdmin = new Admin({
+      tenantId: tenantId,
       name,
       email,
       password: password,
       adminRole: adminRole || 'author',
       authorId: authorId || null,
+      createdBy: createdBy,
       permissions: permissions || {
         dashboard: false,
         books: false,

@@ -35,6 +35,7 @@ export const createContact = async (req, res) => {
 
     // Create contact message with user avatar
     const contact = await Contact.create({
+      tenantId: req.tenantId, // Add tenantId from middleware
       userId,
       name,
       email,
@@ -156,7 +157,7 @@ User ID: ${userId}
 // GET ALL CONTACT MESSAGES (for admin)
 export const getAllContacts = async (req, res) => {
   try {
-    const contacts = await Contact.find({})
+    const contacts = await Contact.find({ tenantId: req.tenantId })
       .populate('userId', 'name email avatar')
       .sort({ createdAt: -1 });
 
@@ -193,7 +194,7 @@ export const getAllContacts = async (req, res) => {
 // GET CONTACT BY ID
 export const getContactById = async (req, res) => {
   try {
-    const contact = await Contact.findById(req.params.id)
+    const contact = await Contact.findOne({ _id: req.params.id, tenantId: req.tenantId })
       .populate('userId', 'name email avatar');
 
     if (!contact) {
@@ -236,8 +237,8 @@ export const updateContactStatus = async (req, res) => {
       });
     }
 
-    const contact = await Contact.findByIdAndUpdate(
-      req.params.id,
+    const contact = await Contact.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
       { status },
       { new: true, runValidators: true }
     );
@@ -267,7 +268,7 @@ export const updateContactStatus = async (req, res) => {
 // DELETE CONTACT (for admin)
 export const deleteContact = async (req, res) => {
   try {
-    const contact = await Contact.findByIdAndDelete(req.params.id);
+    const contact = await Contact.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
 
     if (!contact) {
       return res.status(404).json({

@@ -13,6 +13,7 @@ export const getAllConversations = async (req, res) => {
     // First, update any user messages that don't have isRead set
     await ChatMessage.updateMany(
       {
+        tenantId: req.tenantId, // Add tenantId filter
         sender: "user",
         $or: [
           { isRead: { $exists: false } },
@@ -23,7 +24,13 @@ export const getAllConversations = async (req, res) => {
     );
 
     // Get all unique users who have sent messages
+    // For SUPER_ADMIN, show all conversations; for others, filter by tenant
+    const matchCondition = req.admin?.adminRole === 'SUPER_ADMIN'
+      ? {} // No tenant filter for SUPER_ADMIN
+      : { tenantId: req.tenantId }; // Filter by tenant for regular admins
+
     const conversations = await ChatMessage.aggregate([
+      { $match: matchCondition }, // Filter by tenant (or not for SUPER_ADMIN)
       {
         $group: {
           _id: "$userId",
@@ -116,7 +123,7 @@ export const getUserMessages = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const messages = await ChatMessage.find({ userId })
+    const messages = await ChatMessage.find({ userId, tenantId: req.tenantId })
       .sort({ createdAt: 1 })
       .limit(100);
 
@@ -296,6 +303,7 @@ export const sendMessage = async (req, res) => {
       
       // Save user message first
       const userMessage = await ChatMessage.create({
+        tenantId: req.tenantId, // Add tenantId from middleware
         userId,
         userName,
         userEmail,
@@ -324,7 +332,7 @@ export const sendMessage = async (req, res) => {
         }
         
         // Get conversation history for context
-        const conversationHistory = await ChatMessage.find({ userId })
+        const conversationHistory = await ChatMessage.find({ userId, tenantId: req.tenantId })
           .sort({ createdAt: -1 })
           .limit(10)
           .lean();
@@ -342,6 +350,7 @@ export const sendMessage = async (req, res) => {
         
         // Save AI response to database
         const aiMessage = await ChatMessage.create({
+          tenantId: req.tenantId, // Add tenantId from middleware
           userId,
           userName,
           userEmail,
@@ -394,6 +403,7 @@ export const sendMessage = async (req, res) => {
       }
 
       const chatMessage = await ChatMessage.create({
+        tenantId: req.tenantId, // Add tenantId from middleware
         userId,
         userName,
         userEmail,
@@ -433,7 +443,7 @@ export const markAsRead = async (req, res) => {
     const senderToMark = sender === "admin" ? "admin" : "user";
 
     await ChatMessage.updateMany(
-      { userId, sender: senderToMark, isRead: false },
+      { userId, tenantId: req.tenantId, sender: senderToMark, isRead: false },
       { isRead: true, readAt: new Date() }
     );
 
@@ -458,6 +468,7 @@ export const getUnreadCount = async (req, res) => {
     // - isRead is false, OR
     // - isRead is not set (null/undefined) - treat as unread
     const unreadCount = await ChatMessage.countDocuments({
+      tenantId: req.tenantId,
       sender: "user",
       $or: [
         { isRead: false },
@@ -470,6 +481,7 @@ export const getUnreadCount = async (req, res) => {
     // This fixes existing messages in the database
     await ChatMessage.updateMany(
       {
+        tenantId: req.tenantId,
         sender: "user",
         $or: [
           { isRead: { $exists: false } },

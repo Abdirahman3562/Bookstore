@@ -12,8 +12,16 @@ import {
   takeOverChat,
   sendAIGreeting
 } from "../controllers/chat.controller.js";
+import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+// Apply authentication and tenant middleware to all chat routes
+router.use(requireAuth); // Admin authentication first
+router.use(resolveTenant);
+router.use(requireTenant);
+router.use(checkTenantAccess);
 
 // GET all conversations
 router.get("/conversations", getAllConversations);

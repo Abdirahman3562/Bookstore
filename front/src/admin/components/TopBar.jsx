@@ -21,10 +21,14 @@ export default function TopBar() {
   const fetchCurrentUser = async () => {
     try {
       const adminEmail = localStorage.getItem("admin_email");
-      if (adminEmail) {
+      const token = localStorage.getItem("admin_token");
+
+      if (adminEmail && token) {
         // Try to fetch from admins API first
         try {
-          const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+          const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           const admins = adminsResponse.data.data || [];
           const admin = admins.find(a => a.email === adminEmail);
           if (admin) {
@@ -36,7 +40,9 @@ export default function TopBar() {
         }
 
         // Fallback to users API
-        const usersResponse = await axios.get("http://localhost:3000/api/users");
+        const usersResponse = await axios.get("http://localhost:3000/api/users", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const users = usersResponse.data.data || [];
         const user = users.find(u => u.email === adminEmail);
         if (user) {
@@ -69,20 +75,25 @@ export default function TopBar() {
 
   const fetchNotificationCount = useCallback(async () => {
     try {
+      const token = localStorage.getItem("admin_token");
+      if (!token) return;
+
       // Get read notifications from localStorage
       const savedRead = localStorage.getItem('admin_read_notifications');
       const readNotifications = savedRead ? JSON.parse(savedRead) : [];
-      
+
       // Get deleted notifications from localStorage
       const savedDeleted = localStorage.getItem('admin_deleted_notifications');
       const deletedNotifications = savedDeleted ? JSON.parse(savedDeleted) : [];
-      
+
       // Use Set to track unique unread notification IDs
       const uniqueUnreadNotificationIds = new Set();
 
       // Get pending purchases (exclude active ones)
       try {
-        const purchasesResponse = await axios.get("http://localhost:3000/api/purchased");
+        const purchasesResponse = await axios.get("http://localhost:3000/api/purchased", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const purchases = purchasesResponse.data.data || [];
         const pendingPurchases = purchases.filter(p => p.status === "pending");
         pendingPurchases.forEach(p => {
@@ -99,7 +110,9 @@ export default function TopBar() {
       // Get recent blog comments (last 24 hours) - only for admin
       if (currentUser?.adminRole === "admin") {
         try {
-          const blogsResponse = await axios.get("http://localhost:3000/api/blogs");
+          const blogsResponse = await axios.get("http://localhost:3000/api/blogs", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           const blogs = blogsResponse.data.data || [];
           
           blogs.forEach(blog => {
@@ -129,7 +142,9 @@ export default function TopBar() {
       // Get comments for author role
       if (currentUser?.adminRole === "author") {
         try {
-          const blogsResponse = await axios.get("http://localhost:3000/api/blogs");
+          const blogsResponse = await axios.get("http://localhost:3000/api/blogs", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
           const blogs = blogsResponse.data.data || [];
           
           // Get the authorId from admin user record (this links admin user to author profile)
@@ -141,7 +156,9 @@ export default function TopBar() {
           } else {
             // Fallback: Try to find author by email or name
             try {
-              const authorsResponse = await axios.get("http://localhost:3000/api/authors");
+              const authorsResponse = await axios.get("http://localhost:3000/api/authors", {
+                headers: { Authorization: `Bearer ${token}` }
+              });
               const authors = authorsResponse.data.data || [];
               
               // Try to match by email first
@@ -214,7 +231,12 @@ export default function TopBar() {
   useEffect(() => {
     const fetchWebsiteSettings = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/website-settings");
+        const token = localStorage.getItem("admin_token");
+        if (!token) return;
+
+        const response = await axios.get("http://localhost:3000/api/website-settings", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         if (response.data.success) {
           setWebsiteSettings({
             websiteName: response.data.data.websiteName || "Admin Dashboard",
@@ -538,11 +560,16 @@ export default function TopBar() {
                 {currentUser?.adminRole && (
                   <div className="mt-2">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      currentUser.adminRole === 'admin'
+                      currentUser.adminRole === 'SUPER_ADMIN'
+                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                        : currentUser.adminRole === 'admin'
                         ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
-                        : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                        : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                     }`}>
-                      {currentUser.adminRole === 'admin' ? 'Admin' : 'Author'}
+                      {currentUser.adminRole === 'SUPER_ADMIN' ? 'SUPER_ADMIN' :
+                       currentUser.adminRole === 'admin' ? 'Admin' :
+                       currentUser.adminRole === 'author' ? 'Author' :
+                       currentUser.adminRole}
                     </span>
                   </div>
                 )}

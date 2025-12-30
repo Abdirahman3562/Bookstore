@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
 const notificationSchema = new mongoose.Schema({
+  // Multi-tenant support: every notification belongs to a tenant
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+    index: true
+  },
   userId: {
     type: String,
     required: true,
@@ -40,8 +47,9 @@ const notificationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for efficient queries
-notificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
+// Indexes for efficient tenant-scoped queries
+notificationSchema.index({ tenantId: 1, userId: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index({ tenantId: 1, createdAt: -1 });
 
 const Notification = mongoose.model("Notification", notificationSchema, "notifications");
 

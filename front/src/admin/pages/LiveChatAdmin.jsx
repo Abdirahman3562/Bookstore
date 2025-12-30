@@ -33,9 +33,12 @@ export default function LiveChatAdmin() {
     try {
       const adminUser = await getCurrentAdminUser();
       if (adminUser && adminUser.email) {
+        const adminToken = localStorage.getItem("admin_token");
         await axios.post("http://localhost:3000/api/chat/admin/online", {
           adminId: adminUser.email,
           isOnline: isOnline
+        }, {
+          headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
         });
         console.log(`👤 Admin ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
       }
@@ -74,7 +77,10 @@ export default function LiveChatAdmin() {
         if (adminEmail) {
           // Try admins API first
           try {
-            const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+            const adminToken = localStorage.getItem("admin_token");
+            const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
+              headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+            });
             const admins = adminsResponse.data.data || [];
             const admin = admins.find(a => a.email === adminEmail);
             if (admin) {
@@ -93,7 +99,9 @@ export default function LiveChatAdmin() {
           }
 
           // Fallback to users API
-          const usersResponse = await axios.get("http://localhost:3000/api/users");
+          const usersResponse = await axios.get("http://localhost:3000/api/users", {
+            headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+          });
           const users = usersResponse.data.data || [];
           const user = users.find(u => u.email === adminEmail);
           if (user) {
@@ -127,11 +135,15 @@ export default function LiveChatAdmin() {
       if (showRefreshIndicator) {
         setRefreshing(true);
       }
-      
-      const response = await axios.get("http://localhost:3000/api/chat/conversations");
+
+      const adminToken = localStorage.getItem("admin_token");
+      const response = await axios.get("http://localhost:3000/api/chat/conversations", {
+        headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+      });
+
       if (response.data.success) {
         const convs = response.data.data || [];
-        
+
         // Check for new unread messages and play sound (skip on initial load)
         if (!isInitialLoadRef.current) {
           convs.forEach(conv => {
@@ -190,7 +202,11 @@ export default function LiveChatAdmin() {
   // Fetch unread count
   const fetchUnreadCount = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/chat/unread-count");
+      const adminToken = localStorage.getItem("admin_token");
+      const response = await axios.get("http://localhost:3000/api/chat/unread-count", {
+        headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+      });
+
       if (response.data.success) {
         setUnreadCount(response.data.data.unreadCount || 0);
       }
@@ -251,7 +267,10 @@ export default function LiveChatAdmin() {
   // Fetch messages for selected conversation
   const fetchMessages = async (userId, previousMessagesCount = null) => {
     try {
-      const response = await axios.get(`http://localhost:3000/api/chat/messages/${userId}`);
+      const adminToken = localStorage.getItem("admin_token");
+      const response = await axios.get(`http://localhost:3000/api/chat/messages/${userId}`, {
+        headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+      });
       if (response.data.success) {
         const previousMessages = messages;
         const newMessages = response.data.data || [];
@@ -310,6 +329,7 @@ export default function LiveChatAdmin() {
         adminUser
       });
       
+      const adminToken = localStorage.getItem("admin_token");
       await axios.post("http://localhost:3000/api/chat/send", {
         userId: selectedConversation.userId,
         message: newMessage.trim(),
@@ -317,6 +337,8 @@ export default function LiveChatAdmin() {
         adminId: adminEmail,
         adminName: adminName,
         adminAvatar: adminAvatar
+      }, {
+        headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
       });
 
       setNewMessage("");
@@ -326,10 +348,13 @@ export default function LiveChatAdmin() {
         clearTimeout(typingTimeoutRef.current);
       }
       if (selectedConversation) {
+        const adminToken = localStorage.getItem("admin_token");
         axios.post("http://localhost:3000/api/chat/typing", {
           userId: selectedConversation.userId,
           isTyping: false,
           sender: "admin"
+        }, {
+          headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
         }).catch(() => {});
       }
       
@@ -427,7 +452,10 @@ export default function LiveChatAdmin() {
         const previousCount = messageCountsRef.current[userId] || messages.length;
         fetchMessages(userId, previousCount);
         // Check if user is typing
-        axios.get(`http://localhost:3000/api/chat/typing/${userId}`)
+        const adminToken = localStorage.getItem("admin_token");
+        axios.get(`http://localhost:3000/api/chat/typing/${userId}`, {
+          headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+        })
           .then(res => {
             if (res.data.success) {
               const typingData = res.data.data;
@@ -441,7 +469,10 @@ export default function LiveChatAdmin() {
       
       // Check typing status for all conversations in the sidebar
       conversations.forEach((conv) => {
-        axios.get(`http://localhost:3000/api/chat/typing/${conv.userId}`)
+        const adminToken = localStorage.getItem("admin_token");
+        axios.get(`http://localhost:3000/api/chat/typing/${conv.userId}`, {
+          headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+        })
           .then(res => {
             if (res.data.success) {
               const typingData = res.data.data;
@@ -785,11 +816,14 @@ export default function LiveChatAdmin() {
                         const adminName = adminUser?.name || currentAdmin.name;
                         const adminAvatar = adminUser?.avatar || currentAdmin.avatar;
                         
+                        const adminToken = localStorage.getItem("admin_token");
                         await axios.post("http://localhost:3000/api/chat/takeover", {
                           userId: selectedConversation.userId,
                           adminId: adminId,
                           adminName: adminName,
                           adminAvatar: adminAvatar
+                        }, {
+                          headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
                         });
                         
                         toast.success("You have taken over the chat!");
@@ -1023,12 +1057,15 @@ export default function LiveChatAdmin() {
                         }
                         
                         // Send typing indicator to backend with admin info
+                        const adminToken = localStorage.getItem("admin_token");
                         axios.post("http://localhost:3000/api/chat/typing", {
                           userId: selectedConversation.userId,
                           isTyping: true,
                           sender: "admin",
                           adminName: currentAdmin.name,
                           adminAvatar: currentAdmin.avatar
+                        }, {
+                          headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
                         }).then(() => {
                           console.log("✅ Admin typing status sent: true");
                         }).catch((err) => {
@@ -1037,10 +1074,13 @@ export default function LiveChatAdmin() {
                         
                         // Stop typing indicator after 2 seconds of no typing
                         typingTimeoutRef.current = setTimeout(() => {
+                          const adminToken = localStorage.getItem("admin_token");
                           axios.post("http://localhost:3000/api/chat/typing", {
                             userId: selectedConversation.userId,
                             isTyping: false,
                             sender: "admin"
+                          }, {
+                            headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
                           }).then(() => {
                             console.log("⏰ Admin typing status cleared");
                           }).catch(() => {});
@@ -1050,10 +1090,13 @@ export default function LiveChatAdmin() {
                         if (typingTimeoutRef.current) {
                           clearTimeout(typingTimeoutRef.current);
                         }
+                        const adminToken = localStorage.getItem("admin_token");
                         axios.post("http://localhost:3000/api/chat/typing", {
                           userId: selectedConversation.userId,
                           isTyping: false,
                           sender: "admin"
+                        }, {
+                          headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
                         }).catch(() => {});
                       }
                     }}
@@ -1065,10 +1108,13 @@ export default function LiveChatAdmin() {
                           clearTimeout(typingTimeoutRef.current);
                         }
                         if (selectedConversation) {
+                          const adminToken = localStorage.getItem("admin_token");
                           axios.post("http://localhost:3000/api/chat/typing", {
                             userId: selectedConversation.userId,
                             isTyping: false,
                             sender: "admin"
+                          }, {
+                            headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
                           }).catch(() => {});
                         }
                         handleSendMessage();

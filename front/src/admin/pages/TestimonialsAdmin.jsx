@@ -43,7 +43,15 @@ export default function TestimonialsAdmin() {
         console.log("🔄 Fetching testimonials from database...");
       }
 
-      const response = await axios.get("http://localhost:3000/api/testimonials");
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/testimonials", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = response.data.data || [];
       console.log(`✅ Fetched ${data.length} testimonials from database`);
 
@@ -96,18 +104,26 @@ export default function TestimonialsAdmin() {
       // Note: If editing and no new file uploaded, the existing img will remain unchanged in the database
       // We don't send the img field in FormData to avoid overwriting with empty value
 
+      // Get admin token for authentication
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      const headers = {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
+      };
+
       if (editingTestimonial) {
         await axios.put(`http://localhost:3000/api/testimonials/${editingTestimonial._id}`, formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+          headers
         });
         toast.success("Testimonial updated successfully!");
       } else {
         await axios.post("http://localhost:3000/api/testimonials", formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+          headers
         });
         toast.success("Testimonial created successfully!");
       }
@@ -154,8 +170,16 @@ export default function TestimonialsAdmin() {
   // Update testimonial status
   const updateTestimonialStatus = async (testimonialId, newStatus) => {
     try {
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
       await axios.patch(`http://localhost:3000/api/testimonials/${testimonialId}/status`, {
         status: newStatus
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       const statusMessages = {
@@ -185,7 +209,15 @@ export default function TestimonialsAdmin() {
   // Confirm delete
   const confirmDelete = async () => {
     try {
-      await axios.delete(`http://localhost:3000/api/testimonials/${deleteModal.testimonial._id}`);
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      await axios.delete(`http://localhost:3000/api/testimonials/${deleteModal.testimonial._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success("Testimonial deleted successfully!");
       await fetchTestimonials();
       hideDeleteModal();
@@ -426,8 +458,9 @@ export default function TestimonialsAdmin() {
                 onChange={handleChange}
                 required
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none resize-vertical bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none resize-vertical bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 min-h-[100px]"
                 placeholder="Enter the testimonial quote..."
+                style={{ minHeight: '100px' }}
               />
             </div>
 
@@ -522,41 +555,43 @@ export default function TestimonialsAdmin() {
           ) : (
             <div className="space-y-6">
               {testimonials.map((testimonial) => (
-                <div key={testimonial._id} className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                  <div className="flex flex-col lg:flex-row gap-6">
-                    {/* User Info */}
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={testimonial.img?.startsWith('http') 
-                          ? testimonial.img 
-                          : `http://localhost:3000${testimonial.img}`}
-                        alt={testimonial.name}
-                        className="w-16 h-16 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-sm"
-                        onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
-                        }}
-                      />
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white text-lg">{testimonial.name}</h3>
-                        <p className="text-gray-600 dark:text-gray-400">{testimonial.role}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Tag className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                          <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">{testimonial.tag}</span>
+                <div key={testimonial._id} className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+                  {/* Mobile-first responsive layout */}
+                  <div className="flex flex-col gap-4">
+                    <>
+                      {/* Header: User info and rating - responsive */}
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                      {/* User Info - compact on mobile */}
+                      <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                        <img
+                          src={testimonial.img?.startsWith('http')
+                            ? testimonial.img
+                            : `http://localhost:3000${testimonial.img}`}
+                          alt={testimonial.name}
+                          className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 sm:border-4 border-white dark:border-gray-700 shadow-sm flex-shrink-0"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                          }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-gray-900 dark:text-white text-base sm:text-lg truncate">{testimonial.name}</h3>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm truncate">{testimonial.role}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Tag className="w-3 h-3 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium truncate">{testimonial.tag}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Quote */}
-                    <div className="flex-1">
-                      {/* Rating Stars */}
-                      <div className="flex items-center gap-1 mb-3">
+                      {/* Rating - right aligned on larger screens */}
+                      <div className="flex items-center gap-1 sm:ml-auto flex-shrink-0">
                         {[...Array(5)].map((_, idx) => {
                           const rating = testimonial.rating || 5;
                           const isFilled = idx < rating;
                           return (
                             <Star
                               key={idx}
-                              className={`w-4 h-4 ${
+                              className={`w-3 h-3 sm:w-4 sm:h-4 ${
                                 isFilled
                                   ? 'text-yellow-400 fill-yellow-400'
                                   : 'text-gray-300 dark:text-gray-600'
@@ -564,57 +599,64 @@ export default function TestimonialsAdmin() {
                             />
                           );
                         })}
-                        <span className="ml-2 text-sm text-gray-600 dark:text-gray-400 font-medium">
+                        <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
                           ({testimonial.rating || 5}/5)
                         </span>
                       </div>
-                      
-                      <blockquote className="text-gray-700 dark:text-gray-300 italic text-base leading-relaxed mb-4">
-                        "{testimonial.quote}"
-                      </blockquote>
+                    </div>
 
-                      {/* Status and Actions */}
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    {/* Quote and Meta Info - responsive text sizing */}
+                    <div className="flex-1">
+                      <>
+                        <blockquote className="text-gray-700 dark:text-gray-300 italic text-sm sm:text-base leading-relaxed mb-3 sm:mb-4 break-words">
+                          "{testimonial.quote}"
+                        </blockquote>
+
+                        {/* Status, Date and Actions - responsive layout */}
+                        <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2 mb-3">
                         <div className="flex items-center gap-2">
                           {getStatusBadge(testimonial.status)}
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {testimonial.createdAt 
-                              ? new Date(testimonial.createdAt).toLocaleDateString('en-US', { 
-                                  year: 'numeric', 
-                                  month: 'short', 
-                                  day: 'numeric' 
+                          <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                            {testimonial.createdAt
+                              ? new Date(testimonial.createdAt).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
                                 })
                               : testimonial.timestamp
-                                ? new Date(testimonial.timestamp).toLocaleDateString('en-US', { 
-                                    year: 'numeric', 
-                                    month: 'short', 
-                                    day: 'numeric' 
+                                ? new Date(testimonial.timestamp).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
                                   })
                                 : 'N/A'
                             }
                           </span>
                         </div>
 
-                        <div className="flex gap-2">
+                        {/* Actions - responsive button layout */}
+                        <div className="flex flex-wrap gap-1 sm:gap-2">
                           {canEdit(currentUser, 'testimonials') && testimonial.status === 'pending' && (
                             <>
                               <button
                                 onClick={() => updateTestimonialStatus(testimonial._id, 'approved')}
-                                className="flex items-center gap-1 px-3 py-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors border border-green-200 dark:border-green-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors border border-green-200 dark:border-green-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-0 flex-1 sm:flex-initial"
                                 title="Approve testimonial"
                                 disabled={!canEdit(currentUser, 'testimonials')}
                               >
-                                <CheckCircle className="w-3 h-3" />
-                                Approve
+                                <CheckCircle className="w-3 h-3 flex-shrink-0" />
+                                <span className="hidden xs:inline">Approve</span>
+                                <span className="xs:hidden">✓</span>
                               </button>
                               <button
                                 onClick={() => updateTestimonialStatus(testimonial._id, 'rejected')}
-                                className="flex items-center gap-1 px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-red-200 dark:border-red-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed min-w-0 flex-1 sm:flex-initial"
                                 title="Reject testimonial"
                                 disabled={!canEdit(currentUser, 'testimonials')}
                               >
-                                <XCircle className="w-3 h-3" />
-                                Reject
+                                <XCircle className="w-3 h-3 flex-shrink-0" />
+                                <span className="hidden xs:inline">Reject</span>
+                                <span className="xs:hidden">✗</span>
                               </button>
                             </>
                           )}
@@ -622,31 +664,33 @@ export default function TestimonialsAdmin() {
                           {canEdit(currentUser, 'testimonials') && testimonial.status === 'approved' && (
                             <button
                               onClick={() => updateTestimonialStatus(testimonial._id, 'pending')}
-                              className="flex items-center gap-1 px-3 py-1.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors border border-yellow-200 dark:border-yellow-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors border border-yellow-200 dark:border-yellow-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Move to pending"
                               disabled={!canEdit(currentUser, 'testimonials')}
                             >
-                              <Clock className="w-3 h-3" />
-                              Pending
+                              <Clock className="w-3 h-3 flex-shrink-0" />
+                              <span className="hidden xs:inline">Pending</span>
+                              <span className="xs:hidden">⏳</span>
                             </button>
                           )}
 
                           {canEdit(currentUser, 'testimonials') && testimonial.status === 'rejected' && (
                             <button
                               onClick={() => updateTestimonialStatus(testimonial._id, 'pending')}
-                              className="flex items-center gap-1 px-3 py-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors border border-orange-200 dark:border-orange-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors border border-orange-200 dark:border-orange-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Move to pending"
                               disabled={!canEdit(currentUser, 'testimonials')}
                             >
-                              <Clock className="w-3 h-3" />
-                              Review
+                              <Clock className="w-3 h-3 flex-shrink-0" />
+                              <span className="hidden xs:inline">Review</span>
+                              <span className="xs:hidden">🔄</span>
                             </button>
                           )}
 
                           {canEdit(currentUser, 'testimonials') && (
                             <button
                               onClick={() => handleEdit(testimonial)}
-                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                               title="Edit testimonial"
                               disabled={!canEdit(currentUser, 'testimonials')}
                             >
@@ -657,7 +701,7 @@ export default function TestimonialsAdmin() {
                           {canDelete(currentUser, 'testimonials') && (
                             <button
                               onClick={() => showDeleteModal(testimonial)}
-                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                               title="Delete testimonial"
                               disabled={!canDelete(currentUser, 'testimonials')}
                             >
@@ -666,7 +710,9 @@ export default function TestimonialsAdmin() {
                           )}
                         </div>
                       </div>
+                      </>
                     </div>
+                    </>
                   </div>
                 </div>
               ))}

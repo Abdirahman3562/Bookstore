@@ -54,7 +54,15 @@ export default function BooksAdmin() {
         console.log("🔄 Fetching books from database...");
       }
 
-      const response = await axios.get("http://localhost:3000/api/books");
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        console.error("No admin token found");
+        return;
+      }
+
+      const response = await axios.get("http://localhost:3000/api/books", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = response.data.data || [];
       console.log(`✅ Fetched ${data.length} books from database`);
 
@@ -96,20 +104,28 @@ export default function BooksAdmin() {
         formDataToSend.append('pdfFile', formData.pdfFile);
       }
 
+      // Get admin token for authentication
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      const headers = {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
+      };
+
       if (editingBook) {
         // Update existing book
         await axios.put(`http://localhost:3000/api/books/${editingBook._id}`, formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+          headers
         });
         toast.success("Book updated successfully! 📚");
       } else {
         // Add new book
         await axios.post("http://localhost:3000/api/books", formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+          headers
         });
         toast.success("Book added successfully! 📚");
       }
@@ -172,7 +188,15 @@ export default function BooksAdmin() {
   // Confirm delete
   const confirmDelete = async () => {
     try {
-      await axios.delete(`http://localhost:3000/api/books/${deleteModal.book._id}`);
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      await axios.delete(`http://localhost:3000/api/books/${deleteModal.book._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success("Book deleted successfully!");
       await fetchBooks();
       hideDeleteModal();

@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
 const testimonialSchema = new mongoose.Schema({
+  // Multi-tenant support: every testimonial belongs to a tenant
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Tenant",
+    required: true,
+    index: true
+  },
   name: {
     type: String,
     required: true
@@ -35,6 +42,10 @@ const testimonialSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Indexes for efficient tenant-scoped queries
+testimonialSchema.index({ tenantId: 1, status: 1 });
+testimonialSchema.index({ tenantId: 1, createdAt: -1 });
 
 const Testimonial = mongoose.model("Testimonial", testimonialSchema, "testimonials");
 

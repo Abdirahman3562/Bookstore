@@ -22,9 +22,31 @@ export default function AccountDetails() {
 
     const userId = loggedUser._id || loggedUser.id;
 
-    fetch(`http://localhost:3000/api/users/${userId}`)
-      .then((res) => res.json())
+    const token = localStorage.getItem("token");
+    console.log("AccountDetails - Token:", token ? "Present" : "Missing");
+    console.log("AccountDetails - UserId:", userId);
+
+    if (!token) {
+      toast.error("Authentication required. Please login again.");
+      // Clear localStorage and redirect to login
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      window.location.href = "/auth";
+      return;
+    }
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    fetch(`http://localhost:3000/api/users/${userId}`, { headers })
+      .then((res) => {
+        console.log("AccountDetails - Response status:", res.status);
+        if (res.status === 401) {
+          throw new Error("Authentication failed");
+        }
+        return res.json();
+      })
       .then((responseData) => {
+        console.log("AccountDetails - Response data:", responseData);
         const data = responseData.data || responseData;
         setUser(data);
         setName(data.name || "");
@@ -39,7 +61,15 @@ export default function AccountDetails() {
       })
       .catch((error) => {
         console.error("Error fetching user:", error);
-        toast.error("Failed to load user data");
+        if (error.message === "Authentication failed") {
+          toast.error("Session expired. Please login again.");
+          // Clear localStorage and redirect to login
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          window.location.href = "/auth";
+        } else {
+          toast.error("Failed to load user data");
+        }
       });
   }, []);
 
@@ -81,9 +111,15 @@ export default function AccountDetails() {
     }
 
     try {
+      const token = localStorage.getItem("token");
+      const headers = { "Content-Type": "application/json" };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(updateData),
       });
 
