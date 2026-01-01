@@ -45,11 +45,11 @@ export default function DownloadsTab() {
         const orderResponseData = await orderRes.json();
         const orderData = orderResponseData.data || [];
 
-        // Only show APPROVED orders with download permission
+        // Only show APPROVED or ACTIVE orders with download permission
         const approvedOrders = orderData.filter(
           (o) =>
             (o.email === userEmail || o.userId === userId || o.userId === userId?.toString()) &&
-            o.status === "approved" &&
+            (o.status === "approved" || o.status === "active") &&
             o.isDownloadAllowed === true
         );
 
@@ -133,6 +133,21 @@ export default function DownloadsTab() {
   const handleDownload = async (book) => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return toast.error("Please log in first.");
+
+    // Double-check: Ensure this is a purchased book with approved status
+    if (!book.purchaseId) {
+      return toast.error("This book is not available for download.");
+    }
+
+    // Check if the order is approved/active
+    if (!book.status || (book.status !== "approved" && book.status !== "active")) {
+      return toast.error("Your order is not approved yet. Please wait for approval or contact support.");
+    }
+
+    // Check if download is allowed
+    if (book.isDownloadAllowed !== true) {
+      return toast.error("Download access is not enabled for this order. Please contact support.");
+    }
 
     // Check if access is revoked
     if (book.notDownloaded) {
@@ -353,6 +368,21 @@ export default function DownloadsTab() {
       return toast.error("Please log in first.");
     }
 
+    // Double-check: Ensure this is a purchased book with approved status
+    if (!book.purchaseId) {
+      return toast.error("This book is not available for reading.");
+    }
+
+    // Check if the order is approved/active
+    if (!book.status || (book.status !== "approved" && book.status !== "active")) {
+      return toast.error("Your order is not approved yet. Please wait for approval or contact support.");
+    }
+
+    // Check if download is allowed
+    if (book.isDownloadAllowed !== true) {
+      return toast.error("Read access is not enabled for this order. Please contact support.");
+    }
+
     if (book.notDownloaded) {
       return toast.error("Access to this book has been revoked.");
     }
@@ -377,11 +407,11 @@ export default function DownloadsTab() {
       console.log("📖 Starting read online for:", book.title);
       console.log("🔑 Using token type:", adminToken ? "admin_token" : "user_token");
 
-      // For purchased books, use the same secure download endpoint to get authorized URL
+      // For purchased books, use the secure read endpoint to get authorized URL
       if (book.purchaseId) {
-        console.log("📖 Reading purchased book via secure endpoint");
+        console.log("📖 Reading purchased book via secure read endpoint");
 
-        const readResponse = await fetch(`http://localhost:3000/api/purchased/${book.purchaseId}/download`, {
+        const readResponse = await fetch(`http://localhost:3000/api/purchased/${book.purchaseId}/read`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -394,10 +424,10 @@ export default function DownloadsTab() {
         }
 
         const readData = await readResponse.json();
-        console.log("✅ Read authorized, URL:", readData.downloadUrl);
+        console.log("✅ Read authorized, URL:", readData.url);
 
         // Open PDF in new tab
-        window.open(readData.downloadUrl, "_blank", "noopener,noreferrer");
+        window.open(readData.url, "_blank", "noopener,noreferrer");
         return;
       }
 
