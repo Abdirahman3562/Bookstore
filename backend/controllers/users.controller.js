@@ -456,12 +456,12 @@ export const createUser = async (req, res) => {
   try {
     const { name, email, password, adminRole, permissions, role, status } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    // Check if user already exists in this tenant
+    const existingUser = await User.findOne({ email, tenantId: req.tenantId });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User with this email already exists"
+        message: "User with this email already exists in this tenant"
       });
     }
 

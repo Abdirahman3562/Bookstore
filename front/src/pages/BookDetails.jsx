@@ -283,7 +283,7 @@ export default function BookDetails() {
 
               {/* Book Info Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {book.publisher && (
+                {book.uploadedBy && (
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
@@ -291,7 +291,7 @@ export default function BookDetails() {
                       </div>
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Publisher</p>
-                        <p className="font-semibold text-gray-900 dark:text-white">{book.publisher}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{book.uploadedBy.name || book.uploadedBy.email}</p>
                       </div>
                     </div>
                   </div>

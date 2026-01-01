@@ -54,7 +54,7 @@ const tenantSchema = new mongoose.Schema({
 });
 
 // Indexes for efficient queries
-tenantSchema.index({ subdomain: 1 });
+// Note: subdomain already has a unique index from the unique: true constraint
 tenantSchema.index({ domain: 1 });
 tenantSchema.index({ status: 1 });
 tenantSchema.index({ createdAt: -1 });

@@ -1,12 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { handleApiError } from "../utils/apiUtils";
 import { Bell, ShoppingCart, MessageSquare, User, FileText, CheckCircle, XCircle, Trash2, RotateCcw } from "lucide-react";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+
+  console.log("🔔 Admin Notifications page loaded");
+  const isFetchingRef = useRef(false);
   const [readNotifications, setReadNotifications] = useState(() => {
     // Load read notifications from localStorage
     const saved = localStorage.getItem('admin_read_notifications');
@@ -30,116 +34,241 @@ export default function Notifications() {
   }, [currentUser]);
 
   const fetchCurrentUser = async () => {
+    console.log("🔍 Admin Notifications: fetchCurrentUser called");
     try {
       const adminEmail = localStorage.getItem("admin_email");
-      if (adminEmail) {
-        // Try admins API first
-        try {
-          const token = localStorage.getItem("admin_token");
-          if (!token) return;
+      const token = localStorage.getItem("admin_token");
+      const storedUser = localStorage.getItem("user");
 
-          const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const admins = adminsResponse.data.data || [];
-          const admin = admins.find(a => a.email === adminEmail);
-          if (admin) {
-            setCurrentUser(admin);
+      console.log("🔍 Admin Notifications: Auth data:", {
+        adminEmail: !!adminEmail,
+        token: !!token,
+        storedUser: !!storedUser
+      });
+
+      if (!adminEmail || !token) {
+        console.log("❌ Admin Notifications: No admin auth data, cannot load notifications");
+        setLoading(false);
+        return;
+      }
+
+      // First try to use stored user data if available
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setCurrentUser(userData);
+          return;
+        } catch (parseError) {
+          // Continue to API calls
+        }
+      }
+
+      // Try admins API first
+      try {
+        const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const admins = adminsResponse.data.data || [];
+        const admin = admins.find(a => a.email === adminEmail);
+
+        if (admin) {
+          setCurrentUser(admin);
+          return;
+        } else {
+          // Try case-insensitive match
+          const adminCaseInsensitive = admins.find(a => a.email?.toLowerCase() === adminEmail?.toLowerCase());
+          if (adminCaseInsensitive) {
+            setCurrentUser(adminCaseInsensitive);
             return;
           }
-        } catch (error) {
-          console.log("Admins API not available");
         }
+      } catch (error) {
+        // Continue to fallback
+      }
 
-        // Fallback to users API
+      // Fallback to users API
+      try {
         const usersResponse = await axios.get("http://localhost:3000/api/users", {
           headers: { Authorization: `Bearer ${token}` }
         });
         const users = usersResponse.data.data || [];
         const user = users.find(u => u.email === adminEmail);
+
         if (user) {
           setCurrentUser(user);
+        } else {
+          // Fallback: Create a mock admin user
+          const mockAdmin = {
+            _id: "test-admin-id",
+            name: "Test Admin",
+            email: adminEmail,
+            adminRole: "admin"
+          };
+          setCurrentUser(mockAdmin);
         }
+      } catch (error) {
+        setLoading(false);
       }
     } catch (error) {
-      console.error("Error fetching current user:", error);
+      setLoading(false);
     }
   };
 
+
   const fetchNotifications = async () => {
+    console.log("🚀 Admin Notifications: fetchNotifications called");
+
+    // Prevent multiple simultaneous fetches
+    if (isFetchingRef.current) {
+      console.log("⏸️ Admin Notifications: Fetch already in progress, skipping...");
+      return;
+    }
+
     try {
+      isFetchingRef.current = true;
       setLoading(true);
       const allNotifications = [];
 
-      // If user is admin, show all notifications
+      // Get authentication token
+      const token = localStorage.getItem("admin_token");
+      console.log("🔑 Admin Notifications: Token exists:", !!token);
+
+      if (!token) {
+        console.log("❌ Admin Notifications: No token, showing auth error");
+        toast.error("Authentication required. Please log in again.");
+        setLoading(false);
+        isFetchingRef.current = false;
+        return;
+      }
+
+      // If no currentUser, still show empty notifications but don't error
+      if (!currentUser) {
+        console.log("❌ Admin Notifications: No current user, showing empty notifications");
+        console.log("Available localStorage keys:", Object.keys(localStorage));
+        console.log("Current user state:", currentUser);
+        setNotifications([]);
+        setLoading(false);
+        isFetchingRef.current = false;
+        return;
+      }
+
+      console.log("👤 Admin Notifications: Current user:", currentUser.name, currentUser._id, currentUser.adminRole);
+
+      // Get notifications from database API for this admin user
+      const adminUserId = currentUser._id || currentUser.id;
+      console.log("🆔 Admin Notifications: User ID for fetching notifications:", adminUserId);
+      console.log("🎯 Admin Notifications: User role:", currentUser.adminRole);
+
+      // Always try to get notifications from database first
+      try {
+        console.log("📡 Admin Notifications: Making API call to:", `http://localhost:3000/api/notifications/${adminUserId}`);
+        const notificationsResponse = await axios.get(`http://localhost:3000/api/notifications/${adminUserId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        console.log("📡 Admin Notifications: API Response:", notificationsResponse.data);
+
+        if (notificationsResponse.data.success) {
+          const dbNotifications = notificationsResponse.data.data || [];
+          console.log("✅ Found", dbNotifications.length, "database notifications from API");
+
+          dbNotifications.forEach(notification => {
+            const notificationId = notification._id || notification.id;
+            // Skip if notification is deleted
+            if (!deletedNotifications.includes(notificationId)) {
+              // Map notification type to icon and color
+              let icon = Bell;
+              let color = "blue";
+
+              switch (notification.type) {
+                case 'new_order':
+                  icon = ShoppingCart;
+                  color = "orange";
+                  break;
+                case 'order_approved':
+                  icon = CheckCircle;
+                  color = "green";
+                  break;
+                case 'order_active':
+                  icon = CheckCircle;
+                  color = "green";
+                  break;
+                case 'order_cancelled':
+                  icon = XCircle;
+                  color = "red";
+                  break;
+                case 'download_available':
+                  icon = FileText;
+                  color = "purple";
+                  break;
+                case 'general':
+                default:
+                  icon = Bell;
+                  color = "blue";
+                  break;
+              }
+
+              allNotifications.push({
+                id: notificationId,
+                type: notification.type || "general",
+                title: notification.title || "Notification",
+                message: notification.message || "",
+                status: notification.relatedType === 'purchase' ? "pending" : null,
+                date: notification.createdAt || new Date(),
+                icon: icon,
+                color: color,
+                isRead: notification.isRead || readNotifications.includes(notificationId),
+                relatedId: notification.relatedId,
+                relatedType: notification.relatedType
+              });
+            }
+          });
+        }
+      } catch (apiError) {
+        console.error("❌ Admin Notifications: Database API failed:", apiError.response?.data || apiError.message);
+        // Continue to fetch pending purchases even if API fails
+      }
+
+      // Always fetch pending purchases and add them as notifications (if not already in database notifications)
       if (currentUser?.adminRole === "admin") {
-        // Get pending purchases (only pending, not active)
         try {
+          console.log("📦 Admin Notifications: Fetching pending purchases...");
           const purchasesResponse = await axios.get("http://localhost:3000/api/purchased", {
             headers: { Authorization: `Bearer ${token}` }
           });
           const purchases = purchasesResponse.data.data || [];
           const pendingPurchases = purchases.filter(p => p.status === "pending");
-          
+
+          console.log(`📦 Found ${pendingPurchases.length} pending purchases`);
+
           pendingPurchases.forEach(purchase => {
             const notificationId = `purchase-${purchase._id}`;
-            // Skip if notification is deleted
-            if (!deletedNotifications.includes(notificationId)) {
+            // Check if we already have a database notification for this purchase
+            const existingDbNotification = allNotifications.find(n =>
+              n.relatedId === purchase._id.toString() && n.type === 'new_order'
+            );
+
+            // Only add if not already in database notifications and not deleted
+            if (!existingDbNotification && !deletedNotifications.includes(notificationId)) {
+              console.log(`📦 Adding pending purchase notification: ${purchase.title}`);
               allNotifications.push({
                 id: notificationId,
                 type: "purchase",
-                title: "New Purchase",
-                message: `User purchased: ${purchase.bookTitle || "Book"}`,
+                title: "New Purchase - Pending Approval 📋",
+                message: `User ${purchase.userName || purchase.email || "Someone"} purchased: "${purchase.title || "Book"}" by ${purchase.author || "Unknown"}. Status: Pending Approval - Click to review and approve.`,
                 status: "pending",
-                date: purchase.createdAt || new Date(),
+                date: purchase.createdAt || purchase.timestamp || new Date(),
                 icon: ShoppingCart,
-                color: "blue",
-                isRead: readNotifications.includes(notificationId)
+                color: "orange",
+                isRead: readNotifications.includes(notificationId),
+                purchaseId: purchase._id || purchase.id,
+                needsAction: true, // Mark as needing admin action
+                actionUrl: `/admin/purchased?order=${purchase._id}` // Direct link to approve
               });
             }
           });
-        } catch (error) {
-          console.error("Error fetching purchases:", error);
-        }
-
-        // Get recent blog comments
-        try {
-          const blogsResponse = await axios.get("http://localhost:3000/api/blogs", {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const blogs = blogsResponse.data.data || [];
-          
-          blogs.forEach(blog => {
-            if (blog.comments && blog.comments.length > 0) {
-              const recentComments = blog.comments
-                .filter(c => {
-                  const commentDate = new Date(c.date);
-                  const dayAgo = new Date();
-                  dayAgo.setDate(dayAgo.getDate() - 1);
-                  return commentDate > dayAgo;
-                })
-                .slice(-5); // Last 5 comments
-              
-              recentComments.forEach(comment => {
-                const notificationId = `comment-${comment.id || comment._id}`;
-                // Skip if notification is deleted
-                if (!deletedNotifications.includes(notificationId)) {
-                  allNotifications.push({
-                    id: notificationId,
-                    type: "comment",
-                    title: "New Comment",
-                    message: `${comment.username} commented on "${blog.title}"`,
-                    date: new Date(comment.date),
-                    icon: MessageSquare,
-                    color: "green",
-                    isRead: readNotifications.includes(notificationId)
-                  });
-                }
-              });
-            }
-          });
-        } catch (error) {
-          console.error("Error fetching blogs:", error);
+        } catch (purchaseError) {
+          console.error("❌ Admin Notifications: Error fetching purchases:", purchaseError);
         }
       }
 
@@ -195,63 +324,63 @@ export default function Notifications() {
           
           if (!currentAuthorId) {
             console.log("No authorId found for author user");
-            return;
-          }
-          
-          console.log("Author ID being used for notifications:", currentAuthorId);
-          console.log("Total blogs found:", blogs.length);
-          
-          const authorBlogs = blogs.filter(b => {
-            let blogAuthorId = "";
-            if (b.authorId) {
-              if (typeof b.authorId === "string") {
-                blogAuthorId = b.authorId;
-              } else if (b.authorId._id) {
-                blogAuthorId = b.authorId._id;
-              } else if (b.authorId.toString) {
-                blogAuthorId = b.authorId.toString();
-              }
-            }
-            const matches = String(blogAuthorId) === currentAuthorId;
-            if (matches) {
-              console.log("Found matching blog:", b.title, "with", b.comments?.length || 0, "comments");
-            }
-            return matches;
-          });
-          
-          console.log("Author blogs found:", authorBlogs.length);
-
-          authorBlogs.forEach(blog => {
-            if (blog.comments && blog.comments.length > 0) {
-              // Show ALL comments, not just recent ones
-              blog.comments.forEach(comment => {
-                const notificationId = `comment-${comment.id || comment._id}`;
-                // Skip if notification is deleted
-                if (!deletedNotifications.includes(notificationId)) {
-                  // Get comment text (could be in comment.comment or comment.reply)
-                  const commentText = comment.comment || comment.reply || "";
-                  const commentPreview = commentText.length > 50 
-                    ? commentText.substring(0, 50) + "..." 
-                    : commentText;
-                  
-                  allNotifications.push({
-                    id: notificationId,
-                    type: "comment",
-                    title: "New Comment on Your Blog",
-                    message: `${comment.username || "A user"} commented on your blog "${blog.title}": "${commentPreview}"`,
-                    date: new Date(comment.date),
-                    icon: MessageSquare,
-                    color: "green",
-                    isRead: readNotifications.includes(notificationId),
-                    blogId: blog._id || blog.id,
-                    blogTitle: blog.title,
-                    commentUsername: comment.username || "User",
-                    commentText: commentText
-                  });
+            // Skip author notifications but continue processing
+          } else {
+            console.log("Author ID being used for notifications:", currentAuthorId);
+            console.log("Total blogs found:", blogs.length);
+            
+            const authorBlogs = blogs.filter(b => {
+              let blogAuthorId = "";
+              if (b.authorId) {
+                if (typeof b.authorId === "string") {
+                  blogAuthorId = b.authorId;
+                } else if (b.authorId._id) {
+                  blogAuthorId = b.authorId._id;
+                } else if (b.authorId.toString) {
+                  blogAuthorId = b.authorId.toString();
                 }
-              });
-            }
-          });
+              }
+              const matches = String(blogAuthorId) === currentAuthorId;
+              if (matches) {
+                console.log("Found matching blog:", b.title, "with", b.comments?.length || 0, "comments");
+              }
+              return matches;
+            });
+            
+            console.log("Author blogs found:", authorBlogs.length);
+
+            authorBlogs.forEach(blog => {
+              if (blog.comments && blog.comments.length > 0) {
+                // Show ALL comments, not just recent ones
+                blog.comments.forEach(comment => {
+                  const notificationId = `comment-${comment.id || comment._id}`;
+                  // Skip if notification is deleted
+                  if (!deletedNotifications.includes(notificationId)) {
+                    // Get comment text (could be in comment.comment or comment.reply)
+                    const commentText = comment.comment || comment.reply || "";
+                    const commentPreview = commentText.length > 50 
+                      ? commentText.substring(0, 50) + "..." 
+                      : commentText;
+                    
+                    allNotifications.push({
+                      id: notificationId,
+                      type: "comment",
+                      title: "New Comment on Your Blog",
+                      message: `${comment.username || "A user"} commented on your blog "${blog.title}": "${commentPreview}"`,
+                      date: new Date(comment.date),
+                      icon: MessageSquare,
+                      color: "green",
+                      isRead: readNotifications.includes(notificationId),
+                      blogId: blog._id || blog.id,
+                      blogTitle: blog.title,
+                      commentUsername: comment.username || "User",
+                      commentText: commentText
+                    });
+                  }
+                });
+              }
+            });
+          }
         } catch (error) {
           console.error("Error fetching author blogs:", error);
         }
@@ -260,28 +389,94 @@ export default function Notifications() {
       // Sort by date (newest first)
       allNotifications.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+      console.log("📋 Final notifications to display:", allNotifications.length);
+      console.log("📋 Notification titles:", allNotifications.map(n => n.title));
+
       setNotifications(allNotifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);
-      toast.error("Failed to load notifications");
+      handleApiError(error, "notifications");
+      // Set empty array on error to prevent infinite loading
+      setNotifications([]);
     } finally {
+      // Always set loading to false, even if there was an error
       setLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
-  const markAsRead = (notificationId) => {
-    if (!readNotifications.includes(notificationId)) {
-      const updatedRead = [...readNotifications, notificationId];
-      setReadNotifications(updatedRead);
-      localStorage.setItem('admin_read_notifications', JSON.stringify(updatedRead));
-      
-      // Update the notification in the list
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
-      );
-      
-      // Notify TopBar to update count
-      window.dispatchEvent(new CustomEvent('notificationRead', { detail: { id: notificationId } }));
+  // Handle notification click
+  const handleNotificationClick = async (notification) => {
+    // Mark as read for all notification types when clicked
+    if (!notification.isRead) {
+      await markAsRead(notification.id);
+    }
+
+    // Handle different notification types
+    switch (notification.type) {
+      case 'new_order':
+        // Navigate to specific order in purchased admin page
+        if (notification.relatedId) {
+          navigate(`/admin/purchased?order=${notification.relatedId}`);
+        } else {
+          navigate('/admin/purchased');
+        }
+        break;
+      case 'purchase':
+        // Navigate to purchased admin page for pending approvals
+        if (notification.purchaseId) {
+          navigate(`/admin/purchased?order=${notification.purchaseId}`);
+        } else {
+          navigate('/admin/purchased');
+        }
+        break;
+      case 'order_approved':
+      case 'order_active':
+      case 'order_cancelled':
+        // Navigate to purchased admin page
+        navigate('/admin/purchased');
+        break;
+      default:
+        // For other notifications, navigation already handled
+        break;
+    }
+  };
+
+  const markAsRead = async (notificationId) => {
+    try {
+      if (!readNotifications.includes(notificationId)) {
+        const token = localStorage.getItem("admin_token");
+        const adminUserId = currentUser?._id || currentUser?.id;
+        
+        // Update in database if it's a database notification
+        if (token && adminUserId && !notificationId.startsWith('purchase-') && !notificationId.startsWith('comment-')) {
+          try {
+            await axios.patch(`http://localhost:3000/api/notifications/${notificationId}/read`, {
+              userId: adminUserId
+            }, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+          } catch (apiError) {
+            console.error("Error marking notification as read in API:", apiError);
+            // Continue with local update even if API fails
+          }
+        }
+        
+        const updatedRead = [...readNotifications, notificationId];
+        setReadNotifications(updatedRead);
+        localStorage.setItem('admin_read_notifications', JSON.stringify(updatedRead));
+        
+        // Update the notification in the list
+        setNotifications(prev => 
+          prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
+        );
+        
+        // Notify TopBar to update count
+        window.dispatchEvent(new CustomEvent('notificationRead', { detail: { id: notificationId } }));
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      toast.error("Failed to mark notification as read");
     }
   };
 
@@ -290,8 +485,24 @@ export default function Notifications() {
     setDeleteModal({ isOpen: true, notificationId, notificationTitle });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     const { notificationId } = deleteModal;
+    
+    const token = localStorage.getItem("admin_token");
+    const adminUserId = currentUser?._id || currentUser?.id;
+    
+    // Delete from database if it's a database notification
+    if (token && adminUserId && !notificationId.startsWith('purchase-') && !notificationId.startsWith('comment-')) {
+      try {
+        await axios.delete(`http://localhost:3000/api/notifications/${notificationId}`, {
+          data: { userId: adminUserId },
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (apiError) {
+        console.error("Error deleting notification from API:", apiError);
+        // Continue with local delete even if API fails
+      }
+    }
     
     const updatedDeleted = [...deletedNotifications, notificationId];
     setDeletedNotifications(updatedDeleted);
@@ -337,8 +548,13 @@ export default function Notifications() {
           <div className="flex items-center gap-3">
             <Bell className="w-8 h-8 text-blue-600 dark:text-blue-500" />
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              Notifications
+              Order Management
             </h1>
+            {notifications.filter(n => n.needsAction).length > 0 && (
+              <div className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-full text-sm font-medium">
+                {notifications.filter(n => n.needsAction).length} pending approval
+              </div>
+            )}
           </div>
           <button
             onClick={() => {
@@ -353,7 +569,7 @@ export default function Notifications() {
           </button>
         </div>
         <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
-          Stay updated with your activities and system events
+          Review and approve pending book orders
         </p>
         {currentUser?.adminRole === "author" && (
           <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
@@ -368,10 +584,10 @@ export default function Notifications() {
           <div className="text-center py-12">
             <Bell className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No notifications
+              No pending orders
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              You're all caught up! No new notifications.
+              All orders have been processed! New orders will appear here for approval.
             </p>
           </div>
         ) : (
@@ -382,26 +598,31 @@ export default function Notifications() {
                 blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
                 green: "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
                 red: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
-                yellow: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400"
+                yellow: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400",
+                orange: "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400",
+                purple: "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
               };
 
               return (
                 <div
                   key={notification.id}
-                  onClick={() => markAsRead(notification.id)}
-                  title={!notification.isRead ? "Click to mark as read" : "Click to view"}
+                  onClick={() => handleNotificationClick(notification)}
+                  title={
+                    notification.needsAction
+                      ? "Click to review and approve this purchase"
+                      : notification.type === 'new_order'
+                        ? "Click to view order"
+                        : (!notification.isRead ? "Click to mark as read" : "Click to view")
+                  }
                   className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors cursor-pointer relative group ${
-                    !notification.isRead ? 'bg-blue-50 dark:bg-blue-900/10 border-l-4 border-l-blue-500' : ''
+                    notification.needsAction
+                      ? 'bg-orange-50 dark:bg-orange-900/10 border-l-4 border-l-orange-500'
+                      : !notification.isRead
+                        ? 'bg-blue-50 dark:bg-blue-900/10 border-l-4 border-l-blue-500'
+                        : ''
                   }`}
                 >
-                  {/* Delete Button - Available for admin and author */}
-                  <button
-                    onClick={(e) => openDeleteModal(e, notification.id, notification.title)}
-                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-200 dark:hover:bg-red-900/50"
-                    title="Delete notification"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {/* Action buttons are now at the bottom of the notification */}
                   
                   <div className="flex items-start gap-4">
                     <div className={`p-3 rounded-lg ${colorClasses[notification.color] || colorClasses.blue}`}>
@@ -444,11 +665,18 @@ export default function Notifications() {
                       )}
                       {notification.status && (
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium mt-2 ${
-                          notification.status === "pending"
-                            ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300"
-                            : "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
+                          notification.needsAction
+                            ? "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300"
+                            : notification.status === "pending"
+                              ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300"
+                              : "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300"
                         }`}>
-                          {notification.status === "pending" ? (
+                          {notification.needsAction ? (
+                            <>
+                              <XCircle className="w-3 h-3" />
+                              Needs Approval
+                            </>
+                          ) : notification.status === "pending" ? (
                             <>
                               <XCircle className="w-3 h-3" />
                               Pending
@@ -461,6 +689,31 @@ export default function Notifications() {
                           )}
                         </span>
                       )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 mt-3 flex-shrink-0">
+                        {!notification.isRead && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent triggering navigation
+                              markAsRead(notification.id);
+                            }}
+                            className="flex items-center gap-1 px-3 py-1 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-colors border border-blue-200 dark:border-blue-800"
+                            title="Mark as read"
+                          >
+                            <CheckCircle className="w-3 h-3" />
+                            Mark as Read
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => openDeleteModal(e, notification.id, notification.title)}
+                          className="flex items-center gap-1 px-3 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors border border-red-200 dark:border-red-800"
+                          title="Delete notification"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

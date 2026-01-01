@@ -15,7 +15,9 @@
         const userEmail = user.email?.toLowerCase(); // Normalize email
 
         // Fetch Orders
-        const token = localStorage.getItem("token");
+        const adminToken = localStorage.getItem("admin_token");
+        const userToken = localStorage.getItem("token");
+        const token = adminToken || userToken;
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         fetch("http://localhost:3000/api/purchased", { headers })
         .then((res) => res.json())
@@ -35,7 +37,7 @@
             setPending(userOrders.filter((o) => o.status === "pending").length);
             setActive(
             userOrders.filter(
-                (o) => o.status === "active" || o.status === "processing"
+                (o) => o.status === "active" || o.status === "processing" || o.status === "approved"
             ).length
             );
             setTotalOrders(userOrders.length);
@@ -88,11 +90,11 @@
             <p className="text-gray-600 dark:text-gray-400 mt-1">Pending Orders</p>
             </div>
 
-            {/* ACTIVE */}
+            {/* ACTIVE/APPROVED */}
             <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 shadow p-5 w-full rounded-xl flex flex-col items-center justify-center hover:shadow-lg transition-colors duration-200">
-            <FiLoader className="text-4xl text-blue-500 dark:text-blue-400 mb-2" />
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{active}</p>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Active Orders</p>
+            <FiLoader className="text-4xl text-green-500 dark:text-green-400 mb-2" />
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">{active}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Approved Orders</p>
             </div>
 
             {/* TOTAL ORDERS */}

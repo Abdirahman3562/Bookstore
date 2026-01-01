@@ -64,6 +64,7 @@ export default function AdminLogin() {
 
       // Normal login (2-step verification disabled)
       if (res.data.success && res.data.token) {
+        console.log('📥 Login API response:', res.data);
         localStorage.setItem("admin_token", res.data.token);
         localStorage.setItem("admin_email", email); // Store admin email for permissions
         
@@ -71,15 +72,20 @@ export default function AdminLogin() {
         const adminData = res.data.admin;
         const permissions = adminData?.permissions || {};
         const adminRole = adminData?.adminRole;
-        
+
+        console.log('🔐 Login successful - adminRole:', adminRole, 'adminData:', adminData);
+
         // Check if SUPER_ADMIN - redirect to Super Admin Dashboard
         if (adminRole === "SUPER_ADMIN") {
-          toast.success("Login successful 🎉");
+          console.log('👑 SUPER_ADMIN detected, redirecting to /superadmin/dashboard');
+          toast.success("Login successful!");
           setTimeout(() => {
             navigate("/superadmin/dashboard");
           }, 100);
           return;
         }
+
+        console.log('👤 Regular admin detected, redirecting to /admin/dashboard');
         
         // Determine redirect path based on permissions
         let redirectPath = "/admin/dashboard"; // Default
@@ -344,7 +350,7 @@ export default function AdminLogin() {
         
         // Check if SUPER_ADMIN - redirect to Super Admin Dashboard
         if (adminRole === "SUPER_ADMIN") {
-          toast.success("Login successful 🎉");
+          toast.success("Login successful!");
           setTimeout(() => {
             navigate("/superadmin/dashboard");
           }, 100);

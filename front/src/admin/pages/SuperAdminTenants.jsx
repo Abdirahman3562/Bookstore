@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { handleApiError } from "../utils/apiUtils";
 import {
   Building2,
   Plus,
@@ -149,8 +150,7 @@ export default function SuperAdminTenants() {
         setTotalPages(response.data.pagination?.pages || 1);
       }
     } catch (error) {
-      console.error("Error fetching tenants:", error);
-      toast.error("Failed to load tenants");
+      handleApiError(error, "tenants");
     } finally {
       setLoading(false);
     }
@@ -227,9 +227,9 @@ export default function SuperAdminTenants() {
   }
 
   return (
-    <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 w-full">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Manage Tenants

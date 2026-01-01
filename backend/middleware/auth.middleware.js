@@ -4,7 +4,8 @@ import User from "../models/users.model.js";
 
 /**
  * Authentication middleware for admin routes
- * Sets req.admin with the authenticated admin user
+ * Sets req.user = { adminId, tenantId, role } for proper multi-tenant support
+ * Supports both Admin and User models with admin roles
  */
 export const requireAuth = async (req, res, next) => {
   try {
@@ -20,19 +21,50 @@ export const requireAuth = async (req, res, next) => {
     // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key_change_in_production");
 
-    // Find the admin user
+    // Find the admin user in Admin model first
     let admin = await Admin.findById(decoded.id || decoded._id);
 
     if (admin) {
-      // Convert to plain object to avoid issues
+      // Set req.user with standardized structure
+      req.user = {
+        adminId: admin._id.toString(),
+        tenantId: admin.tenantId ? admin.tenantId.toString() : null,
+        role: admin.adminRole,
+        email: admin.email,
+        permissions: admin.permissions || {}
+      };
+
+      // Also set req.admin for backward compatibility
       req.admin = admin.toObject();
       return next();
     }
 
-    // If not found in Admin model, check User model (legacy support)
+    // If not found in Admin model, check User model for legacy support
     const user = await User.findById(decoded.id || decoded._id);
-    if (user && (user.adminRole === 'admin' || user.adminRole === 'author')) {
-      req.admin = user.toObject();
+
+    if (user) {
+      // If user has admin role, treat as admin
+      if (user.adminRole === 'admin' || user.adminRole === 'author') {
+        req.user = {
+          adminId: user._id.toString(),
+          tenantId: user.tenantId ? user.tenantId.toString() : null,
+          role: user.adminRole,
+          email: user.email,
+          permissions: user.permissions || {}
+        };
+
+        // Also set req.admin for backward compatibility
+        req.admin = user.toObject();
+        return next();
+      }
+
+      // Regular user - set req.user for their own data access
+      req.user = {
+        adminId: user._id.toString(),
+        tenantId: user.tenantId ? user.tenantId.toString() : null,
+        role: 'user',
+        email: user.email
+      };
       return next();
     }
 
@@ -52,7 +84,7 @@ export const requireAuth = async (req, res, next) => {
 
 /**
  * Optional authentication middleware
- * Sets req.admin if token is present, but doesn't fail if missing
+ * Sets req.user if token is present, but doesn't fail if missing
  */
 export const optionalAuth = async (req, res, next) => {
   try {
@@ -65,12 +97,38 @@ export const optionalAuth = async (req, res, next) => {
       let admin = await Admin.findById(decoded.id || decoded._id);
 
       if (admin) {
+        req.user = {
+          adminId: admin._id.toString(),
+          tenantId: admin.tenantId ? admin.tenantId.toString() : null,
+          role: admin.adminRole,
+          email: admin.email,
+          permissions: admin.permissions || {}
+        };
         req.admin = admin.toObject();
       } else {
         // Check User model (legacy support)
         const user = await User.findById(decoded.id || decoded._id);
-        if (user && (user.adminRole === 'admin' || user.adminRole === 'author')) {
-          req.admin = user.toObject();
+        if (user) {
+          if (user.adminRole === 'admin' || user.adminRole === 'author') {
+            // Admin user
+            req.user = {
+              adminId: user._id.toString(),
+              tenantId: user.tenantId ? user.tenantId.toString() : null,
+              role: user.adminRole,
+              email: user.email,
+              permissions: user.permissions || {}
+            };
+            req.admin = user.toObject();
+          } else {
+            // Regular user
+            req.user = {
+              id: user._id.toString(),
+              _id: user._id.toString(),
+              tenantId: user.tenantId ? user.tenantId.toString() : null,
+              role: 'user',
+              email: user.email
+            };
+          }
         }
       }
     }

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { handleApiError } from "../utils/apiUtils";
 import {
   Building2,
   Calendar,
@@ -63,8 +64,7 @@ export default function SuperAdminTenantDetail() {
         setAdmins(adminsResponse.data.data || []);
       }
     } catch (error) {
-      console.error("Error fetching tenant data:", error);
-      toast.error("Failed to load tenant details");
+      handleApiError(error, "tenant details");
       navigate("/superadmin/tenants");
     } finally {
       setLoading(false);

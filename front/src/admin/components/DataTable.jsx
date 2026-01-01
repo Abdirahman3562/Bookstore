@@ -8,6 +8,7 @@ export default function DataTable({
   emptyMessage = "No data available",
   emptyIcon: EmptyIcon,
   onRowClick,
+  highlightedRowId,
   className = "",
 }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -120,28 +121,36 @@ export default function DataTable({
             </tr>
           </thead>
           <tbody>
-            {currentData.map((row, rowIndex) => (
-              <tr
-                key={row._id || row.id || rowIndex}
-                onClick={() => onRowClick && onRowClick(row)}
-                className={`border-b border-gray-100 dark:border-gray-700 transition-colors ${
-                  onRowClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50" : ""
-                }`}
-              >
-                {columns.map((column, colIndex) => (
-                  <td
-                    key={colIndex}
-                    className={`py-3 px-4 text-sm ${
-                      column.cellClassName || "text-gray-900 dark:text-white"
-                    } ${column.className || ""}`}
-                  >
-                    {column.cell
-                      ? column.cell(row, rowIndex)
-                      : row[column.accessor] || "-"}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {currentData.map((row, rowIndex) => {
+              const rowId = row._id || row.id;
+              const isHighlighted = highlightedRowId && rowId === highlightedRowId;
+
+              return (
+                <tr
+                  key={rowId || rowIndex}
+                  data-row-id={rowId}
+                  onClick={() => onRowClick && onRowClick(row)}
+                  className={`border-b border-gray-100 dark:border-gray-700 transition-colors ${
+                    onRowClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50" : ""
+                  } ${
+                    isHighlighted ? "bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-400" : ""
+                  }`}
+                >
+                  {columns.map((column, colIndex) => (
+                    <td
+                      key={colIndex}
+                      className={`py-3 px-4 text-sm ${
+                        column.cellClassName || "text-gray-900 dark:text-white"
+                      } ${column.className || ""}`}
+                    >
+                      {column.cell
+                        ? column.cell(row, rowIndex)
+                        : row[column.accessor] || "-"}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

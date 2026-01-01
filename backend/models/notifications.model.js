@@ -13,10 +13,15 @@ const notificationSchema = new mongoose.Schema({
     required: true,
     index: true
   },
+  receiverRole: {
+    type: String,
+    enum: ['admin', 'user'],
+    default: 'user'
+  },
   type: {
     type: String,
     required: true,
-    enum: ['order_approved', 'order_active', 'order_cancelled', 'download_available', 'general'],
+    enum: ['new_order', 'order_approved', 'order_active', 'order_cancelled', 'download_available', 'general'],
     default: 'general'
   },
   title: {

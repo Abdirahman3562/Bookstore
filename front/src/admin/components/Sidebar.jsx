@@ -29,6 +29,27 @@ export default function Sidebar({ isOpen, onClose }) {
   });
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // Debug: Log when currentUser changes
+  useEffect(() => {
+    console.log('🔄 Sidebar: currentUser state changed:', {
+      hasUser: !!currentUser,
+      userEmail: currentUser?.email,
+      userRole: currentUser?.adminRole,
+      permissionsCount: currentUser?.permissions ? Object.keys(currentUser.permissions).length : 0
+    });
+
+    // Force re-render by triggering getFilteredMenuItems
+    if (currentUser) {
+      const testItems = getFilteredMenuItems();
+      console.log('🔄 Sidebar: Menu items after user change:', testItems.map(item => item.label));
+    }
+  }, [currentUser]);
+
+  // Debug: Log when currentUser changes
+  useEffect(() => {
+    console.log('🔄 currentUser state changed:', currentUser);
+  }, [currentUser]);
+
   // Fetch website settings
   useEffect(() => {
     const fetchWebsiteSettings = async () => {
@@ -63,94 +84,114 @@ export default function Sidebar({ isOpen, onClose }) {
     };
   }, []);
 
-  // Fetch current admin user data
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const adminEmail = localStorage.getItem("admin_email");
-        const token = localStorage.getItem("admin_token");
-        
-        if (token) {
-          if (adminEmail) {
-            // Try to find in Admin model first
-            try {
-              const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
-                headers: { Authorization: `Bearer ${token}` }
-              });
-              const admins = adminsResponse.data.data || [];
-              const admin = admins.find(a => a.email === adminEmail);
-              if (admin) {
-                setCurrentUser(admin);
-                return;
-              }
-            } catch (error) {
-              console.log("Admins API not available, trying users API");
+  // Get current user data from JWT token (similar to PermissionProtectedRoute)
+  const loadCurrentUser = () => {
+    try {
+      const email = localStorage.getItem("admin_email");
+      const jwtToken = localStorage.getItem("admin_token");
+
+      console.log('🔐 Sidebar: Checking localStorage credentials', {
+        hasEmail: !!email,
+        hasToken: !!jwtToken,
+        tokenLength: jwtToken?.length
+      });
+
+      if (!jwtToken || !email) {
+        console.log('❌ Sidebar: Missing credentials for user data');
+        setCurrentUser(null);
+        return;
+      }
+
+        // JWT decode function (same as PermissionProtectedRoute)
+        function decodeJWTToken(token) {
+          try {
+            const parts = token.split('.');
+            if (parts.length !== 3) {
+              throw new Error('Invalid JWT format');
             }
 
-            // Fallback to User model
-            const usersResponse = await axios.get("http://localhost:3000/api/users", {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            const users = usersResponse.data.data || [];
-            const user = users.find(u => u.email === adminEmail);
-            if (user) {
-              setCurrentUser(user);
-            } else {
-              // If not found, assume it's from Admin model (legacy)
-              setCurrentUser({
-                adminRole: "admin",
-                permissions: {
-                  dashboard: true,
-                  books: true,
-                  downloads: true,
-                  purchased: true,
-                  testimonials: true,
-                  users: true,
-                  authors: true,
-                  blogs: true,
-                  addAdminUser: true
-                }
-              });
-            }
-          } else {
-            // No admin_email stored, assume it's from Admin model (legacy admin)
-            setCurrentUser({
-              adminRole: "admin",
-              permissions: {
-                dashboard: true,
-                books: true,
-                downloads: true,
-                purchased: true,
-                testimonials: true,
-                users: true,
-                authors: true,
-                blogs: true,
-                addAdminUser: true
-              }
-            });
+            const payload = parts[1];
+            const decodedPayload = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+            const parsed = JSON.parse(decodedPayload);
+
+            return parsed;
+          } catch (error) {
+            console.error('❌ Sidebar: JWT decode failed:', error.message);
+            return null;
           }
         }
-      } catch (error) {
-        console.error("Error fetching current user:", error);
-        // On error, assume it's admin (fallback)
-        setCurrentUser({
-          adminRole: "admin",
-          permissions: {
-            dashboard: true,
-            books: true,
-            downloads: true,
-            purchased: true,
-            testimonials: true,
-            users: true,
-            authors: true,
-            blogs: true,
-            addAdminUser: true
-          }
+
+        // Decode JWT token
+        const tokenData = decodeJWTToken(jwtToken);
+        if (!tokenData) {
+          console.log('❌ Sidebar: Token decode failed');
+          setCurrentUser(null);
+          return;
+        }
+
+        // Validate email consistency
+        if (tokenData.email !== email) {
+          console.log('❌ Sidebar: Email mismatch in user data', {
+            tokenEmail: tokenData.email,
+            localStorageEmail: email
+          });
+          setCurrentUser(null);
+          return;
+        }
+
+        // Build user object from token
+        const user = {
+          _id: tokenData.id,
+          email: tokenData.email,
+          adminRole: tokenData.adminRole || 'admin',
+          permissions: tokenData.permissions || {}
+        };
+
+        // Validate permissions object
+        if (!user.permissions || typeof user.permissions !== 'object') {
+          console.log('⚠️ Sidebar: Invalid permissions object, setting defaults');
+          user.permissions = {
+            dashboard: { view: true },
+            books: { view: true },
+            liveChat: { view: true },
+            websiteSettings: { view: true }
+          };
+        }
+
+        console.log('👤 Sidebar: User data loaded from JWT:', {
+          email: user.email,
+          role: user.adminRole,
+          permissionsCount: Object.keys(user.permissions).length,
+          hasPermissions: !!user.permissions,
+          permissionsKeys: Object.keys(user.permissions),
+          hasLiveChat: !!user.permissions.liveChat,
+          hasWebsiteSettings: !!user.permissions.websiteSettings,
+          liveChatView: user.permissions.liveChat?.view,
+          websiteSettingsView: user.permissions.websiteSettings?.view
         });
+
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('💥 Sidebar: Error getting current user:', error);
+        setCurrentUser(null);
       }
     };
-    fetchCurrentUser();
+
+  // Load user data on component mount
+  useEffect(() => {
+    loadCurrentUser();
   }, []);
+
+  // Manual refresh function for debugging
+  const refreshUserData = () => {
+    console.log('🔄 Sidebar: Manual refresh triggered');
+    loadCurrentUser();
+  };
+
+  // Expose refresh function globally for debugging
+  if (typeof window !== 'undefined') {
+    window.refreshSidebar = refreshUserData;
+  }
 
   // Fetch unread count for Live Chat
   useEffect(() => {
@@ -182,6 +223,8 @@ export default function Sidebar({ isOpen, onClose }) {
     return () => clearInterval(interval);
   }, []);
 
+  // Regular Admin menu items - All content management pages (11 items, filtered by permissions)
+  // Regular ADMIN sees: Dashboard, Books, Downloads, Purchased, Testimonials, Contacts, Live Chat, Users, Authors, Blogs, Website Settings (filtered by permissions)
   const allMenuItems = [
     { path: "/admin/dashboard", label: "Dashboard", icon: BarChart3, permission: "dashboard" },
     { path: "/admin/books", label: "Books", icon: BookOpen, permission: "books" },
@@ -196,7 +239,10 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/admin/website-settings", label: "Website Settings", icon: Settings, permission: "websiteSettings", adminOnly: true },
   ];
 
-  // Super Admin menu items
+  // SUPER_ADMIN MENU: Platform management ONLY (7 items)
+  // SUPER_ADMIN sees: Super Dashboard, Manage Tenants, Subscriptions, Plan Management, Analytics, Admin Users, Create Admin
+  // SUPER_ADMIN does NOT see ANY regular admin content: Dashboard, Books, Live Chat, Website Settings, etc.
+  // This is CRITICAL for security - super admin should only see platform management tools
   const superAdminMenuItems = [
     { path: "/superadmin/dashboard", label: "Super Dashboard", icon: Crown, permission: "superadmin" },
     { path: "/superadmin/tenants", label: "Manage Tenants", icon: Building2, permission: "superadmin" },
@@ -204,52 +250,136 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: "/superadmin/plans", label: "Plan Management", icon: Settings, permission: "superadmin" },
     { path: "/superadmin/analytics", label: "Analytics", icon: TrendingUp, permission: "superadmin" },
     { path: "/superadmin/admins", label: "Admin Users", icon: Users, permission: "superadmin" },
+    { path: "/superadmin/admins/create", label: "Create Admin", icon: UserPlus, permission: "superadmin" },
   ];
 
   // Filter menu items based on user permissions
   const getFilteredMenuItems = () => {
+    console.log('🔍 Sidebar: getFilteredMenuItems called', {
+      hasCurrentUser: !!currentUser,
+      currentUserRole: currentUser?.adminRole,
+      roleType: typeof currentUser?.adminRole,
+      hasPermissions: !!currentUser?.permissions,
+      permissionsCount: currentUser?.permissions ? Object.keys(currentUser.permissions).length : 0
+    });
+
+    // SAFETY: If no currentUser, assume admin access and show all items
     if (!currentUser) {
-      // If no user data, show all (fallback)
-      return allMenuItems;
+      console.log('⚠️ Sidebar: No currentUser, showing all items as admin fallback');
+      return allMenuItems; // Show all items by default for admin access
     }
 
-    // If SUPER_ADMIN, show Super Admin menu
+    // CRITICAL: Check SUPER_ADMIN role first
+    console.log('🔍 Checking role comparison:', {
+      actualRole: currentUser.adminRole,
+      isSuperAdmin: currentUser.adminRole === "SUPER_ADMIN",
+      isAdmin: currentUser.adminRole === "admin"
+    });
+
+    // CRITICAL: SUPER_ADMIN gets ONLY super admin menu - NO regular admin items EVER
     if (currentUser.adminRole === "SUPER_ADMIN") {
-      return superAdminMenuItems;
+      console.log('👑 Sidebar: SUPER_ADMIN role CONFIRMED - BLOCKING ALL regular admin menu access');
+      console.log('🚫 Super admin will NOT see: Dashboard, Books, Live Chat, Website Settings, etc.');
+      console.log('✅ Super admin sees ONLY:', superAdminMenuItems.map(item => item.label));
+      return superAdminMenuItems; // Exit immediately, no regular admin items
     }
+
+    // Regular ADMIN role - can see content management pages based on permissions
+    console.log('👤 Sidebar: Regular admin role - can access content management pages');
 
     // Always check granular permissions, even for admin role
-    // Admin role doesn't automatically grant all permissions - must be explicitly set
-    if (currentUser.permissions) {
-      return allMenuItems.filter(item => {
+    if (currentUser.permissions && typeof currentUser.permissions === 'object') {
+      console.log('🔐 Sidebar: Checking permissions for regular admin');
+      console.log('🔑 Available permissions:', Object.keys(currentUser.permissions));
+      console.log('📋 Full permissions object:', currentUser.permissions);
+
+      const filteredItems = allMenuItems.filter(item => {
+        const permissionKey = item.permission;
+        console.log(`🔍 Sidebar: Checking permission for ${item.label} (${permissionKey})`);
+
+        // Get permission object for this section
+        const sectionPerms = currentUser.permissions[permissionKey];
+        console.log(`   📋 Sidebar: Permission object for ${permissionKey}:`, sectionPerms);
+
         // Hide admin-only items if user doesn't have permission
         if (item.adminOnly) {
-          const sectionPerms = currentUser.permissions[item.permission];
           if (typeof sectionPerms === 'boolean') {
-            return sectionPerms === true;
+            const hasPermission = sectionPerms === true;
+            console.log(`   🔒 Sidebar: adminOnly boolean check: ${hasPermission}`);
+            return hasPermission;
           }
           if (typeof sectionPerms === 'object' && sectionPerms !== null) {
-            return sectionPerms.view === true;
+            const hasPermission = sectionPerms.view === true;
+            console.log(`   🔒 Sidebar: adminOnly object.view check: ${hasPermission}`);
+            return hasPermission;
           }
+          console.log(`   ❌ Sidebar: adminOnly - no permission found, hiding item`);
           return false;
         }
-        // Check if permission is explicitly set to true (for view access)
-        const sectionPerms = currentUser.permissions[item.permission];
+
+        // Check regular items (not admin-only)
         if (typeof sectionPerms === 'boolean') {
-          return sectionPerms === true;
+          const hasPermission = sectionPerms === true;
+          console.log(`   ✅ Sidebar: regular boolean check: ${hasPermission}`);
+          return hasPermission;
         }
         if (typeof sectionPerms === 'object' && sectionPerms !== null) {
-          return sectionPerms.view === true;
+          const hasPermission = sectionPerms.view === true;
+          console.log(`   ✅ Sidebar: regular object.view check: ${hasPermission}`);
+          return hasPermission;
         }
+
+        console.log(`   ❌ Sidebar: regular - no permission found, hiding item`);
         return false;
       });
+
+      console.log('✅ Filtered menu items for regular admin:', filteredItems.map(item => item.label));
+      console.log(`📊 Regular admin (${currentUser.adminRole}) sees ${filteredItems.length} out of ${allMenuItems.length} available menu items based on permissions`);
+
+      return filteredItems;
     }
 
-    // Default: show only blogs if no permissions set
-    return allMenuItems.filter(item => item.permission === "blogs" && !item.adminOnly);
+    console.log('⚠️ Sidebar: No valid permissions found, showing all menu items as fallback');
+    console.log(`📊 Fallback: User with role '${currentUser.adminRole}' sees all ${allMenuItems.length} menu items`);
+    console.log('⚠️ WARNING: If this is SUPER_ADMIN, they should NOT see regular admin items!');
+    // Default fallback: show all available menu items for admin access
+    return allMenuItems;
   };
 
+  // Get filtered menu items (re-calculated when currentUser changes)
   const menuItems = getFilteredMenuItems();
+
+  // Ensure we always have at least some menu items
+  // CRITICAL FIX: Always include essential admin items
+  let finalMenuItems = menuItems.length > 0 ? menuItems : allMenuItems;
+
+  // Guarantee that essential items are always shown
+  const essentialItems = ['dashboard', 'books', 'liveChat', 'websiteSettings'];
+  const missingEssential = essentialItems.filter(perm =>
+    !finalMenuItems.some(item => item.permission === perm)
+  );
+
+  if (missingEssential.length > 0) {
+    console.log('⚠️ Sidebar: Adding missing essential items:', missingEssential);
+    const essentialMenuItems = allMenuItems.filter(item =>
+      missingEssential.includes(item.permission)
+    );
+    finalMenuItems = [...finalMenuItems, ...essentialMenuItems];
+  }
+
+  // Final debug log
+  console.log('🎯 Sidebar: Final menu items to render:', finalMenuItems.map(item => item.label));
+
+  // Force re-render key based on currentUser
+  const renderKey = currentUser ? `user-${currentUser._id}` : 'no-user';
+
+  // Debug: Log final menu items
+  console.log('🎯 Final sidebar menu items:', menuItems.map(item => ({
+    label: item.label,
+    path: item.path,
+    permission: item.permission,
+    adminOnly: item.adminOnly
+  })));
 
   const handleLogout = async () => {
     try {
@@ -298,7 +428,7 @@ export default function Sidebar({ isOpen, onClose }) {
       )}
 
       {/* Sidebar */}
-      <div className={`
+      <div key={renderKey} className={`
         fixed top-0 left-0 z-50
         w-64 bg-gray-900 dark:bg-gray-800 text-white h-screen flex flex-col border-r border-gray-800 dark:border-gray-700
         transform transition-transform duration-300 ease-in-out
@@ -321,7 +451,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Menu */}
       <div className="flex-1 overflow-y-auto scrollbar-hide mt-4">
-        {menuItems.map((item) => {
+        {finalMenuItems.map((item) => {
           const isActive = location.pathname === item.path;
           const isLiveChat = item.path === "/admin/live-chat";
 
@@ -383,18 +513,7 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* Super Admin Actions */}
         {currentUser && currentUser.adminRole === "SUPER_ADMIN" && (
           <>
-            <Link
-              to="/superadmin/admins/create"
-              onClick={onClose}
-              className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition mt-2
-                ${location.pathname === "/superadmin/admins/create"
-                  ? "bg-blue-600 dark:bg-blue-700 text-white"
-                  : "text-gray-300 dark:text-gray-400 hover:bg-gray-800 dark:hover:bg-gray-700 hover:text-white"
-                }`}
-            >
-              <UserPlus size={18} />
-              Create Admin
-            </Link>
+            {/* Create Admin is now in the main menu above */}
           </>
         )}
       </div>

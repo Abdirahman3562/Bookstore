@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { ShoppingCart, Edit, Trash2, CheckCircle, XCircle, Clock, DollarSign, RefreshCw, RotateCcw } from "lucide-react";
 import { getCurrentAdminUser, canEdit, canDelete } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 import DataTable from "../components/DataTable";
 
 export default function PurchasedAdmin() {
+  const [searchParams] = useSearchParams();
   const [purchased, setPurchased] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -13,6 +16,7 @@ export default function PurchasedAdmin() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleString());
+  const [highlightedOrderId, setHighlightedOrderId] = useState(null);
 
   const [stats, setStats] = useState({
     totalSales: 0,
@@ -20,6 +24,34 @@ export default function PurchasedAdmin() {
     pendingOrders: 0,
     approvedOrders: 0
   });
+
+  // Check for order query parameter to highlight specific order
+  useEffect(() => {
+    const orderId = searchParams.get('order');
+    if (orderId) {
+      console.log("🎯 Highlighting order:", orderId);
+      setHighlightedOrderId(orderId);
+
+      // Scroll to the highlighted row after data loads
+      setTimeout(() => {
+        const highlightedRow = document.querySelector(`[data-row-id="${orderId}"]`);
+        if (highlightedRow) {
+          highlightedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Add a temporary pulse effect
+          highlightedRow.classList.add('animate-pulse');
+          setTimeout(() => {
+            highlightedRow.classList.remove('animate-pulse');
+          }, 2000);
+        }
+      }, 1000); // Wait for data to load
+
+      // Clear the query parameter after highlighting
+      setTimeout(() => {
+        window.history.replaceState(null, null, window.location.pathname);
+        setHighlightedOrderId(null); // Remove highlight after some time
+      }, 5000); // Clear after 5 seconds
+    }
+  }, [searchParams, purchased]);
 
   // Fetch all purchased items
   const fetchPurchased = async (showRefreshIndicator = false) => {
@@ -78,9 +110,7 @@ export default function PurchasedAdmin() {
         toast.success("Data refreshed from database!");
       }
     } catch (error) {
-      console.error("❌ Error fetching purchased items:", error);
-      console.error("❌ Error details:", error.response?.data || error.message);
-      toast.error("Failed to load purchased items");
+      handleApiError(error, "purchased items");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -287,6 +317,7 @@ export default function PurchasedAdmin() {
             </div>
           ) : (
             <DataTable
+              highlightedRowId={highlightedOrderId}
               columns={[
                 {
                   header: "Customer",

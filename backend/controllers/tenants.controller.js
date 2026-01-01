@@ -363,11 +363,9 @@ export const deleteTenant = async (req, res) => {
       });
     }
 
-    // Cancel all subscriptions first
-    await Subscription.updateMany(
-      { tenantId: tenant._id },
-      { status: 'cancelled' }
-    );
+    // Delete all subscriptions for this tenant (cascade delete)
+    const deletedSubscriptions = await Subscription.deleteMany({ tenantId: tenant._id });
+    console.log(`🗑️ Deleted ${deletedSubscriptions.deletedCount} subscriptions for tenant ${tenant.name}`);
 
     // Delete the tenant from database
     await Tenant.findByIdAndDelete(id);

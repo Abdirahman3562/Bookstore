@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Users, RotateCcw, UserCheck, UserX, Mail, Calendar, Shield } from "lucide-react";
 import { getCurrentAdminUser, canEdit } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 import DataTable from "../components/DataTable";
 
 export default function UsersAdmin() {
@@ -75,8 +76,7 @@ export default function UsersAdmin() {
         toast.success("Users data refreshed!");
       }
     } catch (error) {
-      console.error("❌ Error fetching users:", error);
-      toast.error("Failed to load users");
+      handleApiError(error, "users");
     } finally {
       setLoading(false);
       setRefreshing(false);

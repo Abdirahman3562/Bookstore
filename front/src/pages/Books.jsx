@@ -221,11 +221,11 @@ export default function Books() {
                     </p>
                   </div>
 
-                  {book.publisher && (
+                  {book.uploadedBy && (
                     <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                       <Building2 className="w-4 h-4 flex-shrink-0 text-gray-500 dark:text-gray-400" />
                       <p className="text-sm">
-                        <span className="font-semibold text-gray-600 dark:text-gray-400">Publisher:</span> <span className="text-gray-800 dark:text-gray-200">{book.publisher}</span>
+                        <span className="font-semibold text-gray-600 dark:text-gray-400">Publisher:</span> <span className="text-gray-800 dark:text-gray-200">{book.uploadedBy.name || book.uploadedBy.email}</span>
                       </p>
                     </div>
                   )}

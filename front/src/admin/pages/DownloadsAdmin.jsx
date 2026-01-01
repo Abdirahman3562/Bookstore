@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Download, RotateCcw, FileText, User, Calendar, DollarSign, ShieldX, CheckCircle } from "lucide-react";
 import { getCurrentAdminUser, canRevoke } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 import DataTable from "../components/DataTable";
 
 export default function DownloadsAdmin() {
@@ -139,8 +140,7 @@ export default function DownloadsAdmin() {
         toast.success("Data refreshed from database!");
       }
     } catch (error) {
-      console.error("❌ Error fetching downloads:", error);
-      toast.error("Failed to load downloads");
+      handleApiError(error, "downloads");
     } finally {
       setLoading(false);
       setRefreshing(false);

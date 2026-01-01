@@ -3,6 +3,7 @@ import User from "../models/users.model.js";
 import Admin from "../models/admin.model.js";
 import WebsiteSettings from "../models/websiteSettings.model.js";
 import { getAIResponse } from "../utils/aiChatbot.js";
+import mongoose from "mongoose";
 
 // Admin online tracking - Store admin online status in memory
 const adminOnlineStatus = new Map(); // adminId -> { isOnline: boolean, lastSeen: Date }
@@ -10,6 +11,13 @@ const adminOnlineStatus = new Map(); // adminId -> { isOnline: boolean, lastSeen
 // GET ALL CONVERSATIONS (grouped by user)
 export const getAllConversations = async (req, res) => {
   try {
+    console.log("📥 getAllConversations called", {
+      hasAdmin: !!req.admin,
+      hasUser: !!req.user,
+      adminRole: req.admin?.adminRole,
+      tenantId: req.tenantId
+    });
+
     // First, update any user messages that don't have isRead set
     await ChatMessage.updateMany(
       {
@@ -25,9 +33,34 @@ export const getAllConversations = async (req, res) => {
 
     // Get all unique users who have sent messages
     // For SUPER_ADMIN, show all conversations; for others, filter by tenant
-    const matchCondition = req.admin?.adminRole === 'SUPER_ADMIN'
-      ? {} // No tenant filter for SUPER_ADMIN
-      : { tenantId: req.tenantId }; // Filter by tenant for regular admins
+    // Also check req.user in case it's set by checkTenantAccess
+    const isSuperAdmin = req.admin?.adminRole === 'SUPER_ADMIN';
+    let matchCondition = {};
+    
+    if (!isSuperAdmin && req.tenantId) {
+      // Convert tenantId to ObjectId if it's a string, or use as is if it's already ObjectId
+      try {
+        const tenantObjectId = mongoose.Types.ObjectId.isValid(req.tenantId) 
+          ? new mongoose.Types.ObjectId(req.tenantId) 
+          : req.tenantId;
+        matchCondition = { tenantId: tenantObjectId };
+      } catch (error) {
+        console.error("Error converting tenantId to ObjectId:", error);
+        matchCondition = { tenantId: req.tenantId };
+      }
+    }
+    
+    console.log("🔍 Match condition:", matchCondition);
+
+    // First, let's check how many total messages exist (for debugging)
+    const totalMessages = await ChatMessage.countDocuments({});
+    console.log(`📊 Total messages in database: ${totalMessages}`);
+    
+    // Check messages with tenantId filter
+    if (matchCondition.tenantId) {
+      const messagesWithTenant = await ChatMessage.countDocuments({ tenantId: matchCondition.tenantId });
+      console.log(`📊 Messages with tenantId ${matchCondition.tenantId}: ${messagesWithTenant}`);
+    }
 
     const conversations = await ChatMessage.aggregate([
       { $match: matchCondition }, // Filter by tenant (or not for SUPER_ADMIN)
@@ -51,6 +84,11 @@ export const getAllConversations = async (req, res) => {
       },
       { $sort: { lastMessage: -1 } }
     ]);
+
+    console.log(`📋 Aggregated conversations found: ${conversations.length}`);
+    if (conversations.length > 0) {
+      console.log("📋 First conversation sample:", conversations[0]);
+    }
 
     // Get last message for each conversation and fetch user's current avatar
     const conversationsWithLastMessage = await Promise.all(
@@ -123,9 +161,49 @@ export const getUserMessages = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const messages = await ChatMessage.find({ userId, tenantId: req.tenantId })
+    console.log("📥 getUserMessages called", {
+      userId,
+      hasAdmin: !!req.admin,
+      hasUser: !!req.user,
+      tenantId: req.tenantId
+    });
+
+    // If it's a regular user (not admin), ensure they can only access their own messages
+    if (req.user && !req.admin) {
+      const currentUserId = req.user._id?.toString() || req.user.id?.toString();
+      const requestedUserId = userId;
+      
+      if (currentUserId !== requestedUserId) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: You can only access your own messages"
+        });
+      }
+    }
+
+    // Build query with proper tenantId handling
+    const query = { userId };
+    
+    if (req.tenantId) {
+      // Convert tenantId to ObjectId if it's a string, or use as is if it's already ObjectId
+      try {
+        const tenantObjectId = mongoose.Types.ObjectId.isValid(req.tenantId) 
+          ? new mongoose.Types.ObjectId(req.tenantId) 
+          : req.tenantId;
+        query.tenantId = tenantObjectId;
+      } catch (error) {
+        console.error("Error converting tenantId to ObjectId:", error);
+        query.tenantId = req.tenantId;
+      }
+    }
+
+    console.log("🔍 Query for messages:", query);
+
+    const messages = await ChatMessage.find(query)
       .sort({ createdAt: 1 })
       .limit(100);
+
+    console.log(`✅ Found ${messages.length} messages for user ${userId}`);
 
     // Don't mark messages as read here - only mark when admin explicitly calls markAsRead
     // This prevents user messages from being marked as read when user fetches their own messages
@@ -614,19 +692,20 @@ export const takeOverChat = async (req, res) => {
 
     // Update all AI messages for this user to mark that admin has taken over
     await ChatMessage.updateMany(
-      { 
-        userId, 
+      {
+        userId,
         sender: "ai",
-        takenOverBy: null // Only update messages not already taken over
+        takenOverBy: null, // Only update messages not already taken over
+        tenantId: req.tenantId // Add tenantId filter
       },
-      { 
+      {
         takenOverBy: adminId,
         takenOverAt: new Date()
       }
     );
 
     // Get user info
-    const lastUserMsg = await ChatMessage.findOne({ userId, sender: "user" })
+    const lastUserMsg = await ChatMessage.findOne({ userId, sender: "user", tenantId: req.tenantId })
       .sort({ createdAt: -1 });
     
     let userName = "";
@@ -648,6 +727,7 @@ export const takeOverChat = async (req, res) => {
 
     // Send a system message that admin has taken over
     const takeoverMessage = await ChatMessage.create({
+      tenantId: req.tenantId, // Add tenantId
       userId,
       userName,
       userEmail,

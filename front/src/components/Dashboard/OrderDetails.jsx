@@ -10,7 +10,22 @@ export default function OrderDetails() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/purchased");
+        // Get authentication token (admin_token takes priority, then user token)
+        const adminToken = localStorage.getItem("admin_token");
+        const userToken = localStorage.getItem("token");
+        const token = adminToken || userToken;
+
+        if (!token) {
+          console.error("No authentication token found");
+          setLoading(false);
+          return;
+        }
+
+        const headers = {
+          Authorization: `Bearer ${token}`
+        };
+
+        const res = await fetch("http://localhost:3000/api/purchased", { headers });
         const responseData = await res.json();
         const data = responseData.data || [];
 

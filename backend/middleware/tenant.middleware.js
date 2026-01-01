@@ -17,12 +17,42 @@ export const resolveTenant = async (req, res, next) => {
     let tenantId = null;
     let tenant = null;
 
-    // Method 1: Check X-Tenant-Id header (for API calls)
-    if (req.headers['x-tenant-id']) {
+    // PRIORITY 1: Extract from JWT token (if authenticated) - HIGHEST PRIORITY
+    if (req.headers.authorization) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key_change_in_production");
+
+        // If admin has tenantId in token, use it (this takes highest priority)
+        if (decoded.tenantId) {
+          tenantId = decoded.tenantId;
+        }
+        // If user has tenantId in token, use it
+        else if (decoded.id) {
+          // Check if it's an admin
+          const admin = await Admin.findById(decoded.id);
+          if (admin && admin.tenantId) {
+            tenantId = admin.tenantId.toString();
+          } else {
+            // Check if it's a regular user
+            const user = await User.findById(decoded.id);
+            if (user && user.tenantId) {
+              tenantId = user.tenantId.toString();
+            }
+          }
+        }
+      } catch (tokenError) {
+        // Token invalid or expired, continue without tenant
+      }
+    }
+
+    // PRIORITY 2: Check X-Tenant-Id header (for API calls)
+    if (!tenantId && req.headers['x-tenant-id']) {
       tenantId = req.headers['x-tenant-id'];
     }
-    // Method 2: Extract from subdomain/domain
-    else if (req.headers.host) {
+
+    // PRIORITY 3: Extract from subdomain/domain (lowest priority)
+    if (!tenantId && req.headers.host) {
       const host = req.headers.host.toLowerCase();
       // Extract subdomain (e.g., tenant1.example.com -> tenant1)
       const parts = host.split('.');
@@ -40,35 +70,51 @@ export const resolveTenant = async (req, res, next) => {
           tenantId = tenant._id.toString();
         }
       }
-      // For localhost development, use the first tenant as default
+      // For localhost development, use the first tenant as default ONLY if no other method worked
       if (!tenant && (host.includes('localhost') || host.includes('127.0.0.1'))) {
         tenant = await Tenant.findOne({}); // Get first tenant for development
         if (tenant) {
           tenantId = tenant._id.toString();
-          console.log(`🏠 Localhost detected - using default tenant: ${tenant.name}`);
+          console.log(`🏠 Localhost detected - using default tenant: ${tenant.name} (no JWT tenantId found)`);
         }
       }
     }
-    // Method 3: Extract from JWT token (if authenticated)
-    else if (req.headers.authorization) {
-      try {
-        const token = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key_change_in_production");
-        
-        // If admin has tenantId in token, use it
-        if (decoded.tenantId) {
-          tenantId = decoded.tenantId;
+
+    // Method 2: Check X-Tenant-Id header (for API calls)
+    if (!tenantId && req.headers['x-tenant-id']) {
+      tenantId = req.headers['x-tenant-id'];
+    }
+
+    // Method 1: Extract from subdomain/domain
+    if (!tenantId && req.headers.host) {
+      const host = req.headers.host.toLowerCase();
+      // Extract subdomain (e.g., tenant1.example.com -> tenant1)
+      const parts = host.split('.');
+      if (parts.length >= 3) {
+        const subdomain = parts[0];
+        tenant = await Tenant.findOne({ subdomain });
+        if (tenant) {
+          tenantId = tenant._id.toString();
         }
-        // If user has tenantId in token, use it
-        else if (decoded.id) {
-          // Check if it's an admin or user
-          const admin = await Admin.findById(decoded.id);
-          if (admin && admin.tenantId) {
-            tenantId = admin.tenantId.toString();
+      }
+      // Or check by domain
+      if (!tenant) {
+        tenant = await Tenant.findOne({ domain: host });
+        if (tenant) {
+          tenantId = tenant._id.toString();
+        }
+      }
+      // For localhost development, use the first tenant as default ONLY if no JWT tenantId was found
+      if (!tenant && (host.includes('localhost') || host.includes('127.0.0.1'))) {
+        if (!tenantId) { // Only use default if JWT didn't provide tenantId
+          tenant = await Tenant.findOne({}); // Get first tenant for development
+          if (tenant) {
+            tenantId = tenant._id.toString();
+            console.log(`🏠 Localhost detected - using default tenant: ${tenant.name} (no JWT tenantId found)`);
           }
+        } else {
+          console.log(`🏠 Localhost detected - using JWT tenantId: ${tenantId}`);
         }
-      } catch (tokenError) {
-        // Token invalid or expired, continue without tenant
       }
     }
 
@@ -198,7 +244,7 @@ export const checkSubscription = async (req, res, next) => {
 export const requireSuperAdmin = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -207,9 +253,9 @@ export const requireSuperAdmin = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key_change_in_production");
-    
+
     const admin = await Admin.findById(decoded.id);
-    
+
     if (!admin || admin.adminRole !== 'SUPER_ADMIN') {
       return res.status(403).json({
         success: false,
@@ -234,8 +280,43 @@ export const requireSuperAdmin = async (req, res, next) => {
  */
 export const checkTenantAccess = async (req, res, next) => {
   try {
+    // If user is already set by requireAuth middleware, use it
+    if (req.user) {
+      // Regular user - check tenant match
+      if (req.user.tenantId && req.tenantId && req.user.tenantId.toString() !== req.tenantId) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: Tenant mismatch"
+        });
+      }
+      req.isSuperAdmin = false;
+      return next();
+    }
+
+    // If admin is already set by requireAuth middleware, use it
+    if (req.admin) {
+      // Check if SUPER_ADMIN (can access any tenant)
+      if (req.admin.adminRole === 'SUPER_ADMIN') {
+        req.user = req.admin;
+        req.isSuperAdmin = true;
+        return next();
+      }
+
+      // For regular admins, check tenant match
+      if (req.admin.tenantId && req.tenantId && req.admin.tenantId.toString() !== req.tenantId) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: Tenant mismatch"
+        });
+      }
+      req.user = req.admin;
+      req.isSuperAdmin = false;
+      return next();
+    }
+
+    // Fallback: verify token and find user/admin
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -244,7 +325,7 @@ export const checkTenantAccess = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key_change_in_production");
-    
+
     // Check if SUPER_ADMIN (can access any tenant)
     const admin = await Admin.findById(decoded.id);
     if (admin && admin.adminRole === 'SUPER_ADMIN') {
@@ -330,6 +411,7 @@ export const checkRole = (...allowedRoles) => {
     }
   };
 };
+
 
 
 

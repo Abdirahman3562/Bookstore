@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+import { handleApiError } from "../utils/apiUtils";
 import { Calendar, Plus, Save, X, Building2 } from "lucide-react";
 
 export default function SuperAdminCreateSubscription() {
@@ -42,8 +43,7 @@ export default function SuperAdminCreateSubscription() {
         setTenants(response.data.data || []);
       }
     } catch (error) {
-      console.error("Error fetching tenants:", error);
-      toast.error("Failed to load tenants");
+      handleApiError(error, "tenants");
     }
   };
 
@@ -131,7 +131,7 @@ export default function SuperAdminCreateSubscription() {
 
 
   return (
-    <div className="p-4 sm:p-6 w-full max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 ">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">

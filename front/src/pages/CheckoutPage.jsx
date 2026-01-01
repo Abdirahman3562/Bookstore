@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ShoppingCart, ArrowLeft, CreditCard, Smartphone, Package, DollarSign, CheckCircle2, Lock } from "lucide-react";
+import { getTenantHeaders } from "../utils/tenantUtils";
 
 export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
@@ -11,11 +12,7 @@ export default function CheckoutPage() {
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
-  const [cartCount, setCartCount] = useState(0);
-  const [selectedCardType, setSelectedCardType] = useState(null);
-  // Bank details - pre-filled and read-only
-  const bankAccountNumber = "1234567890123"; // Replace with actual bank account number
-  const bankName = "Dahabshiil Bank"; // Replace with actual bank name
+      const [cartCount, setCartCount] = useState(0); // Track cart items
 
 
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
@@ -37,89 +34,134 @@ export default function CheckoutPage() {
 
   // Handle Checkout process
 
- const handleCheckout = () => {
+ const handleCheckout = async () => {
   if (!user) {
     toast.error("Please log in to complete the checkout!");
     return;
   }
 
-  // Fetch the existing purchases to check for pending orders
-  fetch("http://localhost:3000/api/purchased")
-    .then((res) => res.json())
-    .then((responseData) => {
-      const existingPurchases = responseData.data || [];
-      let canProceed = true;
+  // Get authentication token
+  const token = localStorage.getItem("admin_token") || localStorage.getItem("token");
+  if (!token) {
+    toast.error("Authentication required. Please log in again.");
+    return;
+  }
 
-      // Loop through cartItems and check if the user already has a pending order for the same book
-      cartItems.forEach((item) => {
-        const alreadyPurchased = existingPurchases.some(
-          (purchase) =>
-            (purchase.userId === (user._id || user.id)) &&
-            (purchase.bookId === (item._id || item.id)) &&
-            purchase.status === "pending"
-        );
+  const headers = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+    ...getTenantHeaders()
+  };
 
-        // If a pending order exists for the same book, prevent checkout
-        if (alreadyPurchased) {
-          canProceed = false;
-          toast.error(`You have a pending order for "${item.title}". Please wait until it is processed.`);
-        }
+  try {
+    // Step 1: Check for existing purchases to prevent duplicates
+    const existingResponse = await fetch("http://localhost:3000/api/purchased", { headers });
+
+    if (!existingResponse.ok) {
+      throw new Error(`Failed to fetch existing purchases: ${existingResponse.status}`);
+    }
+
+    const existingData = await existingResponse.json();
+    const existingPurchases = existingData.data || [];
+
+    // Check for duplicate pending orders
+    for (const item of cartItems) {
+      const hasPendingOrder = existingPurchases.some(purchase =>
+        purchase.userId?.toString() === (user._id || user.id)?.toString() &&
+        purchase.bookId?.toString() === (item._id || item.id)?.toString() &&
+        purchase.status === "pending"
+      );
+
+      if (hasPendingOrder) {
+        toast.error(`You have a pending order for "${item.title}". Please wait until it is processed.`);
+        return;
+      }
+    }
+
+    // Step 2: Create purchase requests with proper error handling
+    const purchasePromises = cartItems.map(async (item) => {
+      const purchaseData = {
+        userId: (user._id || user.id)?.toString(),
+        userName: user.name,
+        email: user.email?.toLowerCase(),
+        phone: phone || "",
+        bookId: (item._id || item.id)?.toString(),
+        title: item.title,
+        author: item.author,
+        cover: item.cover,
+        price: item.price,
+        paymentmethod: selectedTab === "local" ? selectedMethod : "Online Payment",
+        isFree: item.price === 0,
+        pdfUrl: item.pdfUrl,
+        status: "pending",
+        timestamp: new Date().toISOString(),
+      };
+
+      console.log(`📡 Sending purchase request for: "${item.title}"`);
+      const response = await fetch("http://localhost:3000/api/purchased", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(purchaseData),
       });
 
-      if (canProceed) {
-        // Loop through cartItems and create the purchase order data
-        cartItems.forEach((item) => {
-          const purchaseData = {
-            userId: (user._id || user.id)?.toString(), // Ensure it's a string
-            userName: user.name,
-            email: user.email?.toLowerCase(), // Normalize email to lowercase
-            phone: phone || "", // Include phone number from checkout form
-            bookId: (item._id || item.id)?.toString(), // Ensure it's a string
-            title: item.title,
-            author: item.author,
-            cover: item.cover,
-            price: item.price,
-            paymentmethod: selectedTab === "local" ? selectedMethod : (selectedCardType || "Online Payment"), // Set payment method based on tab
-            isFree: item.price === 0,
-            pdfUrl: item.pdfUrl,
-            status: "pending", // Set status as "pending"
-            timestamp: new Date().toISOString(),
-          };
+      console.log(`📨 Response for "${item.title}":`, response.status, response.ok);
 
-          // Send POST request to save purchase data
-          fetch("http://localhost:3000/api/purchased", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(purchaseData),
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              toast.success("Purchase recorded successfully!");
-            })
-            .catch((err) => {
-              toast.error("Error recording purchase.");
-            });
-        });
-
-        // Clear cart after successful checkout
-        localStorage.removeItem("cart");
-
-        // Dispatch cartUpdated event to notify the Navbar to update the cart count
-        window.dispatchEvent(new Event("cartUpdated"));
-
-        // Set flag in sessionStorage to indicate user just completed checkout
-        sessionStorage.setItem("justCompletedCheckout", "true");
-        sessionStorage.setItem("checkoutTimestamp", new Date().toISOString());
-
-        // Navigate to the "Thank You" page or confirmation
-        navigate("/thank-you");
+      // CRITICAL: Check if response is actually successful
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error(`❌ API Error for "${item.title}":`, response.status, errorText);
+        throw new Error(`Purchase failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
-    })
-    .catch((err) => {
-      toast.error("Error fetching existing purchase data.");
+
+      console.log(`✅ API Success for "${item.title}"`);
+      // Don't show individual toasts, only show final success toast
+
+      return response.json();
     });
+
+    // Step 3: Wait for all requests and analyze results
+    const results = await Promise.allSettled(purchasePromises);
+    const successfulOrders = results.filter(result => result.status === 'fulfilled').length;
+    const failedOrders = results.filter(result => result.status === 'rejected').length;
+
+    // Step 4: Handle results - only proceed on actual success
+    if (successfulOrders === 0) {
+      const errorMessages = results
+        .filter(result => result.status === 'rejected')
+        .map(result => result.reason?.message || 'Unknown error')
+        .join('; ');
+
+      toast.error(`Failed to place orders: ${errorMessages}`);
+      return;
+    }
+
+    // Step 5: Success actions - only if we have successful orders
+    // Clear cart
+    localStorage.removeItem("cart");
+
+    // Dispatch cartUpdated event to notify the Navbar to update the cart count
+    window.dispatchEvent(new Event("cartUpdated"));
+
+    // Set checkout flags for thank-you page
+    sessionStorage.setItem("justCompletedCheckout", "true");
+    sessionStorage.setItem("checkoutTimestamp", new Date().toISOString());
+
+    // Show single success message
+    const successMessage = successfulOrders === cartItems.length
+      ? "order successfully!."
+      : `${successfulOrders} orders successfully! ${failedOrders} orders failed.`;
+
+    toast.success(successMessage);
+
+    // Navigate to thank-you page
+    setTimeout(() => {
+      navigate("/thank-you");
+    }, 1000);
+
+  } catch (error) {
+    console.error("Checkout error:", error);
+    toast.error(`Error processing checkout: ${error.message}`);
+  }
 };
 
 
@@ -155,16 +197,10 @@ export default function CheckoutPage() {
         setIsButtonDisabled(true);
       }
     } else if (selectedTab === "online") {
-      // For online payment, button is enabled when bank is selected
-      const isCardTypeSelected = selectedCardType !== null;
-
-      if (isCardTypeSelected) {
-        setIsButtonDisabled(false);
-      } else {
-        setIsButtonDisabled(true);
-      }
+      // For online payment, always enabled since we have card payment selected by default
+      setIsButtonDisabled(false);
     }
-  }, [phone, selectedMethod, selectedTab, selectedCardType]);
+  }, [phone, selectedMethod, selectedTab]);
 
   if (cartItems.length === 0) {
     return (
@@ -279,7 +315,6 @@ export default function CheckoutPage() {
                   onClick={() => {
                     setSelectedTab("online");
                     setSelectedMethod(null);
-                    setSelectedCardType(null);
                   }}
                   className={`flex-1 text-center py-3 font-semibold text-sm border-b-2 transition-colors ${
                     selectedTab === "online"
@@ -398,80 +433,23 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Payment Method</h3>
                   <div className="space-y-3">
-                    <button
-                      onClick={() => setSelectedCardType("Bank")}
-                      className={`w-full relative border-2 rounded-xl p-4 text-left transition-all duration-200 ${
-                        selectedCardType === "Bank"
-                          ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-md"
-                          : "border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 bg-white dark:bg-gray-700"
-                      }`}
-                    >
+                    <div className="w-full relative border-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 shadow-md">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                           <div>
                             <div className="font-semibold text-gray-900 dark:text-white">
-                              Bank
+                              Credit/Debit Card
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Transfer payment to bank account
+                              Pay securely using your card
                             </div>
                           </div>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          selectedCardType === "Bank"
-                            ? "border-blue-600 bg-blue-600"
-                            : "border-gray-300 dark:border-gray-500"
-                        }`}>
-                          {selectedCardType === "Bank" && (
-                            <CheckCircle2 className="w-3 h-3 text-white" />
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* Bank Details Form */}
-                  {selectedCardType === "Bank" && (
-                    <div className="mt-6 space-y-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Lock className="w-4 h-4 text-green-600 dark:text-green-400" />
-                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Bank Transfer Details</span>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Bank Name
-                        </label>
-                        <input
-                          type="text"
-                          value={bankName}
-                          readOnly
-                          disabled
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300 cursor-not-allowed"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Account Number
-                        </label>
-                        <input
-                          type="text"
-                          value={bankAccountNumber}
-                          readOnly
-                          disabled
-                          className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-300 cursor-not-allowed"
-                        />
-                      </div>
-
-                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          Please transfer the payment amount (${total.toFixed(2)}) to the bank account provided above. Your order will be processed after payment confirmation.
-                        </p>
+                        <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 

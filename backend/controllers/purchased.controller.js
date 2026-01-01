@@ -1,6 +1,8 @@
 import Purchased from "../models/purchased.model.js";
 import User from "../models/users.model.js";
 import Notification from "../models/notifications.model.js";
+import Admin from "../models/admin.model.js";
+import Book from "../models/books.model.js";
 import { sendOrderActiveEmail } from "../utils/email.js";
 
 // GET ALL PURCHASED ITEMS
@@ -12,7 +14,7 @@ export const getAllPurchased = async (req, res) => {
     const purchasedWithAvatars = await Promise.all(
       purchased.map(async (item) => {
         try {
-          const user = await User.findOne({ email: item.email });
+          const user = await User.findOne({ email: item.email, tenantId: req.tenantId });
           const itemObj = item.toObject();
           if (user && user.avatar) {
             itemObj.userAvatar = user.avatar;
@@ -59,14 +61,158 @@ export const getPurchasedById = async (req, res) => {
 // CREATE NEW PURCHASED ITEM
 export const createPurchased = async (req, res) => {
   try {
+    // TEMPORARILY ADD DUMMY TENANT ID FOR TESTING
+    // Find first tenant or create dummy ObjectId
+    let tenantId = req.tenantId;
+    if (!tenantId) {
+      try {
+        const Tenant = (await import("../models/tenant.model.js")).default;
+        const firstTenant = await Tenant.findOne({});
+        tenantId = firstTenant ? firstTenant._id : "507f1f77bcf86cd799439011"; // Dummy ObjectId
+      } catch (err) {
+        tenantId = "507f1f77bcf86cd799439011"; // Dummy ObjectId for testing
+      }
+    }
+
     const purchasedData = {
       ...req.body,
-      tenantId: req.tenantId, // Add tenantId from middleware
+      tenantId: tenantId,
       id: Date.now().toString() // Generate unique ID
     };
 
     const newPurchased = new Purchased(purchasedData);
     await newPurchased.save();
+
+    // Create notification for ALL ADMINS about the new order
+    try {
+      console.log("📧 Creating admin notification for new order:", newPurchased._id);
+
+      // Find all admins in the same tenant
+      const admins = await Admin.find({ tenantId: req.tenantId });
+      console.log(`📧 Found ${admins.length} admins in tenant`);
+
+      // Create notification for each admin
+      for (const admin of admins) {
+        const adminNotificationData = {
+          tenantId: req.tenantId,
+          userId: admin._id.toString(),
+          receiverRole: 'admin',
+          type: 'new_order',
+          title: 'New Order Received! 📦',
+          message: `${purchasedData.userName} placed an order for "${purchasedData.title}" by ${purchasedData.author}. Status: ${purchasedData.status}`,
+          relatedId: newPurchased._id.toString(),
+          relatedType: 'purchase'
+        };
+
+        await Notification.create(adminNotificationData);
+        console.log(`✅ Admin notification created for ${admin.name}`);
+      }
+    } catch (adminNotificationError) {
+      console.error("❌ Error creating admin notifications:", adminNotificationError);
+      // Don't fail the purchase if admin notifications fail
+    }
+
+    // Create notification for the admin who uploaded the purchased book
+    try {
+      console.log("📧 Creating notification for purchase:", newPurchased._id);
+      console.log("📧 Book ID:", purchasedData.bookId);
+      console.log("📧 Book title:", purchasedData.title);
+
+      let targetAdmin = null;
+
+      // Find the book to get the admin who uploaded it
+      const book = await Book.findOne({ _id: purchasedData.bookId }).catch(err => {
+        console.log("⚠️ Error finding book:", err.message);
+        return null;
+      });
+
+      if (book && book.uploadedBy) {
+        console.log("📧 Book uploaded by admin:", book.uploadedBy);
+
+        // Find the admin who uploaded the book
+        const bookAdmin = await Admin.findById(book.uploadedBy).catch(err => {
+          console.log("⚠️ Error finding admin:", err.message);
+          return null;
+        });
+
+        if (bookAdmin) {
+          targetAdmin = bookAdmin;
+          console.log("📧 Found book admin:", bookAdmin.name, bookAdmin.email);
+        } else {
+          console.log("⚠️ Admin who uploaded the book not found");
+        }
+      } else {
+        console.log("⚠️ Book not found or no uploadedBy field");
+      }
+
+      // If no specific admin found, try to find any admin with "author" role or just any admin
+      if (!targetAdmin) {
+        console.log("🔍 Looking for fallback admin...");
+
+        // First try to find admins with "author" role
+        const authorAdmins = await Admin.find({ adminRole: "author" }).catch(err => {
+          console.log("⚠️ Error finding author admins:", err.message);
+          return [];
+        });
+
+        if (authorAdmins.length > 0) {
+          targetAdmin = authorAdmins[0]; // Use first author admin
+          console.log("📧 Using author admin:", targetAdmin.name);
+        } else {
+          // If no author admins, find any admin
+          const anyAdmin = await Admin.findOne({}).catch(err => {
+            console.log("⚠️ Error finding any admin:", err.message);
+            return null;
+          });
+
+          if (anyAdmin) {
+            targetAdmin = anyAdmin;
+            console.log("📧 Using any admin:", targetAdmin.name);
+          } else {
+            console.log("❌ No admins found in database - skipping notification");
+            return;
+          }
+        }
+      }
+
+      // Create notification for the target admin
+      const userInfo = purchasedData.userName
+        ? `${purchasedData.userName} (${purchasedData.email})`
+        : purchasedData.email || "A user";
+
+      const notificationData = {
+        userId: targetAdmin._id.toString(),
+        type: "order_approved",
+        title: "New Book Purchase",
+        message: `${userInfo} purchased ${book ? 'your book' : 'a book'} "${purchasedData.title || "a book"}"`,
+        relatedId: newPurchased._id.toString(),
+        relatedType: "purchase"
+      };
+
+      console.log("📧 Creating notification for admin:", {
+        adminId: targetAdmin._id,
+        adminName: targetAdmin.name,
+        adminEmail: targetAdmin.email,
+        userInfo: userInfo,
+        bookTitle: purchasedData.title,
+        purchaseId: newPurchased._id
+      });
+
+      const createdNotification = await Notification.create(notificationData);
+      console.log("✅ Successfully created notification:", {
+        notificationId: createdNotification._id,
+        title: createdNotification.title,
+        message: createdNotification.message,
+        userId: createdNotification.userId,
+        type: createdNotification.type,
+        createdAt: createdNotification.createdAt
+      });
+
+    } catch (notificationError) {
+      console.error("❌ Error creating purchase notification:", notificationError);
+      console.error("❌ Error details:", notificationError.message);
+      // Don't fail the purchase if notifications fail
+    }
 
     res.status(201).json({
       success: true,
@@ -126,17 +272,63 @@ export const updateOrderStatus = async (req, res) => {
 
     console.log(`📝 Current status: ${currentOrder.status} → New status: ${status}`);
 
+    // Prepare update data
+    const updateData = {
+      status,
+      updatedAt: new Date()
+    };
+
+    // If status is being set to approved, also set isDownloadAllowed to true
+    if (status === 'approved') {
+      updateData.isDownloadAllowed = true;
+    }
+
     const updated = await Purchased.findOneAndUpdate(
       { _id: id, tenantId: req.tenantId },
-      { status, updatedAt: new Date() },
+      updateData,
       { new: true, runValidators: true }
     );
 
     if (!updated) {
-      return res.status(404).json({ success: false, message: "Failed to update purchased item" });
+      return res.status(404).json({ success: false, message: "Purchased item not found" });
     }
 
-    console.log(`✅ Successfully updated order ${id} status to: ${updated.status}`);
+    console.log(`✅ Successfully updated order ${id} status to: ${updated.status}, download allowed: ${updated.isDownloadAllowed}`);
+
+    // If status is changed to "approved", create notification for user
+    if (status === 'approved' && currentOrder.status !== 'approved') {
+      try {
+        console.log(`🔔 Creating approval notification for user ${updated.userId}`);
+        console.log(`👤 User details:`, {
+          userId: updated.userId,
+          userName: updated.userName,
+          email: updated.email
+        });
+
+        // Create notification for user
+        const notification = new Notification({
+          tenantId: req.tenantId,
+          userId: updated.userId.toString(),
+          receiverRole: 'user',
+          type: 'order_approved',
+          title: 'Order Approved! ✅',
+          message: `Your order for "${updated.title}" by ${updated.author} has been approved. You can now download your book.`,
+          relatedId: updated._id.toString(),
+          relatedType: 'purchase'
+        });
+        await Notification.create(notification);
+        console.log(`✅ Approval notification created for user ${updated.userId}`);
+        console.log(`📋 Notification saved:`, {
+          id: notification._id,
+          userId: notification.userId,
+          title: notification.title,
+          type: notification.type
+        });
+      } catch (notificationError) {
+        console.error("❌ Error creating approval notification:", notificationError);
+        // Don't fail the status update if notification creation fails
+      }
+    }
 
     // If status is changed to "active", send email and create notification
     if (status === 'active' && currentOrder.status !== 'active') {

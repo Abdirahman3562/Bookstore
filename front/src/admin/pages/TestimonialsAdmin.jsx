@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { MessageSquare, RotateCcw, Edit, Trash2, Plus, CheckCircle, XCircle, Clock, User, Tag, Upload, Star } from "lucide-react";
 import { getCurrentAdminUser, canAdd, canEdit, canDelete } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 
 export default function TestimonialsAdmin() {
   const [testimonials, setTestimonials] = useState([]);
@@ -75,8 +76,7 @@ export default function TestimonialsAdmin() {
         toast.success("Testimonials data refreshed!");
       }
     } catch (error) {
-      console.error("❌ Error fetching testimonials:", error);
-      toast.error("Failed to load testimonials");
+      handleApiError(error, "testimonials");
     } finally {
       setLoading(false);
       setRefreshing(false);

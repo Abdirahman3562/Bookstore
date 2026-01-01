@@ -7,6 +7,7 @@ import Book from "../models/books.model.js";
 import Purchased from "../models/purchased.model.js";
 import Download from "../models/downloads.model.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 /**
  * Get Super Admin Dashboard Stats
@@ -327,6 +328,109 @@ export const getAllAdmins = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching admins",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Update Super Admin Profile
+ */
+export const updateSuperAdminProfile = async (req, res) => {
+  try {
+    const { name, email, password, avatar, twoStepVerification } = req.body;
+
+    console.log('🔍 SuperAdmin Profile Update: Received request');
+    console.log('📧 Data:', { name, email, hasPassword: !!password, avatar: !!avatar, twoStepVerification });
+
+    // Verify the token and get admin info
+    const token = req.headers.authorization?.split(' ')[1];
+    console.log('🔑 Token present:', !!token);
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided"
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key_change_in_production");
+      console.log('✅ Token decoded successfully:', { id: decoded.id, email: decoded.email, adminRole: decoded.adminRole });
+    } catch (error) {
+      console.log('❌ Token verification failed:', error.message);
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token"
+      });
+    }
+
+    // Find the super admin
+    const admin = await Admin.findById(decoded.id);
+    console.log('👤 Admin found in DB:', !!admin);
+    if (admin) {
+      console.log('👑 Admin role:', admin.adminRole);
+      console.log('📧 Admin email:', admin.email);
+    }
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Super admin not found"
+      });
+    }
+
+    // Verify it's a super admin
+    if (admin.adminRole !== 'SUPER_ADMIN') {
+      console.log('❌ Access denied: User is not SUPER_ADMIN, role is:', admin.adminRole);
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Super admin privileges required."
+      });
+    }
+
+    // Check if email is being changed and if it's already taken
+    if (email && email !== admin.email) {
+      const existingAdmin = await Admin.findOne({ email: email.toLowerCase() });
+      if (existingAdmin) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists"
+        });
+      }
+    }
+
+    // Update fields
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email.toLowerCase();
+    if (avatar !== undefined) updateData.avatar = avatar;
+    if (twoStepVerification !== undefined) updateData.twoStepVerification = twoStepVerification;
+
+    // Hash password if provided
+    if (password) {
+      const saltRounds = 10;
+      updateData.password = await bcrypt.hash(password, saltRounds);
+    }
+
+    // Update the admin
+    const updatedAdmin = await Admin.findByIdAndUpdate(
+      decoded.id,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedAdmin
+    });
+
+  } catch (error) {
+    console.error("Error updating super admin profile:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating profile",
       error: error.message
     });
   }

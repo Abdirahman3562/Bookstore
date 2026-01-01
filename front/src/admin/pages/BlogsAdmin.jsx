@@ -36,6 +36,7 @@ import {
   Send,
 } from "lucide-react";
 import { getCurrentAdminUser, canAdd, canEdit, canDelete, canViewComments, canReplyToComments, canDeleteComments } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 
 export default function BlogsAdmin() {
   const [blogs, setBlogs] = useState([]);
@@ -89,7 +90,11 @@ export default function BlogsAdmin() {
   // Tiptap Editor
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Exclude extensions that we're adding separately to avoid duplicates
+        link: false,
+        underline: false,
+      }),
       TextStyle,
       Color,
       Highlight.configure({ multicolor: true }),
@@ -178,8 +183,7 @@ export default function BlogsAdmin() {
         toast.success("Blogs data refreshed!");
       }
     } catch (error) {
-      console.error("❌ Error fetching blogs:", error);
-      toast.error("Failed to load blogs");
+      handleApiError(error, "blogs");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -716,75 +720,76 @@ export default function BlogsAdmin() {
     }
   };
 
-  // Fetch current admin user data
+  // JWT decode function - same as AccessGuard
+  const decodeToken = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload;
+    } catch (error) {
+      console.error('❌ Token decode failed:', error.message);
+      return null;
+    }
+  };
+
+  // Fetch current admin user data (JWT decode only, no API calls)
   const fetchCurrentUser = async () => {
     try {
       const adminEmail = localStorage.getItem("admin_email");
       const token = localStorage.getItem("admin_token");
-      if (!adminEmail || !token) return;
 
-      // Try admins API first
-      try {
-        const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const admins = adminsResponse.data.data || [];
-        const admin = admins.find(a => a.email === adminEmail);
-        if (admin) {
-          // If admin has authorId, try to get avatar from author profile
-          let userWithAvatar = { ...admin };
-          if (admin.authorId && !admin.avatar) {
-            try {
-              const authorsResponse = await axios.get("http://localhost:3000/api/authors", {
-                headers: { Authorization: `Bearer ${token}` }
-              });
-              const authors = authorsResponse.data.data || [];
-              const authorIdStr = String(admin.authorId._id || admin.authorId || "");
-              const linkedAuthor = authors.find(a => String(a._id || a.id || "") === authorIdStr);
-              if (linkedAuthor && linkedAuthor.avatar) {
-                userWithAvatar.avatar = linkedAuthor.avatar;
-              }
-            } catch (error) {
-              console.log("Could not fetch author avatar");
-            }
-          }
-          setCurrentUser(userWithAvatar);
-          setUserRole(admin.adminRole || admin.role || "admin");
-          return;
-        }
-      } catch (error) {
-        console.log("Admins API not available, trying users API");
-      }
-
-      // Fallback to users API
-      const usersResponse = await axios.get("http://localhost:3000/api/users", {
-        headers: { Authorization: `Bearer ${token}` }
+      console.log('🔐 BlogsAdmin: Checking user credentials...', {
+        hasEmail: !!adminEmail,
+        hasToken: !!token
       });
-      const users = usersResponse.data.data || [];
-      const user = users.find(u => u.email === adminEmail);
-      if (user) {
-        // If user has authorId, try to get avatar from author profile
-        let userWithAvatar = { ...user };
-        if (user.authorId && !user.avatar) {
-          try {
-            const authorsResponse = await axios.get("http://localhost:3000/api/authors", {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            const authors = authorsResponse.data.data || [];
-            const authorIdStr = String(user.authorId._id || user.authorId || "");
-            const linkedAuthor = authors.find(a => String(a._id || a.id || "") === authorIdStr);
-            if (linkedAuthor && linkedAuthor.avatar) {
-              userWithAvatar.avatar = linkedAuthor.avatar;
-            }
-          } catch (error) {
-            console.log("Could not fetch author avatar");
-          }
-        }
-        setCurrentUser(userWithAvatar);
-        setUserRole(user.adminRole || user.role || "admin");
+
+      if (!adminEmail || !token) {
+        console.log('❌ No credentials found');
+        return;
       }
+
+      // Decode JWT token directly
+      const payload = decodeToken(token);
+      if (!payload) {
+        console.log('❌ Invalid token');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_email');
+        return;
+      }
+
+      // Check expiration
+      if (payload.exp && payload.exp < Date.now() / 1000) {
+        console.log('⏰ Token expired');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_email');
+        return;
+      }
+
+      // Check email match
+      if (payload.email !== adminEmail) {
+        console.log('❌ Email mismatch');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_email');
+        return;
+      }
+
+      // Set user data from JWT
+      const userData = {
+        _id: payload.id,
+        email: payload.email,
+        adminRole: payload.adminRole,
+        role: payload.adminRole, // fallback
+        permissions: payload.permissions || {}
+      };
+
+      console.log('✅ User authenticated:', userData.email, 'Role:', userData.adminRole);
+
+      setCurrentUser(userData);
+      setUserRole(userData.adminRole || "admin");
+
     } catch (error) {
-      console.error("Error fetching current user:", error);
+      console.error("❌ Error decoding user token:", error);
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_email');
     }
   };
 

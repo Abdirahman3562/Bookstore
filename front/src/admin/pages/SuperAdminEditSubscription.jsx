@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import { handleApiError } from "../utils/apiUtils";
 import { Calendar, Save, X, Building2, RefreshCw } from "lucide-react";
 
 export default function SuperAdminEditSubscription() {
@@ -156,9 +157,7 @@ export default function SuperAdminEditSubscription() {
         setSubscription(response.data.data);
       }
     } catch (error) {
-      console.error("Error fetching subscription:", error);
-      console.error("Error response:", error.response?.data);
-      toast.error("Failed to load subscription");
+      handleApiError(error, "subscription");
       navigate("/superadmin/subscriptions");
     } finally {
       setLoading(false);
@@ -373,7 +372,7 @@ export default function SuperAdminEditSubscription() {
   console.log("Rendering edit form with formData:", formData);
 
   return (
-    <div className="p-4 sm:p-6 w-full max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 w-full">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">

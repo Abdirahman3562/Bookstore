@@ -1,31 +1,58 @@
 // Utility functions for checking permissions
 
 /**
- * Get current admin user from localStorage and API
+ * JWT decode function
+ */
+const decodeToken = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload;
+  } catch (error) {
+    console.error('❌ Token decode failed:', error.message);
+    return null;
+  }
+};
+
+/**
+ * Get current admin user from JWT token (no API calls)
  */
 export const getCurrentAdminUser = async () => {
   try {
     const adminEmail = localStorage.getItem("admin_email");
-    if (!adminEmail) return null;
+    const token = localStorage.getItem("admin_token");
 
-    const axios = (await import("axios")).default;
+    if (!adminEmail || !token) return null;
 
-    // Try admins API first
-    try {
-      const adminsResponse = await axios.get("http://localhost:3000/api/admins");
-      const admins = adminsResponse.data.data || [];
-      const admin = admins.find(a => a.email === adminEmail);
-      if (admin) return admin;
-    } catch (error) {
-      console.log("Admins API not available, trying users API");
+    // Decode JWT token directly
+    const payload = decodeToken(token);
+    if (!payload) return null;
+
+    // Check expiration
+    if (payload.exp && payload.exp < Date.now() / 1000) {
+      console.log('⏰ Token expired');
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_email');
+      return null;
     }
 
-    // Fallback to users API
-    const usersResponse = await axios.get("http://localhost:3000/api/users");
-    const users = usersResponse.data.data || [];
-    return users.find(u => u.email === adminEmail) || null;
+    // Check email match
+    if (payload.email !== adminEmail) {
+      console.log('❌ Email mismatch');
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_email');
+      return null;
+    }
+
+    // Return user data from JWT
+    return {
+      _id: payload.id,
+      email: payload.email,
+      adminRole: payload.adminRole,
+      role: payload.adminRole,
+      permissions: payload.permissions || {}
+    };
   } catch (error) {
-    console.error("Error fetching current admin user:", error);
+    console.error("Error decoding current admin user:", error);
     return null;
   }
 };
@@ -61,8 +88,17 @@ export const hasPermission = (user, section, action = 'view') => {
 
 /**
  * Check if user can view a section
+ * Special handling for super admin routes
  */
-export const canView = (user, section) => hasPermission(user, section, 'view');
+export const canView = (user, section) => {
+  // SUPER ADMIN ROUTES: Require SUPER_ADMIN role
+  if (section === "superadmin") {
+    return user && user.adminRole === "SUPER_ADMIN";
+  }
+
+  // Regular sections: Use permission-based access
+  return hasPermission(user, section, 'view');
+};
 
 /**
  * Check if user can add items

@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { BookOpen, Upload, Save, Plus, Edit, Trash2, Eye, RotateCcw } from "lucide-react";
 import { getCurrentAdminUser, canAdd, canEdit, canDelete } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 import DataTable from "../components/DataTable";
 
 export default function BooksAdmin() {
@@ -73,8 +74,7 @@ export default function BooksAdmin() {
         toast.success("Data refreshed from database!");
       }
     } catch (error) {
-      console.error("❌ Error fetching books:", error);
-      toast.error("Failed to load books");
+      handleApiError(error, "books");
     } finally {
       setRefreshing(false);
     }
@@ -86,15 +86,64 @@ export default function BooksAdmin() {
     setLoading(true);
 
     try {
+      // Validate required fields
+      if (!formData.title.trim()) {
+        toast.error("Title is required");
+        setLoading(false);
+        return;
+      }
+      if (!formData.author.trim()) {
+        toast.error("Author is required");
+        setLoading(false);
+        return;
+      }
+      if (!formData.description.trim()) {
+        toast.error("Description is required");
+        setLoading(false);
+        return;
+      }
+      if (!formData.publishedDate) {
+        toast.error("Published date is required");
+        setLoading(false);
+        return;
+      }
+      if (!formData.coverFile && !editingBook) {
+        toast.error("Cover image is required");
+        setLoading(false);
+        return;
+      }
+      if (!formData.pdfFile && !editingBook) {
+        toast.error("PDF file is required");
+        setLoading(false);
+        return;
+      }
+
       const formDataToSend = new FormData();
 
-      // Add text fields
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('author', formData.author);
-      formDataToSend.append('price', parseFloat(formData.price));
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('publisher', formData.publisher);
-      formDataToSend.append('publishedDate', formData.publishedDate);
+      // Add text fields with proper validation
+      formDataToSend.append('title', formData.title.trim());
+      formDataToSend.append('author', formData.author.trim());
+      formDataToSend.append('price', parseFloat(formData.price) || 0);
+      formDataToSend.append('description', formData.description.trim());
+      formDataToSend.append('publisher', formData.publisher.trim() || "Unknown Publisher");
+      // Ensure publishedDate is in ISO format
+      const publishedDate = new Date(formData.publishedDate);
+      if (isNaN(publishedDate.getTime())) {
+        toast.error("Invalid published date format");
+        setLoading(false);
+        return;
+      }
+      formDataToSend.append('publishedDate', publishedDate.toISOString());
+
+      // Debug: Log what we're sending
+      console.log("📤 Sending book data:");
+      for (let [key, value] of formDataToSend.entries()) {
+        if (value instanceof File) {
+          console.log(`📁 ${key}: File(${value.name}, ${value.size} bytes)`);
+        } else {
+          console.log(`📝 ${key}: ${value}`);
+        }
+      }
 
       // Add files
       if (formData.coverFile) {
@@ -112,7 +161,6 @@ export default function BooksAdmin() {
       }
 
       const headers = {
-        'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${token}`
       };
 
@@ -161,7 +209,8 @@ export default function BooksAdmin() {
   // Edit book
   const handleEdit = (book) => {
     setEditingBook(book);
-    const publisherName = currentUser?.name || currentUser?.email || book.publisher || "";
+    // Always use current admin's name as publisher, not the old publisher value
+    const publisherName = currentUser?.name || currentUser?.email || "";
     setFormData({
       title: book.title,
       author: book.author,
@@ -169,7 +218,7 @@ export default function BooksAdmin() {
       pdfFile: null,
       coverFile: null,
       description: book.description,
-      publisher: publisherName,
+      publisher: publisherName, // Always set to current admin's name
       publishedDate: book.publishedDate ? new Date(book.publishedDate).toISOString().split('T')[0] : ""
     });
     setShowForm(true);

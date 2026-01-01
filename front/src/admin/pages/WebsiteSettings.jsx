@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Settings, Upload, Save, Mail, Phone, MapPin } from "lucide-react";
 import { getCurrentAdminUser, canEdit } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 
 export default function WebsiteSettings() {
   const [settings, setSettings] = useState({
@@ -46,8 +47,7 @@ export default function WebsiteSettings() {
         }
       }
     } catch (error) {
-      console.error("Error fetching settings:", error);
-      toast.error("Failed to load website settings");
+      handleApiError(error, "website settings");
     } finally {
       setFetching(false);
     }

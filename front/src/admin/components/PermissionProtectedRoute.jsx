@@ -1,11 +1,39 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import axios from "axios";
-import toast from "react-hot-toast";
 import { canView } from "../utils/permissions";
 
-// Map routes to their required permissions
-const routePermissions = {
+// FORCE CACHE CLEAR - VERSION 2.0 - COMPLETE REWRITE
+console.log('🚀🚀🚀 PermissionProtectedRoute.jsx - FORCE CACHE CLEAR v2.0 🚀🚀🚀');
+
+// JWT decode function - completely rewritten
+function decodeJWTToken(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid JWT format');
+    }
+
+    const payload = parts[1];
+    const decodedPayload = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const parsed = JSON.parse(decodedPayload);
+
+    console.log('🔓 Permission JWT decoded:', {
+      id: parsed.id,
+      email: parsed.email,
+      adminRole: parsed.adminRole,
+      permissions: parsed.permissions
+    });
+
+    return parsed;
+  } catch (error) {
+    console.error('❌ Permission JWT decode failed:', error.message);
+    return null;
+  }
+}
+
+// Route permission mapping
+const ROUTE_PERMISSIONS = {
+  // Regular admin routes (tenant-scoped content management)
   "/admin/dashboard": "dashboard",
   "/admin/books": "books",
   "/admin/downloads": "downloads",
@@ -17,118 +45,191 @@ const routePermissions = {
   "/admin/contacts": "contacts",
   "/admin/website-settings": "websiteSettings",
   "/admin/add-author-user": "addAdminUser",
-  "/admin/author-users": "addAdminUser"
+  "/admin/author-users": "addAdminUser",
+
+  // Super admin routes (platform management - SUPER_ADMIN role required)
+  "/superadmin/dashboard": "superadmin",
+  "/superadmin/tenants": "superadmin",
+  "/superadmin/subscriptions": "superadmin",
+  "/superadmin/plans": "superadmin",
+  "/superadmin/analytics": "superadmin",
+  "/superadmin/admins": "superadmin",
+  "/superadmin/admins/create": "superadmin"
 };
 
-// Routes that don't require specific permissions (accessible to all logged-in admins)
-const publicAdminRoutes = [
+// Public routes accessible to all logged-in admins
+const PUBLIC_ROUTES = [
   "/admin/my-profile",
   "/admin/notifications"
 ];
 
 export default function PermissionProtectedRoute({ children, requiredPermission }) {
   const location = useLocation();
-  const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [accessGranted, setAccessGranted] = useState(false);
+  const [verifyingAccess, setVerifyingAccess] = useState(true);
 
   useEffect(() => {
-    const checkPermission = async () => {
-      try {
-        const adminEmail = localStorage.getItem("admin_email");
-        const token = localStorage.getItem("admin_token");
+    console.log('🔐 Starting permission verification...');
 
-        if (!token) {
-          setHasAccess(false);
-          setLoading(false);
+    const verifyPermissions = () => {
+      try {
+        const email = localStorage.getItem("admin_email");
+        const jwtToken = localStorage.getItem("admin_token");
+
+        console.log('📋 Permission check credentials:', {
+          email: email,
+          tokenExists: !!jwtToken,
+          tokenLength: jwtToken?.length
+        });
+
+        // Validate credentials exist
+        if (!jwtToken || !email) {
+          console.log('❌ Missing credentials for permission check');
+          setAccessGranted(false);
+          setVerifyingAccess(false);
+          return;
+        }
+
+        // Basic token validation
+        if (jwtToken.length < 50) {
+          console.log('❌ Token too short, clearing credentials');
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_email');
+          setAccessGranted(false);
+          setVerifyingAccess(false);
+          return;
+        }
+
+        // Decode JWT token
+        const tokenData = decodeJWTToken(jwtToken);
+        if (!tokenData) {
+          console.log('❌ Token decode failed');
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_email');
+          setAccessGranted(false);
+          setVerifyingAccess(false);
+          return;
+        }
+
+        // Check token expiration
+        const currentTimestamp = Date.now() / 1000;
+        if (tokenData.exp && tokenData.exp < currentTimestamp) {
+          console.log('⏰ Permission token expired');
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_email');
+          setAccessGranted(false);
+          setVerifyingAccess(false);
+          return;
+        }
+
+        // Validate email consistency
+        if (tokenData.email !== email) {
+          console.log('❌ Email mismatch in permission check');
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('admin_email');
+          setAccessGranted(false);
+          setVerifyingAccess(false);
           return;
         }
 
         // Check if route is public
-        if (publicAdminRoutes.includes(location.pathname)) {
-          setHasAccess(true);
-          setLoading(false);
+        if (PUBLIC_ROUTES.includes(location.pathname)) {
+          console.log('✅ Public route - access granted');
+          setAccessGranted(true);
+          setVerifyingAccess(false);
           return;
         }
 
-        // Get required permission for current route
-        const routePermission = requiredPermission || routePermissions[location.pathname];
+        // Determine required permission
+        const neededPermission = requiredPermission || ROUTE_PERMISSIONS[location.pathname];
 
-        if (!routePermission) {
-          // No permission required for this route
-          setHasAccess(true);
-          setLoading(false);
+        if (!neededPermission) {
+          console.log('✅ No specific permission required');
+          setAccessGranted(true);
+          setVerifyingAccess(false);
           return;
         }
 
-        if (adminEmail) {
-          // Try to fetch from admins API first
-          try {
-            const adminsResponse = await axios.get("http://localhost:3000/api/admins");
-            const admins = adminsResponse.data.data || [];
-            const admin = admins.find(a => a.email === adminEmail);
-            
-            if (admin) {
-              setCurrentUser(admin);
-              // Check if user has view permission using canView utility
-              if (canView(admin, routePermission)) {
-                setHasAccess(true);
-              } else {
-                setHasAccess(false);
-                // Don't show toast - silently redirect
-              }
-              setLoading(false);
-              return;
-            }
-          } catch (error) {
-            console.log("Admins API not available, trying users API");
+        // Build user object from token
+        const user = {
+          _id: tokenData.id,
+          email: tokenData.email,
+          adminRole: tokenData.adminRole,
+          permissions: tokenData.permissions || {}
+        };
+
+        console.log('👤 User permissions:', {
+          email: user.email,
+          role: user.adminRole,
+          permissions: user.permissions,
+          requiredPermission: neededPermission
+        });
+
+        setUserData(user);
+
+        // SPECIAL HANDLING: Super admin routes require SUPER_ADMIN role
+        if (neededPermission === "superadmin") {
+          const isSuperAdmin = user.adminRole === "SUPER_ADMIN";
+          console.log('👑 Super admin route access check:', {
+            route: location.pathname,
+            userRole: user.adminRole,
+            isSuperAdmin,
+            accessGranted: isSuperAdmin
+          });
+
+          if (!isSuperAdmin) {
+            console.log('🚫 Access DENIED: Super admin route requires SUPER_ADMIN role');
+            setAccessGranted(false);
+            setVerifyingAccess(false);
+            return;
           }
 
-          // Fallback to users API
-          const usersResponse = await axios.get("http://localhost:3000/api/users");
-          const users = usersResponse.data.data || [];
-          const user = users.find(u => u.email === adminEmail);
-          
-          if (user) {
-            setCurrentUser(user);
-            // Check if user has view permission using canView utility
-            if (canView(user, routePermission)) {
-              setHasAccess(true);
-            } else {
-              setHasAccess(false);
-              // Don't show toast - silently redirect
-            }
-          } else {
-            setHasAccess(false);
-          }
-        } else {
-          setHasAccess(false);
+          // Super admin has access to all super admin routes
+          setAccessGranted(true);
+          setVerifyingAccess(false);
+          return;
         }
+
+        // Regular routes use permission-based access
+        const hasPermission = canView(user, neededPermission);
+        console.log('🔍 Permission result:', neededPermission, '=', hasPermission);
+
+        setAccessGranted(hasPermission);
+
       } catch (error) {
-        console.error("Error checking permissions:", error);
-        setHasAccess(false);
+        console.error('💥 Permission verification error:', error);
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_email');
+        setAccessGranted(false);
       } finally {
-        setLoading(false);
+        setVerifyingAccess(false);
       }
     };
 
-    checkPermission();
+    verifyPermissions();
   }, [location.pathname, requiredPermission]);
 
-  if (loading) {
+  // Loading state
+  if (verifyingAccess) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Checking permissions...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">
+            Verifying Permissions...
+          </p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Checking your access rights
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!hasAccess) {
-    // Find first page user has permission for
-    const permissionRoutes = {
+  // Access denied - redirect to appropriate page
+  if (!accessGranted) {
+    const REDIRECT_ROUTES = {
       dashboard: "/admin/dashboard",
       books: "/admin/books",
       downloads: "/admin/downloads",
@@ -142,21 +243,24 @@ export default function PermissionProtectedRoute({ children, requiredPermission 
       liveChat: "/admin/live-chat"
     };
 
-    let redirectPath = "/admin/dashboard"; // Default fallback
+    let targetPath = "/admin/dashboard"; // Default fallback
 
-    if (currentUser) {
-      // Find first allowed page based on permissions using canView utility
-      for (const [key, path] of Object.entries(permissionRoutes)) {
-        if (canView(currentUser, key)) {
-          redirectPath = path;
+    if (userData) {
+      // Find first accessible page
+      for (const [permission, path] of Object.entries(REDIRECT_ROUTES)) {
+        if (canView(userData, permission)) {
+          targetPath = path;
           break;
         }
       }
     }
 
-    return <Navigate to={redirectPath} replace />;
+    console.log('🚫 Access denied, redirecting to:', targetPath);
+    return <Navigate to={targetPath} replace />;
   }
 
+  // Access granted
+  console.log('✅ Permission granted - rendering protected content');
   return children;
 }
 

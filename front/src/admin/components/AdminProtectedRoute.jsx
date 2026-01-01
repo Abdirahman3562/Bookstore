@@ -1,5 +1,7 @@
 import { Navigate } from "react-router-dom";
-import PermissionProtectedRoute from "./PermissionProtectedRoute";
+import PermissionRoute from "./PermissionRoute";
+
+// ✅ FORCE IMPORT - Using PermissionRoute (no API calls)
 
 export default function AdminProtectedRoute({ children, requiredPermission }) {
   const token = localStorage.getItem("admin_token");
@@ -11,9 +13,9 @@ export default function AdminProtectedRoute({ children, requiredPermission }) {
   // Wrap with permission check if requiredPermission is provided
   if (requiredPermission) {
     return (
-      <PermissionProtectedRoute requiredPermission={requiredPermission}>
+      <PermissionRoute requiredPermission={requiredPermission}>
         {children}
-      </PermissionProtectedRoute>
+      </PermissionRoute>
     );
   }
 

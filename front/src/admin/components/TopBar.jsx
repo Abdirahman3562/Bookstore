@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, User, Key, Bell, LogOut, Moon, Sun, Globe } from "lucide-react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function TopBar() {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [previousNotificationCount, setPreviousNotificationCount] = useState(0);
   const [websiteSettings, setWebsiteSettings] = useState({
     websiteName: "Admin Dashboard",
   });
@@ -18,13 +20,90 @@ export default function TopBar() {
     return saved === 'true';
   });
 
+  const notificationSoundRef = useRef(null);
+
+  // Request permission for browser notifications
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      console.log("🔔 Browser notification permission:", permission);
+      return permission;
+    }
+    return Notification.permission;
+  };
+
+  // Show browser notification
+  const showBrowserNotification = (title, message) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const notification = new Notification(title, {
+        body: message,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'bookstore-order',
+        requireInteraction: false,
+        silent: false
+      });
+
+      // Auto close after 5 seconds
+      setTimeout(() => {
+        notification.close();
+      }, 5000);
+
+      // Click handler
+      notification.onclick = () => {
+        window.focus();
+        navigate('/admin/notifications');
+        notification.close();
+      };
+    }
+  };
+
+  // Play notification sound using Web Audio API (simple beep)
+  const playNotificationSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800Hz beep
+      oscillator.type = 'sine';
+
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Low volume
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+      console.log("🔊 Web Audio API not supported or error:", error.message);
+    }
+  };
+
   const fetchCurrentUser = async () => {
     try {
       const adminEmail = localStorage.getItem("admin_email");
       const token = localStorage.getItem("admin_token");
 
-      if (adminEmail && token) {
-        // Try to fetch from admins API first
+      if (token) {
+        // Try to get current admin profile (includes avatar and updated data)
+        try {
+          console.log("🔍 fetchCurrentUser: Trying profile endpoint");
+          const profileResponse = await axios.get("http://localhost:3000/api/admins/profile", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const admin = profileResponse.data.data;
+          if (admin) {
+            console.log("🔍 fetchCurrentUser: Found admin via profile API:", admin.name, admin._id);
+            setCurrentUser(admin);
+            return;
+          }
+        } catch (profileError) {
+          console.log("🔍 fetchCurrentUser: Profile API failed, trying fallback methods");
+        }
+
+        // Fallback: Try to fetch from admins API first
         try {
           const adminsResponse = await axios.get("http://localhost:3000/api/admins", {
             headers: { Authorization: `Bearer ${token}` }
@@ -32,31 +111,35 @@ export default function TopBar() {
           const admins = adminsResponse.data.data || [];
           const admin = admins.find(a => a.email === adminEmail);
           if (admin) {
+            console.log("🔍 fetchCurrentUser: Found admin in admins API:", admin.name, admin._id);
             setCurrentUser(admin);
             return;
           }
         } catch (error) {
-          console.log("Admins API not available, trying users API");
+          console.log("🔍 fetchCurrentUser: Admins API not available, trying users API");
         }
 
-        // Fallback to users API
+        // Final fallback to users API
         const usersResponse = await axios.get("http://localhost:3000/api/users", {
           headers: { Authorization: `Bearer ${token}` }
         });
         const users = usersResponse.data.data || [];
         const user = users.find(u => u.email === adminEmail);
         if (user) {
+          console.log("🔍 fetchCurrentUser: Found user in users API:", user.name, user._id);
           setCurrentUser(user);
         } else {
           // If not found, create default admin object
+          console.log("🔍 fetchCurrentUser: No user found, creating default");
           setCurrentUser({
-            name: adminEmail.split('@')[0],
-            email: adminEmail,
+            name: adminEmail ? adminEmail.split('@')[0] : "Admin",
+            email: adminEmail || "admin@example.com",
             adminRole: "admin"
           });
         }
       } else {
-        // No email stored, create default
+        // No token stored, create default
+        console.log("🔍 fetchCurrentUser: No token found, creating default");
         setCurrentUser({
           name: "Admin",
           email: "admin@example.com",
@@ -64,7 +147,8 @@ export default function TopBar() {
         });
       }
     } catch (error) {
-      console.error("Error fetching current user:", error);
+      console.error("🔍 fetchCurrentUser: Error fetching current user:", error);
+      // Create fallback user
       setCurrentUser({
         name: "Admin",
         email: "admin@example.com",
@@ -76,9 +160,14 @@ export default function TopBar() {
   const fetchNotificationCount = useCallback(async () => {
     try {
       const token = localStorage.getItem("admin_token");
-      if (!token) return;
+      if (!token || !currentUser) {
+        console.log("🔍 fetchNotificationCount: No token or currentUser", { token: !!token, currentUser: !!currentUser });
+        return;
+      }
 
-      // Get read notifications from localStorage
+      console.log("🔍 fetchNotificationCount: Fetching pending orders count for admin");
+
+      // Get read notifications from localStorage to exclude already reviewed orders
       const savedRead = localStorage.getItem('admin_read_notifications');
       const readNotifications = savedRead ? JSON.parse(savedRead) : [];
 
@@ -86,144 +175,58 @@ export default function TopBar() {
       const savedDeleted = localStorage.getItem('admin_deleted_notifications');
       const deletedNotifications = savedDeleted ? JSON.parse(savedDeleted) : [];
 
-      // Use Set to track unique unread notification IDs
-      const uniqueUnreadNotificationIds = new Set();
-
-      // Get pending purchases (exclude active ones)
+      // Count pending purchases (orders that need approval)
       try {
         const purchasesResponse = await axios.get("http://localhost:3000/api/purchased", {
           headers: { Authorization: `Bearer ${token}` }
         });
         const purchases = purchasesResponse.data.data || [];
         const pendingPurchases = purchases.filter(p => p.status === "pending");
-        pendingPurchases.forEach(p => {
+
+        console.log(`📦 Found ${pendingPurchases.length} total pending purchases`);
+
+        // Count pending purchases that haven't been reviewed yet (not in read/deleted notifications)
+        const unreviewedPendingPurchases = pendingPurchases.filter(p => {
           const notificationId = `purchase-${p._id}`;
-          // Only count if not read and not deleted
-          if (!readNotifications.includes(notificationId) && !deletedNotifications.includes(notificationId)) {
-            uniqueUnreadNotificationIds.add(notificationId);
-          }
+          return !readNotifications.includes(notificationId) && !deletedNotifications.includes(notificationId);
         });
-      } catch (error) {
-        console.error("Error fetching purchases:", error);
-      }
 
-      // Get recent blog comments (last 24 hours) - only for admin
-      if (currentUser?.adminRole === "admin") {
-        try {
-          const blogsResponse = await axios.get("http://localhost:3000/api/blogs", {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const blogs = blogsResponse.data.data || [];
-          
-          blogs.forEach(blog => {
-            if (blog.comments && blog.comments.length > 0) {
-              const dayAgo = new Date();
-              dayAgo.setDate(dayAgo.getDate() - 1);
-              
-              const recentComments = blog.comments.filter(c => {
-                const commentDate = new Date(c.date);
-                return commentDate > dayAgo;
-              }).slice(-5); // Last 5 comments per blog (matching Notifications.jsx)
-              
-              recentComments.forEach(comment => {
-                const notificationId = `comment-${comment.id || comment._id}`;
-                // Only count if not read and not deleted
-                if (!readNotifications.includes(notificationId) && !deletedNotifications.includes(notificationId)) {
-                  uniqueUnreadNotificationIds.add(notificationId);
-                }
-              });
-            }
-          });
-        } catch (error) {
-          console.error("Error fetching blogs:", error);
+        const pendingCount = unreviewedPendingPurchases.length;
+        console.log(`📦 Unreviewed pending purchases: ${pendingCount}`);
+
+        // Check if there are new pending orders
+        if (pendingCount > previousNotificationCount) {
+          const newOrders = pendingCount - previousNotificationCount;
+          console.log(`🔔 New pending orders detected: ${newOrders}`);
+
+          // Removed toast notification as requested
+          // toast.success(`${newOrders} new order${newOrders > 1 ? 's' : ''} need${newOrders === 1 ? 's' : ''} your approval!`, {
+          //   duration: 5000,
+          //   position: 'top-right',
+          //   icon: '📋',
+          // });
+
+          // Show browser notification if permission granted
+          showBrowserNotification(
+            'New Orders Pending Approval',
+            `${newOrders} order${newOrders > 1 ? 's need' : ' needs'} your approval`
+          );
+
+          // Removed sound notification as requested
+          // playNotificationSound();
         }
+
+        setPreviousNotificationCount(pendingCount);
+        setNotificationCount(pendingCount);
+        return;
+      } catch (purchaseError) {
+        console.error("❌ Error fetching pending purchases:", purchaseError);
+        setNotificationCount(0);
       }
 
-      // Get comments for author role
-      if (currentUser?.adminRole === "author") {
-        try {
-          const blogsResponse = await axios.get("http://localhost:3000/api/blogs", {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const blogs = blogsResponse.data.data || [];
-          
-          // Get the authorId from admin user record (this links admin user to author profile)
-          let currentAuthorId = "";
-          
-          if (currentUser.authorId) {
-            // authorId from admin user record (links to authors collection)
-            currentAuthorId = String(currentUser.authorId._id || currentUser.authorId || "");
-          } else {
-            // Fallback: Try to find author by email or name
-            try {
-              const authorsResponse = await axios.get("http://localhost:3000/api/authors", {
-                headers: { Authorization: `Bearer ${token}` }
-              });
-              const authors = authorsResponse.data.data || [];
-              
-              // Try to match by email first
-              let matchedAuthor = authors.find(a => 
-                a.email && a.email.toLowerCase() === currentUser.email?.toLowerCase()
-              );
-              
-              // If no match by email, try by name
-              if (!matchedAuthor && currentUser.name) {
-                matchedAuthor = authors.find(a => 
-                  a.name && a.name.toLowerCase() === currentUser.name?.toLowerCase()
-                );
-              }
-              
-              if (matchedAuthor) {
-                currentAuthorId = String(matchedAuthor._id || matchedAuthor.id || "");
-              } else {
-                // Last fallback: use admin user's _id
-                currentAuthorId = String(currentUser._id || currentUser.id || "");
-              }
-            } catch (error) {
-              console.error("Error fetching authors for fallback:", error);
-              currentAuthorId = String(currentUser._id || currentUser.id || "");
-            }
-          }
-          
-          if (!currentAuthorId) {
-            return;
-          }
-          
-          const authorBlogs = blogs.filter(b => {
-            let blogAuthorId = "";
-            if (b.authorId) {
-              if (typeof b.authorId === "string") {
-                blogAuthorId = b.authorId;
-              } else if (b.authorId._id) {
-                blogAuthorId = b.authorId._id;
-              } else if (b.authorId.toString) {
-                blogAuthorId = b.authorId.toString();
-              }
-            }
-            return String(blogAuthorId) === currentAuthorId;
-          });
-
-          // Count ALL unread comments, not just recent ones (matching Notifications.jsx)
-          authorBlogs.forEach(blog => {
-            if (blog.comments && blog.comments.length > 0) {
-              blog.comments.forEach(comment => {
-                const notificationId = `comment-${comment.id || comment._id}`;
-                // Only count if not read and not deleted
-                if (!readNotifications.includes(notificationId) && !deletedNotifications.includes(notificationId)) {
-                  uniqueUnreadNotificationIds.add(notificationId);
-                }
-              });
-            }
-          });
-        } catch (error) {
-          console.error("Error fetching author blogs:", error);
-        }
-      }
-
-      // Count unique unread notifications
-      setNotificationCount(uniqueUnreadNotificationIds.size);
     } catch (error) {
       console.error("Error fetching notification count:", error);
+      setNotificationCount(0);
     }
   }, [currentUser]);
 
@@ -264,22 +267,39 @@ export default function TopBar() {
   useEffect(() => {
     fetchCurrentUser();
 
+    // Request notification permission on mount
+    requestNotificationPermission();
+
     // Listen for profile update events
     const handleProfileUpdate = (event) => {
+      console.log("🔄 TopBar: Profile update event received", event.detail);
       // Update current user with new data
       if (event.detail) {
-        setCurrentUser(prev => ({
-          ...prev,
-          name: event.detail.name || prev?.name,
-          email: event.detail.email || prev?.email,
-          avatar: event.detail.avatar || prev?.avatar
-        }));
+        console.log("🔄 TopBar: Updating currentUser with:", {
+          name: event.detail.name,
+          email: event.detail.email,
+          avatar: event.detail.avatar ? "HAS_AVATAR" : "NO_AVATAR"
+        });
+
+        const updatedUser = {
+          ...currentUser,
+          name: event.detail.name || currentUser?.name,
+          email: event.detail.email || currentUser?.email,
+          avatar: event.detail.avatar || currentUser?.avatar
+        };
+
+        setCurrentUser(updatedUser);
+
         // Also update localStorage email if it changed
         if (event.detail.email) {
           localStorage.setItem("admin_email", event.detail.email);
         }
-        // Refetch to get complete updated data
-        fetchCurrentUser();
+
+        // Refetch to get complete updated data after a short delay to ensure immediate UI update
+        console.log("🔄 TopBar: Refetching current user data...");
+        setTimeout(() => {
+          fetchCurrentUser();
+        }, 100);
       }
     };
 
@@ -292,12 +312,14 @@ export default function TopBar() {
 
   // Fetch notification count when currentUser is available
   useEffect(() => {
+    console.log("🔍 useEffect: currentUser changed", currentUser?.name, currentUser?.adminRole, currentUser?._id);
     if (currentUser?.adminRole === "admin" || currentUser?.adminRole === "author") {
+      console.log("🔍 useEffect: Calling fetchNotificationCount for admin/author");
       fetchNotificationCount();
-      // Refresh notification count every 30 seconds
+      // Refresh notification count every 10 seconds for real-time updates
       const interval = setInterval(() => {
         fetchNotificationCount();
-      }, 30000);
+      }, 10000);
       
       // Listen for notification read events
       const handleNotificationRead = () => {
@@ -321,7 +343,7 @@ export default function TopBar() {
       // Reset count if user is not admin/author
       setNotificationCount(0);
     }
-  }, [currentUser, fetchNotificationCount]);
+  }, [currentUser]);
 
   // Initialize on mount - sync with main darkMode preference
   useEffect(() => {
@@ -466,9 +488,12 @@ export default function TopBar() {
         {/* Notification Icon with Badge */}
         {(currentUser?.adminRole === "admin" || currentUser?.adminRole === "author") && (
           <button
-            onClick={() => navigate("/admin/notifications")}
+            onClick={() => {
+              console.log("🔔 Notification icon clicked, navigating to /admin/notifications");
+              navigate("/admin/notifications");
+            }}
             className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            title="Notifications"
+            title={`Pending Orders: ${notificationCount} orders need approval`}
           >
             <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             {notificationCount > 0 && (

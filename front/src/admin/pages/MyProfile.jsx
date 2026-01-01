@@ -1,19 +1,16 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { handleApiError } from "../utils/apiUtils";
 import { User, Mail, Key, Camera, Save, Shield, Eye, EyeOff, Lock, LockOpen } from "lucide-react";
 
 export default function MyProfile() {
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: "" });
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    confirmPassword: "",
     avatar: "",
     twoStepVerification: false
   });
@@ -26,10 +23,50 @@ export default function MyProfile() {
   const fetchCurrentUser = async () => {
     try {
       const adminEmail = localStorage.getItem("admin_email");
+      const token = localStorage.getItem("admin_token");
+
+      if (!token) {
+        console.log("No admin token found");
+        return;
+      }
+
+      const headers = {
+        Authorization: `Bearer ${token}`
+      };
+
       if (adminEmail) {
-        // Try admins API first
+        // Try to get current admin profile (includes password)
         try {
-          const adminsResponse = await axios.get("http://localhost:3000/api/admins");
+          console.log("Fetching admin profile with email:", adminEmail);
+          const profileResponse = await axios.get("http://localhost:3000/api/admins/profile", { headers });
+          const admin = profileResponse.data.data;
+
+          if (admin) {
+            console.log("Admin profile fetched successfully:", {
+              name: admin.name,
+              email: admin.email,
+              hasPassword: !!admin.password,
+              passwordLength: admin.password ? admin.password.length : 0
+            });
+
+            setCurrentUser(admin);
+            setFormData({
+              name: admin.name || "",
+              email: admin.email || "",
+              password: admin.password || "••••••••", // Show actual password or masked if not available
+              avatar: admin.avatar || "",
+              twoStepVerification: admin.twoStepVerification || false
+            });
+            setAvatarPreview(admin.avatar || "");
+            return;
+          }
+        } catch (error) {
+          console.log("Admin profile API not available, trying fallback methods");
+        }
+
+        // Fallback: Try admins API first
+        try {
+          const adminsResponse = await axios.get("http://localhost:3000/api/admins", { headers });
           const admins = adminsResponse.data.data || [];
           const admin = admins.find(a => a.email === adminEmail);
           if (admin) {
@@ -37,8 +74,7 @@ export default function MyProfile() {
             setFormData({
               name: admin.name || "",
               email: admin.email || "",
-              password: "",
-              confirmPassword: "",
+              password: admin.password || "••••••••", // Show masked password or actual if returned
               avatar: admin.avatar || "",
               twoStepVerification: admin.twoStepVerification || false
             });
@@ -49,8 +85,8 @@ export default function MyProfile() {
           console.log("Admins API not available");
         }
 
-        // Fallback to users API
-        const usersResponse = await axios.get("http://localhost:3000/api/users");
+        // Final fallback to users API
+        const usersResponse = await axios.get("http://localhost:3000/api/users", { headers });
         const users = usersResponse.data.data || [];
         const user = users.find(u => u.email === adminEmail);
         if (user) {
@@ -58,8 +94,7 @@ export default function MyProfile() {
           setFormData({
             name: user.name || "",
             email: user.email || "",
-            password: "",
-            confirmPassword: "",
+            password: user.password || "••••••••", // Show masked password or actual if returned
             avatar: user.avatar || "",
             twoStepVerification: user.twoStepVerification || false
           });
@@ -67,71 +102,13 @@ export default function MyProfile() {
         }
       }
     } catch (error) {
-      console.error("Error fetching current user:", error);
-      toast.error("Failed to load profile");
+      handleApiError(error, "profile");
     }
   };
 
   // Password strength validation
-  const validatePasswordStrength = (password) => {
-    const errors = [];
-    if (password.length < 8) {
-      errors.push("Password must be at least 8 characters");
-    }
-    if (!/[a-z]/.test(password)) {
-      errors.push("Password must contain at least one lowercase letter");
-    }
-    if (!/[A-Z]/.test(password)) {
-      errors.push("Password must contain at least one uppercase letter");
-    }
-    if (!/[0-9]/.test(password)) {
-      errors.push("Password must contain at least one number");
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      errors.push("Password must contain at least one special character");
-    }
-    return errors;
-  };
 
   // Calculate password strength
-  const calculatePasswordStrength = (password) => {
-    if (!password) return { score: 0, feedback: "", label: "" };
-    
-    let score = 0;
-    const feedback = [];
-
-    if (password.length >= 8) score += 1;
-    else feedback.push("At least 8 characters");
-
-    if (/[a-z]/.test(password)) score += 1;
-    else feedback.push("Lowercase letter");
-
-    if (/[A-Z]/.test(password)) score += 1;
-    else feedback.push("Uppercase letter");
-
-    if (/[0-9]/.test(password)) score += 1;
-    else feedback.push("Number");
-
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score += 1;
-    else feedback.push("Special character");
-
-    const strengthLabels = ["Very Weak", "Weak", "Fair", "Good", "Strong"];
-    return {
-      score,
-      feedback: feedback.length > 0 ? `Missing: ${feedback.join(", ")}` : "Strong password",
-      label: strengthLabels[score - 1] || "Very Weak"
-    };
-  };
-
-  // Update password strength on change
-  useEffect(() => {
-    if (formData.password) {
-      const strength = calculatePasswordStrength(formData.password);
-      setPasswordStrength(strength);
-    } else {
-      setPasswordStrength({ score: 0, feedback: "", label: "" });
-    }
-  }, [formData.password]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -179,38 +156,23 @@ export default function MyProfile() {
     setLoading(true);
 
     try {
-      console.log("Form submission started", { 
+      console.log("Form submission started", {
         twoStepVerification: formData.twoStepVerification,
-        hasPassword: !!formData.password,
-        passwordLength: formData.password?.length || 0
+        note: "Name, email, and password fields are disabled"
       });
 
-      // If password is being changed, validate it
-      if (formData.password && formData.password.trim() !== "") {
-        if (formData.password !== formData.confirmPassword) {
-          toast.error("Passwords do not match");
-          setLoading(false);
-          return;
-        }
-
-        // Password strength validation
-        const passwordErrors = validatePasswordStrength(formData.password);
-        if (passwordErrors.length > 0) {
-          toast.error(passwordErrors.join(", "));
-          setLoading(false);
-          return;
-        }
-      }
+      // Password is disabled, no password validation needed
+      // All password-related validations are removed
 
       const updateData = {
-        name: formData.name,
-        email: formData.email,
         twoStepVerification: formData.twoStepVerification
+        // Note: name and email are disabled, password is also disabled
       };
 
-      if (formData.password && formData.password.trim() !== "") {
-        updateData.password = formData.password;
-      }
+      // Password is disabled, so we won't include it in updates
+      // if (formData.password && formData.password.trim() !== "") {
+      //   updateData.password = formData.password;
+      // }
 
       if (formData.avatar && formData.avatar.trim() !== "") {
         updateData.avatar = formData.avatar;
@@ -222,47 +184,76 @@ export default function MyProfile() {
       const adminEmail = localStorage.getItem("admin_email");
       let response;
 
-      // Try admins API first
+      // Get authentication token
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
+      const headers = {
+        Authorization: `Bearer ${token}`
+      };
+
+      // Try to update using profile endpoint first
       try {
-        const adminsResponse = await axios.get("http://localhost:3000/api/admins");
-        const admins = adminsResponse.data.data || [];
-        const admin = admins.find(a => a.email === adminEmail);
-        
-        if (admin) {
-          // Update in admins collection
-          console.log("Updating admin:", admin._id);
-          response = await axios.put(`http://localhost:3000/api/admins/${admin._id}`, updateData);
-          console.log("Admin update response:", response.data);
-          localStorage.setItem("admin_email", formData.email); // Update stored email
-        } else {
-          throw new Error("Not in admins");
-        }
-      } catch (error) {
-        // Fallback to users API
-        console.log("Trying users API...");
-        const usersResponse = await axios.get("http://localhost:3000/api/users");
-        const users = usersResponse.data.data || [];
-        const user = users.find(u => u.email === adminEmail);
-        
-        if (user) {
-          console.log("Updating user:", user._id);
-          response = await axios.put(`http://localhost:3000/api/users/${user._id}`, updateData);
-          console.log("User update response:", response.data);
-          localStorage.setItem("admin_email", formData.email);
-        } else {
-          throw new Error("User not found");
+        console.log("Trying to update admin profile directly");
+        response = await axios.put("http://localhost:3000/api/admins/profile", updateData, { headers });
+        console.log("Profile update response:", response.data);
+        localStorage.setItem("admin_email", formData.email); // Update stored email
+      } catch (profileError) {
+        console.log("Profile update failed, trying alternative methods:", profileError.message);
+
+        // Fallback: Try admins API first
+        console.log("Trying admins API with email:", adminEmail);
+        try {
+          const adminsResponse = await axios.get("http://localhost:3000/api/admins", { headers });
+          console.log("Admins API response:", adminsResponse.data);
+          const admins = adminsResponse.data.data || [];
+          console.log("Found", admins.length, "admins");
+
+          const admin = admins.find(a => a.email === adminEmail);
+          console.log("Admin found in admins collection:", admin ? "YES" : "NO");
+
+          if (admin) {
+            // Update in admins collection
+            console.log("Updating admin:", admin._id);
+            response = await axios.put(`http://localhost:3000/api/admins/${admin._id}`, updateData, { headers });
+            console.log("Admin update response:", response.data);
+            localStorage.setItem("admin_email", formData.email); // Update stored email
+          } else {
+            console.log("Admin not found in admins collection. Available admin emails:", admins.map(a => a.email));
+            throw new Error("Not in admins");
+          }
+        } catch (error) {
+          // Fallback to users API
+          console.log("Admins API failed:", error.message);
+          console.log("Trying users API with email:", adminEmail);
+          const usersResponse = await axios.get("http://localhost:3000/api/users", { headers });
+          console.log("Users API response:", usersResponse.data);
+          const users = usersResponse.data.data || [];
+          console.log("Found", users.length, "users");
+
+          const user = users.find(u => u.email === adminEmail);
+          console.log("User found in users collection:", user ? "YES" : "NO");
+
+          if (user) {
+            console.log("Updating user:", user._id);
+            response = await axios.put(`http://localhost:3000/api/users/${user._id}`, updateData, { headers });
+            console.log("User update response:", response.data);
+            localStorage.setItem("admin_email", formData.email);
+          } else {
+            console.log("User not found in users collection. Admin email:", adminEmail);
+            console.log("Available user emails:", users.map(u => u.email));
+            throw new Error("User not found");
+          }
         }
       }
 
       // Check if update was successful (handle both success field and status)
       if (response.data.success !== false && response.status >= 200 && response.status < 300) {
         toast.success("Profile updated successfully!");
-        // Reset password fields
-        setFormData(prev => ({
-          ...prev,
-          password: "",
-          confirmPassword: ""
-        }));
+        // Password field is read-only, no need to reset
         await fetchCurrentUser();
         
         // Get updated user data from response or use formData
@@ -270,12 +261,15 @@ export default function MyProfile() {
         const updatedAvatar = updatedUser?.avatar || formData.avatar || currentUser?.avatar;
         
         // Notify TopBar to update user data
+        const profileUpdateData = {
+          name: updatedUser?.name || formData.name,
+          email: updatedUser?.email || formData.email,
+          avatar: updatedAvatar
+        };
+        console.log("📢 MyProfile: Dispatching profile update event with:", profileUpdateData);
+
         window.dispatchEvent(new CustomEvent('profileUpdated', {
-          detail: {
-            name: updatedUser?.name || formData.name,
-            email: updatedUser?.email || formData.email,
-            avatar: updatedAvatar
-          }
+          detail: profileUpdateData
         }));
       } else {
         toast.error(response.data?.message || "Failed to update profile");
@@ -301,7 +295,7 @@ export default function MyProfile() {
           </h1>
         </div>
         <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
-          Update your profile information and settings
+          Manage your security settings (Two-Step Verification)
         </p>
       </div>
 
@@ -351,9 +345,10 @@ export default function MyProfile() {
             <input
               type="text"
               required
+              readOnly
+              disabled
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
               placeholder="Your Name"
             />
           </div>
@@ -367,9 +362,10 @@ export default function MyProfile() {
             <input
               type="email"
               required
+              readOnly
+              disabled
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
               placeholder="your@email.com"
             />
           </div>
@@ -377,104 +373,26 @@ export default function MyProfile() {
           {/* Password Section */}
           <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Key className="w-5 h-5" />
-              Change Password (leave blank to keep current)
+              <Key className="w-5 h-5 text-gray-400" />
+              Current Password
             </h3>
-
-            <div className="mb-4">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <Key className="w-4 h-4" />
-                New Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none"
-                  placeholder="Enter new password (min 8 chars, uppercase, lowercase, number, special char)"
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {formData.password && (
-                <div className="mt-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all ${
-                          passwordStrength.score <= 1
-                            ? "bg-red-500 dark:bg-red-600"
-                            : passwordStrength.score === 2
-                            ? "bg-orange-500 dark:bg-orange-600"
-                            : passwordStrength.score === 3
-                            ? "bg-yellow-500 dark:bg-yellow-600"
-                            : passwordStrength.score === 4
-                            ? "bg-blue-500 dark:bg-blue-600"
-                            : "bg-green-500 dark:bg-green-600"
-                        }`}
-                        style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                      {passwordStrength.label || "Very Weak"}
-                    </span>
-                  </div>
-                  {passwordStrength.feedback && passwordStrength.score < 5 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{passwordStrength.feedback}</p>
-                  )}
-                </div>
-              )}
-            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Your current password. Password changes are disabled - contact administrator if needed.
+            </p>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Confirm New Password
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Key className="w-4 h-4" />
+                Password
               </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className={`w-full px-4 py-2 pr-10 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none ${
-                    formData.confirmPassword && formData.password !== formData.confirmPassword
-                      ? "border-red-300 dark:border-red-600"
-                      : formData.confirmPassword && formData.password === formData.confirmPassword
-                      ? "border-green-300 dark:border-green-600"
-                      : "border-gray-300 dark:border-gray-600"
-                  }`}
-                  placeholder="Confirm new password"
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {formData.confirmPassword && (
-                <div className="mt-2">
-                  {formData.password === formData.confirmPassword ? (
-                    <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                      <Shield className="w-3 h-3" />
-                      Passwords match ✓
-                    </p>
-                  ) : (
-                    <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                      <Shield className="w-3 h-3" />
-                      Passwords do not match
-                    </p>
-                  )}
-                </div>
-              )}
+              <input
+                type="password"
+                readOnly
+                disabled
+                value={formData.password}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                placeholder="Password not available"
+              />
             </div>
           </div>
 

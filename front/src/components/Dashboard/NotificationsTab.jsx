@@ -10,16 +10,47 @@ export default function NotificationsTab() {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?._id || user?.id;
+  console.log("👤 NotificationsTab - Current user:", user);
+  console.log("🆔 NotificationsTab - User ID:", userId);
 
   // Fetch notifications
   const fetchNotifications = async () => {
-    if (!userId) return;
+    if (!userId) {
+      console.log("❌ No userId available for notifications");
+      return;
+    }
 
     try {
-      const response = await axios.get(`http://localhost:3000/api/notifications/${userId}`);
+      // Get authentication token (admin_token takes priority, then user token)
+      const adminToken = localStorage.getItem("admin_token");
+      const userToken = localStorage.getItem("token");
+      const token = adminToken || userToken;
+
+      if (!token) {
+        console.log("❌ No token available for notifications");
+        toast.error("Authentication required. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
+      console.log(`📡 Fetching notifications for user: ${userId}`);
+      const response = await axios.get(`http://localhost:3000/api/notifications/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      console.log("📨 Notifications API response:", response.data);
+
       if (response.data.success) {
-        setNotifications(response.data.data || []);
+        const notifications = response.data.data || [];
+        console.log(`✅ Found ${notifications.length} notifications for user ${userId}`);
+        notifications.forEach((n, i) => {
+          console.log(`  ${i+1}. ${n.title} (${n.type})`);
+        });
+
+        setNotifications(notifications);
         setUnreadCount(response.data.unreadCount || 0);
+      } else {
+        console.log("❌ API returned success: false");
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -29,9 +60,10 @@ export default function NotificationsTab() {
     }
   };
 
+
   useEffect(() => {
     fetchNotifications();
-    
+
     // Refresh notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     
@@ -41,8 +73,20 @@ export default function NotificationsTab() {
   // Mark notification as read
   const markAsRead = async (notificationId) => {
     try {
+      // Get authentication token (admin_token takes priority, then user token)
+      const adminToken = localStorage.getItem("admin_token");
+      const userToken = localStorage.getItem("token");
+      const token = adminToken || userToken;
+
+      if (!token) {
+        toast.error("Authentication required. Please log in again.");
+        return;
+      }
+
       await axios.patch(`http://localhost:3000/api/notifications/${notificationId}/read`, {
         userId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       await fetchNotifications();
     } catch (error) {
@@ -54,8 +98,20 @@ export default function NotificationsTab() {
   // Mark all as read
   const markAllAsRead = async () => {
     try {
+      // Get authentication token (admin_token takes priority, then user token)
+      const adminToken = localStorage.getItem("admin_token");
+      const userToken = localStorage.getItem("token");
+      const token = adminToken || userToken;
+
+      if (!token) {
+        toast.error("Authentication required. Please log in again.");
+        return;
+      }
+
       await axios.patch(`http://localhost:3000/api/notifications/read-all`, {
         userId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       await fetchNotifications();
       toast.success("All notifications marked as read");
@@ -68,8 +124,19 @@ export default function NotificationsTab() {
   // Delete notification
   const deleteNotification = async (notificationId) => {
     try {
+      // Get authentication token (admin_token takes priority, then user token)
+      const adminToken = localStorage.getItem("admin_token");
+      const userToken = localStorage.getItem("token");
+      const token = adminToken || userToken;
+
+      if (!token) {
+        toast.error("Authentication required. Please log in again.");
+        return;
+      }
+
       await axios.delete(`http://localhost:3000/api/notifications/${notificationId}`, {
-        data: { userId }
+        data: { userId },
+        headers: { Authorization: `Bearer ${token}` }
       });
       await fetchNotifications();
       toast.success("Notification deleted");
@@ -81,12 +148,20 @@ export default function NotificationsTab() {
 
   // Delete all notifications
   const deleteAllNotifications = async () => {
-    if (!window.confirm("Are you sure you want to delete all notifications?")) {
-      return;
-    }
     try {
+      // Get authentication token (admin_token takes priority, then user token)
+      const adminToken = localStorage.getItem("admin_token");
+      const userToken = localStorage.getItem("token");
+      const token = adminToken || userToken;
+
+      if (!token) {
+        toast.error("Authentication required. Please log in again.");
+        return;
+      }
+
       await axios.delete(`http://localhost:3000/api/notifications/`, {
-        data: { userId }
+        data: { userId },
+        headers: { Authorization: `Bearer ${token}` }
       });
       await fetchNotifications();
       toast.success("All notifications deleted");

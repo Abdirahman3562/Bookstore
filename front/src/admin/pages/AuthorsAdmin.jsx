@@ -7,6 +7,7 @@ import {
   Calendar, MapPin, FileText, X
 } from "lucide-react";
 import { getCurrentAdminUser, canAdd, canEdit, canDelete } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 import DataTable from "../components/DataTable";
 
 export default function AuthorsAdmin() {
@@ -92,8 +93,7 @@ export default function AuthorsAdmin() {
         toast.success("Authors data refreshed!");
       }
     } catch (error) {
-      console.error("❌ Error fetching authors:", error);
-      toast.error("Failed to load authors");
+      handleApiError(error, "authors");
     } finally {
       setLoading(false);
       setRefreshing(false);

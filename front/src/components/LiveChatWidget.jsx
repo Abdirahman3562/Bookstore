@@ -4,6 +4,11 @@ import { MessageCircle, X, Send, Minimize2, User, LogIn } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
+// Helper function to get the appropriate token (admin or user)
+const getAuthToken = () => {
+  return localStorage.getItem("admin_token") || localStorage.getItem("token");
+};
+
 export default function LiveChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -42,14 +47,56 @@ export default function LiveChatWidget() {
       userId = userId.toString();
     }
     
-    return userId || null;
+    // Final check: if userId exists, convert to string
+    if (userId) {
+      return String(userId);
+    }
+    
+    return null;
   };
 
-  // Note: These are only used for initial render. Always check localStorage directly in functions.
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-  const userId = user ? extractUserId(user) : null;
-  const token = localStorage.getItem("token");
-  const isAuthenticated = !!(user && userId && token);
+  // State to track authentication status (updates when localStorage changes)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      const adminToken = localStorage.getItem("admin_token");
+      const userToken = localStorage.getItem("token");
+      const hasToken = adminToken || userToken;
+      if (!userStr || userStr === "null" || !hasToken) return false;
+      const user = JSON.parse(userStr);
+      const userId = extractUserId(user);
+      return !!(user && userId && tokenStr);
+    } catch {
+      return false;
+    }
+  });
+
+  // State to track current user and userId (updates when localStorage changes)
+  const [user, setUser] = useState(() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (!userStr || userStr === "null") return null;
+      return JSON.parse(userStr);
+    } catch {
+      return null;
+    }
+  });
+
+  const [userId, setUserId] = useState(() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (!userStr || userStr === "null") return null;
+      const user = JSON.parse(userStr);
+      return extractUserId(user);
+    } catch {
+      return null;
+    }
+  });
+
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem("token");
+  });
+
   const [adminOnline, setAdminOnline] = useState(false);
   const [lastActivity, setLastActivity] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0); // Unread count for admin messages
@@ -126,27 +173,10 @@ export default function LiveChatWidget() {
       return false;
     }
 
-    try {
-      // Test token validity with a simple API call
-      await axios.get("http://localhost:3000/api/users/profile", {
-        headers: { Authorization: `Bearer ${currentToken}` }
-      });
-      return true;
-    } catch (error) {
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        console.error("Token expired or invalid, redirecting to login");
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        toast.error("Session expired. Please login again.");
-        window.location.href = "/auth";
-        return false;
-      }
-      // For 500 or other server errors, still allow chat but log the error
-      if (error.response?.status === 500) {
-        console.warn("Server error during authentication check, continuing anyway");
-      }
-      return true; // Other errors don't prevent chat initialization
-    }
+    // If we have token and userId, assume valid for now
+    // We'll validate when actually making chat API calls
+    // This prevents blocking chat if profile endpoint has issues
+    return true;
   };
 
   // Play notification sound
@@ -165,7 +195,7 @@ export default function LiveChatWidget() {
   // Fetch website settings to get website name
   const fetchWebsiteSettings = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAuthToken();
       const response = await axios.get("http://localhost:3000/api/website-settings", {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
@@ -174,7 +204,11 @@ export default function LiveChatWidget() {
         setWebsiteName(websiteName);
       }
     } catch (error) {
-      console.error("Error fetching website settings:", error);
+      // Silently handle errors - website settings is not critical for chat
+      // Only log if it's not a 401 (which is expected when not logged in)
+      if (error.response?.status !== 401) {
+        console.error("Error fetching website settings:", error);
+      }
       // Keep default "Bookstore" if fetch fails
     }
   };
@@ -205,7 +239,8 @@ export default function LiveChatWidget() {
     
     // Fallback: Try to get admin info from recent admin messages
     try {
-      const token = localStorage.getItem("token");
+      const token = getAuthToken();
+
       const conversationsResponse = await axios.get("http://localhost:3000/api/chat/conversations", {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
@@ -214,7 +249,7 @@ export default function LiveChatWidget() {
         // Find a conversation with admin messages
         for (const conv of conversations) {
           if (conv.lastMessage?.sender === "admin") {
-            const token = localStorage.getItem("token");
+            const token = getAuthToken();
             const messagesResponse = await axios.get(`http://localhost:3000/api/chat/messages/${conv.userId}`, {
               headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
@@ -244,7 +279,7 @@ export default function LiveChatWidget() {
   const sendWelcomeMessage = async () => {
     const currentUser = JSON.parse(localStorage.getItem("user") || "null");
     const currentUserId = extractUserId(currentUser);
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     
     if (!currentUserId || welcomeMessageSentRef.current) return;
     
@@ -371,16 +406,19 @@ export default function LiveChatWidget() {
     } catch (error) {
       // Handle authentication errors
       if (error.response?.status === 401 || error.response?.status === 403) {
-        console.log("Authentication failed - token expired");
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        setIsOpen(false);
-        // Stop the interval if it's running
-        if (chatIntervalRef.current) {
-          clearInterval(chatIntervalRef.current);
-          chatIntervalRef.current = null;
+        console.log("Authentication failed - token expired or invalid");
+        // Only clear and redirect if this is a critical error (not just a failed fetch)
+        // Don't clear immediately - let user try to use chat first
+        // The error will be handled when they try to send a message
+        if (isOpen) {
+          // Only close chat if it's already open and we get auth error
+          setIsOpen(false);
+          // Stop the interval if it's running
+          if (chatIntervalRef.current) {
+            clearInterval(chatIntervalRef.current);
+            chatIntervalRef.current = null;
+          }
         }
-        // Don't redirect automatically to avoid interrupting user experience
       } else {
         // Only log non-auth errors
         console.error("Error fetching messages:", error);
@@ -408,11 +446,9 @@ export default function LiveChatWidget() {
 
       // Check if token and userId exist
       if (!token || !currentUserId) {
-        toast.error("Session expired. Please login again.");
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
+        toast.error("Please login to send a message");
         setIsOpen(false);
-        window.location.href = "/auth";
+        setShowLoginModal(true);
         return;
       }
 
@@ -452,12 +488,13 @@ export default function LiveChatWidget() {
       console.error("Error sending message:", error);
 
       // Handle authentication errors
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
         toast.error("Session expired. Please login again.");
         localStorage.removeItem("user");
         localStorage.removeItem("token");
+        updateAuthState();
         setIsOpen(false);
-        window.location.href = "/auth";
+        setShowLoginModal(true);
       } else {
         toast.error("Failed to send message");
       }
@@ -553,6 +590,8 @@ export default function LiveChatWidget() {
               // Clear invalid token and user
               localStorage.removeItem("user");
               localStorage.removeItem("token");
+              // Update auth state
+              updateAuthState();
               // Stop the interval immediately
               if (unreadIntervalRef.current) {
                 clearInterval(unreadIntervalRef.current);
@@ -617,6 +656,71 @@ export default function LiveChatWidget() {
     fetchWebsiteSettings();
     fetchAdminInfo();
   }, []);
+
+  // Function to update authentication state from localStorage
+  const updateAuthState = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      const tokenStr = localStorage.getItem("token");
+      
+      if (!userStr || userStr === "null" || !tokenStr) {
+        setUser(null);
+        setUserId(null);
+        setToken(null);
+        setIsAuthenticated(false);
+        return false;
+      }
+      
+      const currentUser = JSON.parse(userStr);
+      const currentUserId = extractUserId(currentUser);
+      const isLoggedIn = !!(currentUser && currentUserId && tokenStr);
+      
+      setUser(currentUser);
+      setUserId(currentUserId);
+      setToken(tokenStr);
+      setIsAuthenticated(isLoggedIn);
+      
+      // If user is logged in, close login modal
+      if (isLoggedIn && showLoginModal) {
+        setShowLoginModal(false);
+      }
+      
+      return isLoggedIn;
+    } catch (error) {
+      console.error("Error updating auth state:", error);
+      setUser(null);
+      setUserId(null);
+      setToken(null);
+      setIsAuthenticated(false);
+      return false;
+    }
+  };
+
+  // Listen for storage changes (when user logs in/out in another tab or after login)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "user" || e.key === "token") {
+        updateAuthState();
+      }
+    };
+
+    // Listen for storage events (cross-tab communication)
+    window.addEventListener("storage", handleStorageChange);
+    
+    // Also check periodically for localStorage changes (same-tab)
+    // This is important because storage event only fires for other tabs
+    const checkInterval = setInterval(() => {
+      updateAuthState();
+    }, 500); // Check every 500ms for faster response
+
+    // Initial check
+    updateAuthState();
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(checkInterval);
+    };
+  }, [showLoginModal]);
 
   useEffect(() => {
     if (isOpen && userId && isAuthenticated) {
@@ -786,54 +890,26 @@ export default function LiveChatWidget() {
   }, [isOpen]);
 
   const handleOpenChat = () => {
-    // Check authentication directly from localStorage (not from stale component state)
-    try {
-      const userStr = localStorage.getItem("user");
-      const tokenStr = localStorage.getItem("token");
-      
-      // Debug: Log what we found
-      console.log("🔍 Opening chat - Checking localStorage:", {
-        hasUserString: !!userStr,
-        hasTokenString: !!tokenStr,
-        userString: userStr ? userStr.substring(0, 100) + "..." : null
-      });
-      
-      if (!userStr || userStr === "null" || !tokenStr) {
-        console.log("❌ Missing user or token - showing login modal");
-        setShowLoginModal(true);
-        return;
-      }
-      
-      const currentUser = JSON.parse(userStr);
-      const currentUserId = extractUserId(currentUser);
-      const currentToken = tokenStr;
-      
-      // Debug: Log authentication status
-      console.log("🔍 Opening chat - User check:", {
-        hasUser: !!currentUser,
-        userId: currentUserId,
-        hasToken: !!currentToken,
-        userKeys: currentUser ? Object.keys(currentUser) : [],
-        _idType: typeof currentUser?._id,
-        _idValue: currentUser?._id
-      });
-      
-      if (!currentUserId || !currentToken) {
-        console.log("❌ Not authenticated - showing login modal. Missing:", {
-          missingUserId: !currentUserId,
-          missingToken: !currentToken
-        });
-        setShowLoginModal(true);
-        return;
-      }
-      
-      console.log("✅ Authenticated - opening chat");
-      setIsOpen(true);
-      setIsMinimized(false);
-    } catch (error) {
-      console.error("❌ Error checking authentication:", error);
+    // First, update auth state to get latest from localStorage
+    const isLoggedIn = updateAuthState();
+    
+    // Check if user and token exist in localStorage
+    // We'll validate the token when making actual API calls
+    const userStr = localStorage.getItem("user");
+    const tokenStr = localStorage.getItem("token");
+    
+    if (!userStr || userStr === "null" || !tokenStr || tokenStr.trim() === "") {
+      console.log("❌ No user or token in localStorage - showing login modal");
       setShowLoginModal(true);
+      return;
     }
+    
+    // If we have user and token, allow opening chat
+    // We'll handle invalid token errors when making API calls
+    console.log("✅ User and token found - opening chat");
+    setIsOpen(true);
+    setIsMinimized(false);
+    setShowLoginModal(false); // Make sure login modal is closed
   };
 
   const handleGoToLogin = () => {

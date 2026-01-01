@@ -1,5 +1,5 @@
 import express from "express";
-import { getDashboardStats, createAdmin, getAllAdmins } from "../controllers/superadmin.controller.js";
+import { getDashboardStats, createAdmin, getAllAdmins, updateSuperAdminProfile } from "../controllers/superadmin.controller.js";
 import { requireSuperAdmin } from "../middleware/tenant.middleware.js";
 import realtimeMonitor from "../utils/realtimeSubscriptionMonitor.js";
 import plansRouter from "./plans.route.js";
@@ -80,6 +80,9 @@ router.post("/test-payment", async (req, res) => {
 // Admin management
 router.post("/admins", createAdmin);
 router.get("/admins", getAllAdmins);
+
+// Profile management
+router.put("/profile", updateSuperAdminProfile);
 
 // Plans management
 router.use("/plans", plansRouter);

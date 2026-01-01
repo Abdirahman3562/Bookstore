@@ -53,8 +53,8 @@ export const createContact = async (req, res) => {
         console.error("❌ Email credentials not configured. Cannot send contact notification.");
         emailError = "Email service not configured";
       } else {
-        // Get website settings
-        const websiteSettings = await WebsiteSettings.getSettings();
+        // Get website settings for the current tenant
+        const websiteSettings = await WebsiteSettings.getSettings(req.tenantId);
         const adminEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER;
         const fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER;
         const fromName = websiteSettings.websiteName || "Bookstore";

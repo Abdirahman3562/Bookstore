@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { handleApiError } from "../utils/apiUtils";
 import {
   BookOpen,
   Users,
@@ -203,7 +204,8 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error("❌ Error fetching dashboard data:", error);
-      toast.error("Failed to load dashboard data");
+
+      handleApiError(error, "dashboard data");
     } finally {
       setLoading(false);
       setRefreshing(false);

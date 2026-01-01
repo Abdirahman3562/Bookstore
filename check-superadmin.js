@@ -1,23 +1,21 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import Admin from './backend/models/admin.model.js';
 
-dotenv.config();
-
-async function checkSuperAdmin() {
+async function checkSuperAdmins() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/bookstore');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bookstore');
+    const superAdmins = await Admin.find({ adminRole: 'SUPER_ADMIN' });
+    console.log('Super Admins found:', superAdmins.length);
+    superAdmins.forEach(admin => {
+      console.log('ID:', admin._id, 'Email:', admin.email, 'Name:', admin.name, 'Role:', admin.adminRole);
+    });
 
-    const admin = await Admin.findOne({ email: 'superadmin@gmail.com' });
-    console.log('SUPER_ADMIN found:', admin ? 'YES' : 'NO');
-
-    if (admin) {
-      console.log('Email:', admin.email);
-      console.log('Role:', admin.adminRole);
-      console.log('Password hash starts with $2a$:', admin.password.startsWith('$2a$'));
-      console.log('tenantId:', admin.tenantId);
-      console.log('Password hash:', admin.password);
-    }
+    // Also check all admins
+    const allAdmins = await Admin.find({});
+    console.log('\nAll Admins found:', allAdmins.length);
+    allAdmins.forEach(admin => {
+      console.log('ID:', admin._id, 'Email:', admin.email, 'Name:', admin.name, 'Role:', admin.adminRole);
+    });
 
     process.exit(0);
   } catch (error) {
@@ -26,7 +24,4 @@ async function checkSuperAdmin() {
   }
 }
 
-checkSuperAdmin();
-
-
-
+checkSuperAdmins();

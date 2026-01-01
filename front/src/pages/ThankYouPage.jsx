@@ -10,27 +10,48 @@ export default function ThankYouPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1️⃣ If user is not logged in → redirect to login
-    if (!user) {
-      toast.error("Please log in to view your order details.");
-      navigate("/auth");
-      return;
-    }
+    const fetchOrderDetails = async () => {
+      try {
+        // 1️⃣ If user is not logged in → redirect to login
+        if (!user) {
+          toast.error("Please log in to view your order details.");
+          navigate("/auth");
+          return;
+        }
 
-    // 2️⃣ Check if user just completed checkout
-    const justCompletedCheckout = sessionStorage.getItem("justCompletedCheckout") === "true";
-    const checkoutTimestamp = sessionStorage.getItem("checkoutTimestamp");
-    
-    // 3️⃣ Fetch user purchases from backend
-    const userId = (user._id || user.id)?.toString();
-    const userEmail = user.email?.toLowerCase();
-    
-    fetch("http://localhost:3000/api/purchased")
-      .then((res) => res.json())
-      .then((responseData) => {
+        // Get authentication token (admin_token takes priority, then user token)
+        const adminToken = localStorage.getItem("admin_token");
+        const userToken = localStorage.getItem("token");
+        const token = adminToken || userToken;
+
+        if (!token) {
+          toast.error("Authentication required. Please log in again.");
+          navigate("/auth");
+          return;
+        }
+
+        const headers = {
+          Authorization: `Bearer ${token}`
+        };
+
+        // 2️⃣ Check if user just completed checkout
+        const justCompletedCheckout = sessionStorage.getItem("justCompletedCheckout") === "true";
+        const checkoutTimestamp = sessionStorage.getItem("checkoutTimestamp");
+
+        // 3️⃣ Fetch user purchases from backend
+        const userId = (user._id || user.id)?.toString();
+        const userEmail = user.email?.toLowerCase();
+
+        const res = await fetch("http://localhost:3000/api/purchased", { headers });
+        const responseData = await res.json();
+
+        if (!responseData.success) {
+          throw new Error("Failed to fetch order data");
+        }
+
         const data = responseData.data || [];
-        
-        // Filter by userId or email
+
+        // Filter by userId or email with robust matching
         let userPurchases = data.filter((p) => {
           const orderUserId = p.userId?.toString();
           const orderEmail = p.email?.toLowerCase();
@@ -45,27 +66,33 @@ export default function ThankYouPage() {
         // If user just completed checkout, show their most recent pending orders
         if (justCompletedCheckout && checkoutTimestamp) {
           const checkoutTime = new Date(checkoutTimestamp);
-          // Get orders created around the checkout time (within 2 minutes before/after)
-          const twoMinutesBefore = new Date(checkoutTime.getTime() - 2 * 60 * 1000);
-          const twoMinutesAfter = new Date(checkoutTime.getTime() + 2 * 60 * 1000);
-          
+          // Get orders created around the checkout time (within 10 minutes for reliability)
+          const tenMinutesBefore = new Date(checkoutTime.getTime() - 10 * 60 * 1000);
+          const tenMinutesAfter = new Date(checkoutTime.getTime() + 10 * 60 * 1000);
+
           userPurchases = userPurchases.filter((p) => {
             const orderDate = new Date(p.timestamp || p.createdAt);
-            return orderDate >= twoMinutesBefore && orderDate <= twoMinutesAfter && p.status === "pending";
+            return orderDate >= tenMinutesBefore && orderDate <= tenMinutesAfter && p.status === "pending";
           });
-          
+
           // Clear the flag after using it
           sessionStorage.removeItem("justCompletedCheckout");
           sessionStorage.removeItem("checkoutTimestamp");
+
+          // If no recent orders found but user just checked out, show all pending orders
+          if (userPurchases.length === 0) {
+            userPurchases = data.filter((p) => {
+              const orderUserId = p.userId?.toString();
+              const orderEmail = p.email?.toLowerCase();
+              return (
+                (orderUserId === userId || orderEmail === userEmail) &&
+                p.status === "pending"
+              );
+            });
+          }
         } else {
-          // If visiting/refreshing without checkout, only show recent pending orders (last 10 minutes)
-          const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-          userPurchases = userPurchases.filter((p) => {
-            const orderDate = new Date(p.timestamp || p.createdAt);
-            const isRecent = orderDate > tenMinutesAgo;
-            const isPending = p.status === "pending";
-            return isRecent && isPending;
-          });
+          // If visiting/refreshing without checkout, show all pending orders for this user
+          userPurchases = userPurchases.filter((p) => p.status === "pending");
         }
 
         // Sort by most recent first
@@ -76,13 +103,19 @@ export default function ThankYouPage() {
         });
 
         setOrderDetails(userPurchases);
-        setLoading(false);
-      })
-      .catch((error) => {
+
+        // Success toast already shown in checkout, no need to show again
+        // The checkout page already shows success toast when order is completed
+      } catch (error) {
         console.error("Error fetching purchase data:", error);
+        toast.error("Failed to load order details. Please refresh the page.");
+      } finally {
         setLoading(false);
-      });
-  }, []);
+      }
+    };
+
+    fetchOrderDetails();
+  }, [user, navigate]);
 
   if (loading) {
     return (
@@ -168,37 +201,65 @@ export default function ThankYouPage() {
         {orderDetails.length > 0 && (
           <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-md p-4 rounded-lg mb-6">
             <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Order Summary</h2>
-            <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Order ID:</strong> #{orderDetails[0]._id || orderDetails[0].id}</p>
-            <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Total:</strong> ${totalAmount}</p>
-            <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Payment Method:</strong> {orderDetails[0].paymentmethod}</p>
-            <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Status:</strong> {orderDetails[0].status}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Total Items:</strong> {orderDetails.length}</p>
+                <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Total Amount:</strong> ${totalAmount}</p>
+              </div>
+              <div>
+                <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Payment Method:</strong> {orderDetails[0].paymentmethod}</p>
+                <p className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-white">Status:</strong>
+                  <span className="ml-2 px-2 py-1 text-xs rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400">
+                    {orderDetails[0].status}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <p className="text-gray-700 dark:text-gray-300 mt-2"><strong className="text-gray-900 dark:text-white">Order Date:</strong> {new Date(orderDetails[0].timestamp || orderDetails[0].createdAt).toLocaleString()}</p>
           </div>
         )}
 
         {/* BOOK LIST */}
         <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow p-4 rounded-lg mb-6">
-          <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Books in Your Order</h3>
+          <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Books in Your Order ({orderDetails.length})</h3>
 
           {orderDetails.length > 0 ? (
-            orderDetails.map((item) => (
-              <div key={item._id || item.id || item.bookId} className="flex items-center gap-4 mb-4">
-                <img
-                  src={item.cover ? `http://localhost:3000${item.cover}` : 'https://via.placeholder.com/64x96?text=No+Image'}
-                  className="w-16 h-24 rounded-md object-cover"
-                  alt={item.title}
-                  onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/64x96?text=No+Image';
-                  }}
-                />
-              <div className="text-left">
-                <p className="font-semibold text-gray-900 dark:text-white">{item.title}</p>
-                <p className="text-gray-600 dark:text-gray-400">By {item.author}</p>
-                <p className="text-gray-900 dark:text-white font-medium">${item.price.toFixed(2)}</p>
-              </div>
+            <div className="space-y-4">
+              {orderDetails.map((item, index) => (
+                <div key={item._id || item.id || item.bookId || index} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
+                  <div className="flex-shrink-0">
+                    <img
+                      src={item.cover ? `http://localhost:3000${item.cover}` : 'https://via.placeholder.com/64x96?text=No+Image'}
+                      className="w-16 h-24 rounded-md object-cover shadow-sm"
+                      alt={item.title}
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/64x96?text=No+Image';
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white text-lg line-clamp-2">{item.title}</p>
+                        <p className="text-gray-600 dark:text-gray-400">By {item.author}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Order ID: #{item._id || item.id}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-green-600 dark:text-green-400">${item.price.toFixed(2)}</p>
+                        <span className="inline-block px-2 py-1 text-xs rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 mt-1">
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            ))
           ) : (
-            <p className="text-gray-600 dark:text-gray-400">No pending orders found.</p>
+            <div className="text-center py-8">
+              <p className="text-gray-600 dark:text-gray-400 text-lg">No pending orders found.</p>
+              <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Your orders may have been processed already.</p>
+            </div>
           )}
         </div>
 

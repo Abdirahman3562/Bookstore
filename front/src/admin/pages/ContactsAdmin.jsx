@@ -3,6 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Mail, RotateCcw, Trash2, CheckCircle, Clock, Eye, User, Calendar, MessageSquare } from "lucide-react";
 import { getCurrentAdminUser, canAdd, canEdit, canDelete } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 import DataTable from "../components/DataTable";
 
 export default function ContactsAdmin() {
@@ -68,8 +69,7 @@ export default function ContactsAdmin() {
         toast.success("Contacts data refreshed!");
       }
     } catch (error) {
-      console.error("❌ Error fetching contacts:", error);
-      toast.error("Failed to load contacts");
+      handleApiError(error, "contacts");
     } finally {
       setLoading(false);
       setRefreshing(false);

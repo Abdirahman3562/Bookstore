@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { handleApiError } from "../utils/apiUtils";
 import {
   Users,
   Search,
@@ -52,8 +53,7 @@ export default function SuperAdminAdmins() {
         setTotalPages(response.data.pagination?.pages || 1);
       }
     } catch (error) {
-      console.error("Error fetching admins:", error);
-      toast.error("Failed to load admins");
+      handleApiError(error, "admins");
     } finally {
       setLoading(false);
     }
@@ -110,11 +110,11 @@ export default function SuperAdminAdmins() {
   }
 
   return (
-    <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 w-full ">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="lg:text-3xl text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Admin Users Management
           </h1>
           <p className="text-gray-600 dark:text-gray-400">

@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { Shield, RotateCcw, Edit, X, Save, UserPlus, Check, Eye, EyeOff, Key, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentAdminUser, canView, canAdd, canEdit, canDelete } from "../utils/permissions";
+import { handleApiError } from "../utils/apiUtils";
 import DataTable from "../components/DataTable";
 
 export default function AuthorUsersAdmin() {
@@ -62,21 +63,45 @@ export default function AuthorUsersAdmin() {
       // First get current admin user to filter by creator
       const currentAdmin = await getCurrentAdminUser();
       if (!currentAdmin) {
+        console.log('❌ No current admin found');
         setAdmins([]);
         setLoading(false);
         setRefreshing(false);
         return;
       }
 
+      console.log('👤 Current admin:', {
+        id: currentAdmin._id,
+        email: currentAdmin.email,
+        role: currentAdmin.adminRole
+      });
+
       const response = await axios.get("http://localhost:3000/api/admins", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const allAdmins = response.data.data || [];
 
+      console.log('📊 All admins from API:', allAdmins.length);
+      console.log('👥 All admins:', allAdmins.map(a => ({
+        email: a.email,
+        role: a.adminRole,
+        createdBy: a.createdBy
+      })));
+
       // Filter to only show author users created by current admin
       const authorUsers = allAdmins.filter(admin =>
-        admin.adminRole === 'author' && admin.createdBy === currentAdmin._id
+        admin.adminRole === 'author' &&
+        admin.createdBy &&
+        (admin.createdBy.toString() === currentAdmin._id.toString() ||
+         admin.createdBy === currentAdmin._id)
       );
+
+      console.log('✅ Filtered author users:', authorUsers.length);
+      console.log('👨‍💼 Author users:', authorUsers.map(a => ({
+        email: a.email,
+        role: a.adminRole,
+        createdBy: a.createdBy
+      })));
 
       setAdmins(authorUsers);
       setLastUpdated(new Date().toLocaleString());
@@ -85,8 +110,7 @@ export default function AuthorUsersAdmin() {
         toast.success("Author users data refreshed!");
       }
     } catch (error) {
-      console.error("Error fetching author users:", error);
-      toast.error("Failed to load author users");
+      handleApiError(error, "author users");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -685,10 +709,10 @@ export default function AuthorUsersAdmin() {
                           e.stopPropagation();
                           openEditModal(admin);
                         }}
-                        disabled={!canEdit(currentUser, 'addAdminUser') || admin.createdBy !== currentUser?._id}
+                        disabled={!canEdit(currentUser, 'addAdminUser') || admin.createdBy?.toString() !== currentUser?._id?.toString()}
                         className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700"
                         title={
-                          admin.createdBy !== currentUser?._id
+                          admin.createdBy?.toString() !== currentUser?._id?.toString()
                             ? "You can only edit author users you created"
                             : !canEdit(currentUser, 'addAdminUser')
                             ? "You don't have permission to edit admin users"
@@ -706,7 +730,7 @@ export default function AuthorUsersAdmin() {
                         disabled={!canDelete(currentUser, 'addAdminUser') || admin.createdBy !== currentUser?._id}
                         className="flex items-center gap-1 px-3 py-1.5 bg-red-600 dark:bg-red-700 hover:bg-red-700 dark:hover:bg-red-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600 dark:disabled:hover:bg-red-700"
                         title={
-                          admin.createdBy !== currentUser?._id
+                          admin.createdBy?.toString() !== currentUser?._id?.toString()
                             ? "You can only delete author users you created"
                             : !canDelete(currentUser, 'addAdminUser')
                             ? "You don't have permission to delete admin users"

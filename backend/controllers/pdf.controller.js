@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 import Book from '../models/books.model.js';
 import Purchased from '../models/purchased.model.js';
 import Download from '../models/downloads.model.js';
@@ -10,12 +11,32 @@ export const getProtectedPDF = async (req, res) => {
     const { filename } = req.params;
     const userId = req.query.userId || req.headers['user-id'];
     const userEmail = req.query.email || req.headers['user-email'];
+    const token = req.query.token || req.headers.authorization?.replace('Bearer ', '');
 
-    // If no user info provided, deny access
-    if (!userId && !userEmail) {
+    // Try to authenticate via JWT token first
+    let authenticatedUser = null;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret_key_change_in_production");
+        authenticatedUser = {
+          id: decoded.id,
+          email: decoded.email
+        };
+        console.log("✅ PDF access authenticated via JWT token for user:", authenticatedUser.email);
+      } catch (tokenError) {
+        console.log("❌ JWT token verification failed:", tokenError.message);
+      }
+    }
+
+    // Use authenticated user info if available, otherwise fall back to query params
+    const finalUserId = authenticatedUser?.id || userId;
+    const finalUserEmail = authenticatedUser?.email || userEmail;
+
+    // If no user info provided (neither JWT nor query params), deny access
+    if (!finalUserId && !finalUserEmail) {
       return res.status(401).json({
         success: false,
-        message: "Unauthorized: User information required"
+        message: "Unauthorized: User authentication required"
       });
     }
 
@@ -36,18 +57,18 @@ export const getProtectedPDF = async (req, res) => {
     // Check if user has purchased this book (active status)
     const hasPurchase = await Purchased.findOne({
       $or: [
-        { userId: userId?.toString() },
-        { email: userEmail?.toLowerCase() }
+        { userId: finalUserId?.toString() },
+        { email: finalUserEmail?.toLowerCase() }
       ],
       bookId: book._id.toString(),
-      status: 'active'
+      status: { $in: ['active', 'approved'] }
     });
 
     // Check if download access has been revoked for this user and book
     const revokedAccess = await Download.findOne({
       $or: [
-        { userId: userId?.toString() },
-        { email: userEmail?.toLowerCase() }
+        { userId: finalUserId?.toString() },
+        { email: finalUserEmail?.toLowerCase() }
       ],
       bookId: book._id.toString(),
       notDownloaded: true
@@ -64,8 +85,8 @@ export const getProtectedPDF = async (req, res) => {
     // Check if user has free download access (not revoked)
     const hasDownloadAccess = await Download.findOne({
       $or: [
-        { userId: userId?.toString() },
-        { email: userEmail?.toLowerCase() }
+        { userId: finalUserId?.toString() },
+        { email: finalUserEmail?.toLowerCase() }
       ],
       bookId: book._id.toString(),
       notDownloaded: { $ne: true }

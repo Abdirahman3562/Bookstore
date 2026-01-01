@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { handleApiError } from "../utils/apiUtils";
 import { Building2, Save, X, Trash2 } from "lucide-react";
 import ConfirmationModal from "../components/ConfirmationModal";
 
@@ -51,8 +52,7 @@ export default function SuperAdminEditTenant() {
         });
       }
     } catch (error) {
-      console.error("Error fetching tenant:", error);
-      toast.error("Failed to load tenant");
+      handleApiError(error, "tenant");
       navigate("/superadmin/tenants");
     } finally {
       setLoading(false);

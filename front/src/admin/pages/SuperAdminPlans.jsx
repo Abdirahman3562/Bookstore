@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { handleApiError } from "../utils/apiUtils";
 import {
   Settings,
   DollarSign,
@@ -102,8 +103,7 @@ export default function SuperAdminPlans() {
         setPlans({});
       }
     } catch (error) {
-      console.error("Error fetching plans from API:", error);
-      toast.error(`Failed to load plans: ${error.response?.data?.message || error.message}`);
+      handleApiError(error, "plans");
       setPlans({});
     } finally {
       setLoading(false);
@@ -264,10 +264,10 @@ export default function SuperAdminPlans() {
   }
 
   return (
-    <div className="p-4 sm:p-6 w-full max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 w-full">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-3 mb-4">
               <Settings className="w-8 h-8 text-blue-600 dark:text-blue-500" />

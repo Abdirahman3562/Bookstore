@@ -10,7 +10,7 @@ export const getAllDownloads = async (req, res) => {
     const downloadsWithAvatars = await Promise.all(
       downloads.map(async (download) => {
         try {
-          const user = await User.findOne({ email: download.email });
+          const user = await User.findOne({ email: download.email, tenantId: req.tenantId });
           const downloadObj = download.toObject();
           if (user && user.avatar) {
             downloadObj.userAvatar = user.avatar;

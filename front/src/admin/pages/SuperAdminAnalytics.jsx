@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { handleApiError } from "../utils/apiUtils";
 import {
   TrendingUp,
   Users,
@@ -43,8 +44,7 @@ export default function SuperAdminAnalytics() {
         setAnalytics(response.data.data);
       }
     } catch (error) {
-      console.error("Error fetching analytics:", error);
-      toast.error("Failed to load analytics data");
+      handleApiError(error, "analytics data");
     } finally {
       setLoading(false);
     }
@@ -78,9 +78,9 @@ export default function SuperAdminAnalytics() {
   };
 
   return (
-    <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 w-full ">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Platform Analytics

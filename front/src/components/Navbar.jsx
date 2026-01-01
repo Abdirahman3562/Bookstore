@@ -7,6 +7,17 @@ import { MdDashboard } from "react-icons/md";
 import { Moon, Sun } from "lucide-react";
 import axios from "axios";
 
+// JWT decode function
+const decodeToken = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload;
+  } catch (error) {
+    console.error('❌ Token decode failed:', error.message);
+    return null;
+  }
+};
+
 export default function Navbar() {
   const navigate = useNavigate();
   const regularUser = JSON.parse(localStorage.getItem("user"));
@@ -39,30 +50,40 @@ export default function Navbar() {
       const token = localStorage.getItem("admin_token");
 
       if (adminEmail && token) {
-        try {
-          // Try to fetch from admins API first
-          const adminsResponse = await axios.get("http://localhost:3000/api/admins");
-          const admins = adminsResponse.data.data || [];
-          const admin = admins.find(a => a.email === adminEmail);
-
-          if (admin) {
-            setAdminUser(admin);
-            return;
-          }
-
-          // Fallback to users API
-          const usersResponse = await axios.get("http://localhost:3000/api/users");
-          const users = usersResponse.data.data || [];
-          const user = users.find(u => u.email === adminEmail);
-
-          if (user) {
-            setAdminUser(user);
-          }
-        } catch (error) {
-          console.error("Error fetching admin user:", error);
-          // Clear admin data if fetch fails
+        // Decode JWT token directly
+        const payload = decodeToken(token);
+        if (!payload) {
+          console.log('❌ Invalid admin token in navbar');
           setAdminUser(null);
+          return;
         }
+
+        // Check expiration
+        if (payload.exp && payload.exp < Date.now() / 1000) {
+          console.log('⏰ Admin token expired in navbar');
+          setAdminUser(null);
+          return;
+        }
+
+        // Check email match
+        if (payload.email !== adminEmail) {
+          console.log('❌ Admin email mismatch in navbar');
+          setAdminUser(null);
+          return;
+        }
+
+        // Set admin data from JWT
+        const adminData = {
+          _id: payload.id,
+          email: payload.email,
+          adminRole: payload.adminRole,
+          role: payload.adminRole,
+          permissions: payload.permissions || {},
+          tenantId: payload.tenantId
+        };
+
+        console.log('✅ Admin navbar data loaded:', adminData.email, 'Role:', adminData.adminRole);
+        setAdminUser(adminData);
       } else {
         setAdminUser(null);
       }
@@ -91,7 +112,11 @@ export default function Navbar() {
   useEffect(() => {
     const fetchWebsiteSettings = async () => {
       try {
-        const token = localStorage.getItem("token");
+        // Check for admin token first, then regular user token
+        const adminToken = localStorage.getItem("admin_token");
+        const userToken = localStorage.getItem("token");
+        const token = adminToken || userToken;
+
         const response = await axios.get("http://localhost:3000/api/website-settings", {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });

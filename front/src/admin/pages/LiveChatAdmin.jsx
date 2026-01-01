@@ -137,12 +137,17 @@ export default function LiveChatAdmin() {
       }
 
       const adminToken = localStorage.getItem("admin_token");
+      console.log("🔍 Fetching conversations with token:", adminToken ? "Present" : "Missing");
+      
       const response = await axios.get("http://localhost:3000/api/chat/conversations", {
         headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
       });
 
+      console.log("📥 Conversations API response:", response.data);
+
       if (response.data.success) {
         const convs = response.data.data || [];
+        console.log(`✅ Found ${convs.length} conversations:`, convs);
 
         // Check for new unread messages and play sound (skip on initial load)
         if (!isInitialLoadRef.current) {
@@ -190,9 +195,29 @@ export default function LiveChatAdmin() {
         });
         setConversations(sortedConvs);
         setLastUpdated(new Date().toLocaleString());
+      } else {
+        console.warn("⚠️ API returned success:false", response.data);
+        setConversations([]);
       }
     } catch (error) {
-      console.error("Error fetching conversations:", error);
+      console.error("❌ Error fetching conversations:", error);
+      console.error("Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
+      // Show error to user
+      if (error.response?.status === 401) {
+        toast.error("Authentication failed. Please login again.");
+      } else if (error.response?.status === 403) {
+        toast.error("Access denied. You don't have permission to view conversations.");
+      } else {
+        toast.error("Failed to load conversations. Please try refreshing.");
+      }
+      
+      setConversations([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -268,12 +293,19 @@ export default function LiveChatAdmin() {
   const fetchMessages = async (userId, previousMessagesCount = null) => {
     try {
       const adminToken = localStorage.getItem("admin_token");
+      console.log(`🔍 Fetching messages for userId: ${userId}`);
+      
       const response = await axios.get(`http://localhost:3000/api/chat/messages/${userId}`, {
         headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
       });
+      
+      console.log("📥 Messages API response:", response.data);
+      
       if (response.data.success) {
         const previousMessages = messages;
         const newMessages = response.data.data || [];
+        console.log(`✅ Received ${newMessages.length} messages`);
+        
         const previousCount = previousMessagesCount !== null ? previousMessagesCount : previousMessages.length;
         const newCount = newMessages.length;
         
@@ -294,13 +326,40 @@ export default function LiveChatAdmin() {
         }
         
         // Mark as read
-        await axios.patch(`http://localhost:3000/api/chat/read/${userId}`);
+        try {
+          await axios.patch(`http://localhost:3000/api/chat/read/${userId}`, {}, {
+            headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+          });
+        } catch (readError) {
+          console.error("Error marking as read:", readError);
+          // Don't fail the whole operation if marking as read fails
+        }
+        
         fetchUnreadCount();
         fetchConversations();
+      } else {
+        console.warn("⚠️ API returned success:false", response.data);
+        toast.error(response.data.message || "Failed to load messages");
       }
     } catch (error) {
-      console.error("Error fetching messages:", error);
-      toast.error("Failed to load messages");
+      console.error("❌ Error fetching messages:", error);
+      console.error("Error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
+      // Show more specific error message
+      if (error.response?.status === 401) {
+        toast.error("Authentication failed. Please login again.");
+      } else if (error.response?.status === 403) {
+        toast.error("Access denied. You don't have permission to view these messages.");
+      } else if (error.response?.status === 404) {
+        toast.error("User not found.");
+      } else {
+        toast.error(error.response?.data?.message || "Failed to load messages");
+      }
     }
   };
 
@@ -581,7 +640,7 @@ export default function LiveChatAdmin() {
 
       {/* Main Chat Interface */}
       <div className="flex-1 flex gap-4 min-h-0">
-        {/* Conversations List - Full screen on mobile when no chat selected, side panel on desktop */}
+        {/* Conversations List - Always visible on desktop, can toggle on mobile */}
         <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} w-full lg:w-80 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex-col h-full`}>
           {/* Fixed Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
@@ -771,9 +830,9 @@ export default function LiveChatAdmin() {
                     </div>
                   </div>
                   
-                  {/* Admin Info with Online Indicator - Hidden on mobile */}
-                  <div className="hidden lg:flex items-center gap-2">
-                    <div className="text-right">
+                  {/* Admin Info with Online Indicator - Always visible */}
+                  <div className="flex items-center gap-2">
+                    <div className="text-right hidden sm:block">
                       <p className="text-xs text-gray-600 dark:text-gray-400">You</p>
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{currentAdmin.name}</p>
                     </div>
@@ -782,18 +841,18 @@ export default function LiveChatAdmin() {
                         <img
                           src={currentAdmin.avatar}
                           alt={currentAdmin.name}
-                          className="w-10 h-10 rounded-full object-cover"
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                          <span className="text-white text-sm font-semibold">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <span className="text-white text-xs sm:text-sm font-semibold">
                             {currentAdmin.name[0]?.toUpperCase() || "A"}
                           </span>
                         </div>
                       )}
                       {/* Admin Online Indicator - Only show if admin is logged in */}
                       {isAdminLoggedIn() && (
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></span>
                       )}
                     </div>
                   </div>

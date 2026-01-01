@@ -5,9 +5,10 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:front\"",
+    "dev": "concurrently \"npm run dev:database\" \"npm run dev:backend\" \"npm run dev:front\"",
     "dev:front": "cd front && npm run dev",
     "dev:backend": "cd backend && npm run dev",
+    "dev:database": "echo 'Starting MongoDB... (Make sure MongoDB is running on port 27017)' && timeout 2",
     "build": "cd front && npm run build",
     "lint": "cd front && npm run lint",
     "preview": "cd front && npm run preview",

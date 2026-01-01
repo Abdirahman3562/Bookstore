@@ -17,6 +17,11 @@ const bookSchema = new mongoose.Schema(
     description: { type: String, required: true },
     publisher: { type: String, default: "Unknown Publisher" },
     publishedDate: { type: Date, required: true },
+    uploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+      required: true
+    },
   },
   { timestamps: true }
 );

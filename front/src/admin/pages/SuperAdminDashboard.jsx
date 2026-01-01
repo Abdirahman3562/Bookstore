@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { handleApiError } from "../utils/apiUtils";
 import {
   Building2,
   Users,
@@ -81,12 +82,11 @@ export default function SuperAdminDashboard() {
         // toast.success("Dashboard updated", { duration: 2000 });
       }
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
       if (error.response?.status === 403) {
         toast.error("Super admin access required");
         navigate("/admin/dashboard");
-      } else if (!silent) {
-        toast.error("Failed to load dashboard data");
+      } else {
+        handleApiError(error, "dashboard data");
       }
     } finally {
       setLoading(false);
@@ -106,9 +106,9 @@ export default function SuperAdminDashboard() {
   const recentTenants = stats?.recentTenants || [];
 
   return (
-    <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 w-full">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Super Admin Dashboard

@@ -35,6 +35,7 @@ import LiveChatWidget from "./components/LiveChatWidget";
 import AdminLogin from "./admin/pages/AdminLogin";
 import ADminDashboard from "./admin/pages/Dashboard";
 import AdminLayout from "./admin/layouts/AdminLayout";
+import SuperAdminLayout from "./admin/layouts/SuperAdminLayout";
 import BooksAdmin from "./admin/pages/BooksAdmin";
 import DownloadsAdmin from "./admin/pages/DownloadsAdmin";
 import PurchasedAdmin from "./admin/pages/PurchasedAdmin";
@@ -50,7 +51,7 @@ import WebsiteSettings from "./admin/pages/WebsiteSettings";
 import ContactsAdmin from "./admin/pages/ContactsAdmin";
 import LiveChatAdmin from "./admin/pages/LiveChatAdmin";
 import AdminProtectedRoute from "./admin/components/AdminProtectedRoute";
-import SuperAdminProtectedRoute from "./admin/components/SuperAdminProtectedRoute";
+import AccessGuard from "./admin/components/AccessGuard";
 // Super Admin
 import SuperAdminDashboard from "./admin/pages/SuperAdminDashboard";
 import SuperAdminTenants from "./admin/pages/SuperAdminTenants";
@@ -65,14 +66,26 @@ import SuperAdminEditSubscription from "./admin/pages/SuperAdminEditSubscription
 import SuperAdminPlans from "./admin/pages/SuperAdminPlans";
 import SuperAdminEditTenant from "./admin/pages/SuperAdminEditTenant";
 import SuperAdminTenantDetail from "./admin/pages/SuperAdminTenantDetail";
+import SuperAdminProfile from "./admin/pages/SuperAdminProfile";
 
 function App() {
-  const location = useLocation();
+  console.log('📱 App component rendering...')
 
-  // check routes
-  const isHomePage = location.pathname === "/";
-  const isAdminRoute = location.pathname.startsWith("/admin") || location.pathname.startsWith("/superadmin");
-  const isAuthRoute = location.pathname === "/auth" || location.pathname === "/verify-email";
+  // Use window.location for basic route checks to avoid Router context issues
+  const currentPath = window.location.pathname;
+  const isHomePage = currentPath === "/";
+  const isAdminRoute = currentPath.startsWith("/admin") || currentPath.startsWith("/superadmin");
+  const isAuthRoute = currentPath === "/auth" || currentPath === "/verify-email";
+
+  // Still try to use useLocation for more advanced routing if available
+  let location = { pathname: currentPath };
+  try {
+    const routerLocation = useLocation();
+    location = routerLocation;
+    console.log('✅ Router context available, location:', location.pathname);
+  } catch (error) {
+    console.warn('⚠️ Router context not yet available, using window.location fallback');
+  }
 
   // Initialize dark mode and axios interceptors on app load
   useEffect(() => {
@@ -101,7 +114,39 @@ function App() {
       <div className={`${!isAdminRoute && !isAuthRoute ? "w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" : isAuthRoute ? "w-full" : ""}`}>
         <ScrollToTop />
         {!isAdminRoute && !isAuthRoute && <AdPopup />}
-        <Toaster position="top-right" />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#f8fafc',
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '500',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              border: '1px solid #e2e8f0',
+              zIndex: 9999,
+            },
+            success: {
+              style: {
+                background: '#f0fdf4',
+                color: '#166534',
+                border: '1px solid #bbf7d0',
+              },
+              icon: '✓',
+            },
+            error: {
+              style: {
+                background: '#fef2f2',
+                color: '#991b1b',
+                border: '1px solid #fecaca',
+              },
+              icon: '✕',
+            },
+          }}
+        />
 
         <Routes>
           {/* ================= Public Pages ================= */}
@@ -294,88 +339,88 @@ function App() {
           <Route
             path="/superadmin/dashboard"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminDashboard />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/tenants"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminTenants />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/admins/create"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminCreateAdmin />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/subscriptions"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminSubscriptions />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/analytics"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminAnalytics />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/plans"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminPlans />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/admins"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminAdmins />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/admins/:id/edit"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminEditAdmin />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
@@ -383,44 +428,44 @@ function App() {
           <Route
             path="/superadmin/tenants/new"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminCreateTenant />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/tenants/:id"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminTenantDetail />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/tenants/:id/edit"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminEditTenant />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/tenants/:id/create-admin"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminCreateAdmin />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
@@ -428,22 +473,33 @@ function App() {
           <Route
             path="/superadmin/subscriptions/create"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminCreateSubscription />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
           <Route
             path="/superadmin/subscriptions/:id/edit"
             element={
-              <SuperAdminProtectedRoute>
-                <AdminLayout>
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
                   <SuperAdminEditSubscription />
-                </AdminLayout>
-              </SuperAdminProtectedRoute>
+                </SuperAdminLayout>
+              </AccessGuard>
+            }
+          />
+
+          <Route
+            path="/superadmin/profile"
+            element={
+              <AccessGuard superAdminOnly={true}>
+                <SuperAdminLayout>
+                  <SuperAdminProfile />
+                </SuperAdminLayout>
+              </AccessGuard>
             }
           />
 
@@ -457,13 +513,13 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="orders" element={<div>Orders Section</div>} />
+            <Route path="orders" element={<AccessGuard superAdminOnly={true}>Orders Section</AccessGuard>} />
             <Route path="orderdetails" element={<OrderDetails />} />
             <Route path="orderdetails/:id" element={<OrderDetails />} />
             <Route path="orders/:id" element={<OrderDetails />} />
-            <Route path="downloads" element={<div>Downloads Section</div>} />
-            <Route path="notifications" element={<div>Notifications Section</div>} />
-            <Route path="addresses" element={<div>Addresses Section</div>} />
+            <Route path="downloads" element={<AccessGuard superAdminOnly={true}>Downloads Section</AccessGuard>} />
+            <Route path="notifications" element={<AccessGuard superAdminOnly={true}>Notifications Section</AccessGuard>} />
+            <Route path="addresses" element={<AccessGuard superAdminOnly={true}>Addresses Section</AccessGuard>} />
             <Route path="account" element={<AccountDetails />} />
           </Route>
 

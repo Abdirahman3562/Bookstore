@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
+import { handleApiError } from "../utils/apiUtils";
 import { UserPlus, X, Shield, Check, Eye, EyeOff, Save, ArrowLeft } from "lucide-react";
 
 export default function SuperAdminEditAdmin() {
@@ -61,8 +62,7 @@ export default function SuperAdminEditAdmin() {
           });
         }
       } catch (error) {
-        console.error("Error fetching admin:", error);
-        toast.error("Failed to load admin data");
+        handleApiError(error, "admin data");
         navigate("/superadmin/admins");
       } finally {
         setFetchLoading(false);

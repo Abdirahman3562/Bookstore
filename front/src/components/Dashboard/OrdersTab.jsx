@@ -9,56 +9,71 @@ export default function OrdersTab() {
   const navigate = useNavigate();
 
   useEffect(() => {
-  const fetchOrders = async () => {
-    try {
-      const storedUser = localStorage.getItem("user");
+    const fetchOrders = async () => {
+      try {
+        const storedUser = localStorage.getItem("user");
 
-      if (!storedUser) {
-        setError("Please log in to see your orders.");
+        if (!storedUser) {
+          setError("Please log in to see your orders.");
+          setLoading(false);
+          return;
+        }
+
+        const user = JSON.parse(storedUser);
+        const userId = (user._id || user.id)?.toString(); // Convert to string for comparison
+        const userEmail = user.email?.toLowerCase(); // Normalize email to lowercase
+
+        // Get authentication token (admin_token takes priority, then user token)
+        const adminToken = localStorage.getItem("admin_token");
+        const userToken = localStorage.getItem("token");
+        const token = adminToken || userToken;
+
+        if (!token) {
+          setError("Authentication required. Please log in again.");
+          setLoading(false);
+          return;
+        }
+
+        const headers = {
+          Authorization: `Bearer ${token}`
+        };
+
+        const res = await fetch("http://localhost:3000/api/purchased", { headers });
+        const responseData = await res.json();
+
+        const data = responseData.data || [];
+
+        // More robust filtering - check both userId and email (case-insensitive)
+        const userOrders = data.filter((order) => {
+          const orderUserId = order.userId?.toString();
+          const orderEmail = order.email?.toLowerCase();
+
+          return (
+            orderUserId === userId ||
+            orderEmail === userEmail ||
+            (order.userId && order.userId.toString() === userId) ||
+            (order.email && order.email.toLowerCase() === userEmail)
+          );
+        });
+
+        // Sort orders by most recent first
+        userOrders.sort((a, b) => {
+          const dateA = new Date(a.timestamp || a.createdAt);
+          const dateB = new Date(b.timestamp || b.createdAt);
+          return dateB - dateA;
+        });
+
+        setOrders(userOrders);
         setLoading(false);
-        return;
+
+      } catch (err) {
+        setError("Something went wrong.");
+        setLoading(false);
       }
+    };
 
-      const user = JSON.parse(storedUser);
-      const userId = (user._id || user.id)?.toString(); // Convert to string for comparison
-      const userEmail = user.email?.toLowerCase(); // Normalize email to lowercase
-
-      const res = await fetch("http://localhost:3000/api/purchased");
-      const responseData = await res.json();
-
-      const data = responseData.data || [];
-      
-      // More robust filtering - check both userId and email (case-insensitive)
-      const userOrders = data.filter((order) => {
-        const orderUserId = order.userId?.toString();
-        const orderEmail = order.email?.toLowerCase();
-        
-        return (
-          orderUserId === userId ||
-          orderEmail === userEmail ||
-          (order.userId && order.userId.toString() === userId) ||
-          (order.email && order.email.toLowerCase() === userEmail)
-        );
-      });
-      
-      console.log("User ID:", userId, "User Email:", userEmail);
-      console.log("All orders:", data.length, "User orders:", userOrders.length);
-
-      setOrders(userOrders);
-
-      // ⏳ Delay-ka loading-ka (10 seconds)
-      setTimeout(() => {
-        setLoading(false);
-      }, 1000); // 10 seconds
-
-    } catch (err) {
-      setError("Something went wrong.");
-      setLoading(false);
-    }
-  };
-
-  fetchOrders();
-}, []);
+    fetchOrders();
+  }, []);
 
 
   const formatDate = (date) => {

@@ -7,8 +7,10 @@ import {
   createBook,
   updateBook,
   deleteBook,
+  updateBookPublishers,
 } from "../controllers/book.controller.js";
 import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -45,14 +47,17 @@ const upload = multer({
 
 router.get("/", getAllBooks);
 router.get("/:id", getBookById);
-router.post("/", upload.fields([
+router.post("/", requireAuth, upload.fields([
   { name: 'cover', maxCount: 1 },
   { name: 'pdfFile', maxCount: 1 }
 ]), createBook);
-router.put("/:id", upload.fields([
+router.put("/:id", requireAuth, upload.fields([
   { name: 'cover', maxCount: 1 },
   { name: 'pdfFile', maxCount: 1 }
 ]), updateBook);
-router.delete("/:id", deleteBook);
+router.delete("/:id", requireAuth, deleteBook);
+
+// Admin utility route to update existing book publishers
+router.post("/update-publishers", updateBookPublishers);
 
 export default router;

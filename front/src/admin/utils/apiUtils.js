@@ -41,6 +41,29 @@ export const performAutoLogout = async (reason = "Session expired") => {
   }
 };
 
+// Utility function for consistent error handling
+// Only shows toast errors for real system failures, not empty data
+export const handleApiError = (error, context = "data") => {
+  // Don't show errors for empty data arrays - this is normal for new admins
+  if (error.response?.status === 200 && Array.isArray(error.response?.data?.data) && error.response.data.data.length === 0) {
+    console.log(`ℹ️ ${context} is empty (normal for new admins/tenants)`);
+    return;
+  }
+
+  // Only show toast errors for real system failures
+  if (error.response?.status >= 500 || error.response?.status === 401 || error.response?.status === 403) {
+    console.error(`❌ Error loading ${context}:`, error);
+    toast.error(`Failed to load ${context}`);
+  } else if (!error.response) {
+    // Network errors
+    console.error(`❌ Network error loading ${context}:`, error);
+    toast.error(`Failed to load ${context} - network error`);
+  } else {
+    // Other client errors (4xx except 401/403) - log but don't show toast
+    console.log(`ℹ️ ${context} request returned ${error.response.status} - ${error.response.data?.message || 'No message'}`);
+  }
+};
+
 // Setup axios interceptors for automatic logout on subscription expiry
 export const setupAxiosInterceptors = () => {
   // Response interceptor

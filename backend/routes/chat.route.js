@@ -13,7 +13,7 @@ import {
   sendAIGreeting
 } from "../controllers/chat.controller.js";
 import { resolveTenant, requireTenant, checkTenantAccess } from "../middleware/tenant.middleware.js";
-import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireAuth, optionalAuth } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -23,26 +23,26 @@ router.use(resolveTenant);
 router.use(requireTenant);
 router.use(checkTenantAccess);
 
-// GET all conversations
+// GET all conversations (admin only)
 router.get("/conversations", getAllConversations);
 
-// GET messages for a specific user
-router.get("/messages/:userId", getUserMessages);
+// GET messages for a specific user (admin only, or user accessing their own messages)
+router.get("/messages/:userId", optionalAuth, resolveTenant, requireTenant, getUserMessages);
 
 // SEND a message
-router.post("/send", sendMessage);
+router.post("/send", optionalAuth, resolveTenant, requireTenant, sendMessage);
 
 // MARK messages as read
-router.patch("/read/:userId", markAsRead);
+router.patch("/read/:userId", optionalAuth, resolveTenant, requireTenant, markAsRead);
 
 // GET unread count
 router.get("/unread-count", getUnreadCount);
 
 // SET typing status
-router.post("/typing", setTypingStatus);
+router.post("/typing", optionalAuth, resolveTenant, requireTenant, setTypingStatus);
 
 // GET typing status
-router.get("/typing/:userId", getTypingStatus);
+router.get("/typing/:userId", optionalAuth, resolveTenant, requireTenant, getTypingStatus);
 
 // SET admin online status
 router.post("/admin/online", setAdminOnlineStatus);
@@ -54,7 +54,7 @@ router.get("/admin/online", getAdminOnlineStatus);
 router.post("/takeover", takeOverChat);
 
 // SEND automatic AI greeting when user comes online
-router.post("/ai-greeting/:userId", sendAIGreeting);
+router.post("/ai-greeting/:userId", optionalAuth, resolveTenant, requireTenant, sendAIGreeting);
 
 export default router;
 

@@ -62,6 +62,10 @@ const purchasedSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'cancelled', 'active'],
     default: 'pending'
   },
+  isDownloadAllowed: {
+    type: Boolean,
+    default: false
+  },
   timestamp: {
     type: Date,
     default: Date.now
