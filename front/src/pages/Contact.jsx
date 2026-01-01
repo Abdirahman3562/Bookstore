@@ -22,9 +22,18 @@ export default function Contact() {
   useEffect(() => {
     const fetchWebsiteSettings = async () => {
       try {
+        // Try to get authentication token (admin or user token)
+        const adminToken = localStorage.getItem("admin_token");
+        const userToken = localStorage.getItem("token");
+        const token = adminToken || userToken;
+
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
         const response = await axios.get(
-          "http://localhost:3000/api/website-settings"
+          "http://localhost:3000/api/website-settings",
+          { headers }
         );
+
         if (response.data.success) {
           const data = response.data.data;
           setWebsiteSettings({
@@ -35,7 +44,8 @@ export default function Contact() {
         }
       } catch (error) {
         console.error("Error fetching website settings:", error);
-        // Keep default values if fetch fails
+        // If authentication fails or user is not logged in, keep default values
+        console.log("Using default contact information");
       }
     };
     fetchWebsiteSettings();

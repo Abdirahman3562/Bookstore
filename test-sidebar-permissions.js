@@ -82,3 +82,6 @@ const filteredItems = allMenuItems.filter(item => {
 console.log('\n✅ Filtered menu items:', filteredItems.map(item => item.label));
 console.log('Total items shown:', filteredItems.length);
 
+
+
+

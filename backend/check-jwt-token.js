@@ -44,3 +44,6 @@ console.log('\nTesting permission checks:');
 console.log('liveChat permission check:', decoded.permissions.liveChat?.view === true);
 console.log('websiteSettings permission check:', decoded.permissions.websiteSettings?.view === true);
 
+
+
+

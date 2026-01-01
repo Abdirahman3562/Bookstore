@@ -13,7 +13,14 @@ export default function About() {
   useEffect(() => {
     const fetchWebsiteSettings = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/website-settings");
+        // Check for admin token first, then regular user token
+        const adminToken = localStorage.getItem("admin_token");
+        const userToken = localStorage.getItem("token");
+        const token = adminToken || userToken;
+
+        const response = await axios.get("http://localhost:3000/api/website-settings", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         if (response.data.success) {
           setWebsiteSettings({
             websiteName: response.data.data.websiteName || "BookStore",

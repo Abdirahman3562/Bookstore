@@ -57,25 +57,58 @@ export const getDownloadById = async (req, res) => {
 // CREATE NEW DOWNLOAD (Prevent duplicates - one record per user per book)
 export const createDownload = async (req, res) => {
   try {
-    const { userId, bookId, title } = req.body;
+    const { userId, bookId, title, isFree, price } = req.body;
+
+    // Validate required fields
+    if (!userId || (!bookId && !title)) {
+      console.log("❌ Missing required fields:", { userId: !!userId, bookId: !!bookId, title: !!title });
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: userId and either bookId or title"
+      });
+    }
+
+    console.log("📥 Creating download record:", {
+      userId,
+      bookId,
+      title,
+      isFree,
+      price,
+      tenantId: req.tenantId
+    });
 
     // Check if download record already exists for this user and book
-    // Match by userId AND (bookId OR title) to prevent duplicates
+    // Match by userId AND bookId (primary key) OR fallback to title
     const query = {
       tenantId: req.tenantId, // Add tenantId filter
       userId: userId?.toString()
     };
 
-    // Build query to match by bookId if available, otherwise by title
-    if (bookId && bookId.toString().trim() !== '') {
-      query.bookId = bookId.toString();
-    } else if (title) {
-      query.title = title;
+    // Primary: Match by bookId if available and valid
+    if (bookId && typeof bookId === 'string' && bookId.trim().length > 0 && bookId !== 'undefined' && bookId !== 'null') {
+      query.bookId = bookId.trim();
+      console.log("🔍 Searching for existing download by bookId:", query);
+    } else if (title && title.trim().length > 0) {
+      // Fallback: Match by title if bookId is not available
+      query.title = title.trim();
+      console.log("🔍 Searching for existing download by title:", query);
+    } else {
+      console.log("❌ Cannot create download record: no valid bookId or title provided");
+      return res.status(400).json({
+        success: false,
+        message: "Invalid book data: bookId or title required"
+      });
     }
 
     const existingDownload = await Download.findOne(query);
 
     if (existingDownload) {
+      console.log("🔄 Found existing download record, incrementing count:", {
+        id: existingDownload._id,
+        currentCount: existingDownload.downloadCount || 1,
+        newCount: (existingDownload.downloadCount || 1) + 1
+      });
+
       // Increment download count
       existingDownload.downloadCount = (existingDownload.downloadCount || 1) + 1;
       // Update timestamp to latest download time and reset access
@@ -106,18 +139,24 @@ export const createDownload = async (req, res) => {
     }
 
     // Create new download record if it doesn't exist
+    console.log("🆕 Creating new download record (no existing record found)");
     // Ensure isFree is correctly set based on price (not source)
-    const price = req.body.price || 0;
+    // price is already destructured from req.body above
     const downloadData = {
       ...req.body,
       tenantId: req.tenantId, // Add tenantId from middleware
       price: price,
       isFree: price === 0, // Always set isFree based on price, not source
+      downloadCount: 1, // First download
       id: Date.now().toString() // Generate unique ID
     };
 
+    console.log("📝 New download data:", downloadData);
+
     const newDownload = new Download(downloadData);
     await newDownload.save();
+
+    console.log("✅ New download record created:", newDownload._id);
 
     res.status(201).json({
       success: true,

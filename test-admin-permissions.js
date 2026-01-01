@@ -59,3 +59,6 @@ filteredItems.forEach(item => {
 
 console.log(`\nTotal: ${filteredItems.length} out of ${allMenuItems.length} items`);
 
+
+
+

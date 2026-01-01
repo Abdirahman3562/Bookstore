@@ -82,25 +82,31 @@ export default function DownloadsAdmin() {
       const totalDownloads = data.length;
       const totalUsers = new Set(data.map(d => d.userId)).size;
       
-      // Only count revenue from downloads that have active purchase status
+      // Calculate revenue from downloads that have associated orders (paid downloads)
       const totalRevenue = data.reduce((sum, d) => {
         // Only count paid downloads (price > 0)
         if ((d.price || 0) === 0) {
           return sum;
         }
-        
-        // Normalize IDs to strings for matching
+
+        // For downloads created through the unified endpoint, check if they have an orderId
+        // This indicates they went through the purchase validation process
+        if (d.orderId) {
+          console.log(`✅ Counting revenue for download: ${d.title} - $${d.price} (has orderId: ${d.orderId})`);
+          return sum + (d.price || 0);
+        }
+
+        // Fallback: try to match with active purchases using the complex matching logic
         const downloadBookIdStr = String(d.bookId || '');
         const downloadUserIdStr = d.userId ? String(d.userId) : null;
         const downloadEmailStr = d.email ? d.email.toLowerCase() : null;
         const downloadTitleStr = d.title ? d.title.toLowerCase().trim() : '';
-        
-        // Check if this download has an active purchase (by userId or email + bookId)
+
         const userIdKey = downloadUserIdStr ? `userId_${downloadUserIdStr}_${downloadBookIdStr}` : null;
         const emailKey = downloadEmailStr ? `email_${downloadEmailStr}_${downloadBookIdStr}` : null;
-        let hasActivePurchase = (userIdKey && activePurchasesMap[userIdKey]) || 
+        let hasActivePurchase = (userIdKey && activePurchasesMap[userIdKey]) ||
                                 (emailKey && activePurchasesMap[emailKey]);
-        
+
         // Fallback: try matching by title if bookId doesn't match
         if (!hasActivePurchase && downloadTitleStr) {
           const userIdTitleKey = downloadUserIdStr ? `userId_${downloadUserIdStr}_${downloadTitleStr}` : null;
@@ -108,14 +114,14 @@ export default function DownloadsAdmin() {
           hasActivePurchase = (userIdTitleKey && activePurchasesByTitle[userIdTitleKey]) ||
                               (emailTitleKey && activePurchasesByTitle[emailTitleKey]);
         }
-        
-        // Count revenue if has active purchase
+
         if (hasActivePurchase) {
           console.log(`✅ Counting revenue for download: ${d.title} - $${d.price} (matched with active purchase)`);
           return sum + (d.price || 0);
         } else {
-          console.log(`❌ Skipping download: ${d.title} - $${d.price} (no active purchase found)`);
+          console.log(`❌ Skipping download: ${d.title} - $${d.price} (no active purchase found and no orderId)`);
         }
+
         return sum;
       }, 0);
       

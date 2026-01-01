@@ -46,3 +46,6 @@ const checkNotificationTenants = async () => {
 };
 
 checkNotificationTenants();
+
+
+

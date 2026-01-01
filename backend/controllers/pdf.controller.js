@@ -82,20 +82,9 @@ export const getProtectedPDF = async (req, res) => {
       });
     }
 
-    // Check if user has free download access (not revoked)
-    const hasDownloadAccess = await Download.findOne({
-      $or: [
-        { userId: finalUserId?.toString() },
-        { email: finalUserEmail?.toLowerCase() }
-      ],
-      bookId: book._id.toString(),
-      notDownloaded: { $ne: true }
-    });
-
-    // Grant access if:
-    // 1. User has an active purchase (for paid books)
-    // 2. OR book is free AND user has download access (not revoked)
-    const hasAccess = hasPurchase || (isFreeBook && hasDownloadAccess);
+    // For free books, allow access if user is authenticated (no need for existing download record)
+    // For paid books, require active purchase
+    const hasAccess = hasPurchase || isFreeBook;
 
     if (!hasAccess) {
       return res.status(403).json({

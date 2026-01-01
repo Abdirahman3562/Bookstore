@@ -79,8 +79,16 @@ export default function ContactsAdmin() {
   // Update contact status
   const updateContactStatus = async (contactId, newStatus) => {
     try {
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        toast.error("Authentication required. Please login again.");
+        return;
+      }
+
       await axios.patch(`http://localhost:3000/api/contacts/${contactId}/status`, {
         status: newStatus
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       toast.success(`Contact marked as ${newStatus}!`);

@@ -71,137 +71,131 @@ export default function BookDetails() {
   };
 
 
-  const handleDownload = (pdfUrl, title, cover, author, price, email) => {
-  console.log("Book Title:", title); // Log to verify the title
-  console.log("PDF URL:", pdfUrl); // Log to verify the PDF URL
+  const handleDownload = (bookId, pdfUrl, title, cover, author, price, email) => {
+    console.log("Book ID:", bookId);
+    console.log("Book Title:", title);
+    console.log("PDF URL:", pdfUrl);
 
-  const user = JSON.parse(localStorage.getItem("user")); // Assuming the user is saved in localStorage
+    const user = JSON.parse(localStorage.getItem("user"));
 
-  if (!user) {
-    toast.error("You need to log in first."); // Show error if user is not logged in
-    return;
-  }
+    if (!user) {
+      toast.error("You need to log in first.");
+      return;
+    }
 
-  // Extract filename from PDF URL
-  const filename = pdfUrl.split('/').pop();
-  
-  // Use protected PDF endpoint with user authentication
-  const userId = user._id || user.id;
-  const userEmail = user.email;
-  const protectedUrl = `http://localhost:3000/api/pdf/${filename}?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(userEmail)}`;
+    // Get authentication token
+    const adminToken = localStorage.getItem("admin_token");
+    const userToken = localStorage.getItem("token");
+    const token = adminToken || userToken;
 
-  // Get authentication token
-  const adminToken = localStorage.getItem("admin_token");
-  const userToken = localStorage.getItem("token");
-  const token = adminToken || userToken;
+    if (!token) {
+      toast.error("Authentication required. Please log in again.");
+      return;
+    }
 
-  if (!token) {
-    toast.error("Authentication required. Please log in again.");
-    return;
-  }
+    // For BookDetails page - assume this is for free books or direct downloads
+    // Use the protected PDF endpoint for free books
+    console.log("📥 Downloading book from details page");
+    const filename = pdfUrl.split('/').pop();
+    const protectedUrl = `http://localhost:3000/api/pdf/${filename}?userId=${encodeURIComponent(user._id || user.id)}&email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
 
-  const headers = {
-    'Authorization': `Bearer ${token}`
-  };
+    console.log("🔗 Protected PDF URL:", protectedUrl);
 
-  // Fetch current downloads from backend API
-  fetch("http://localhost:3000/api/downloads", { headers })
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error("Failed to fetch downloads data");
+    fetch(protectedUrl).then((response) => {
+      console.log("📡 PDF endpoint response:", response.status, response.ok);
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          console.error("❌ Access denied for book download");
+          throw new Error("Access denied: You don't have permission to download this book");
+        } else if (response.status === 404) {
+          console.error("❌ PDF file not found for book download");
+          throw new Error("PDF file not found on server");
+        } else if (response.status === 401) {
+          console.error("❌ Authentication failed for book download");
+          throw new Error("Authentication required. Please log in again.");
+        }
+        console.error("❌ PDF endpoint failed:", response.status, response.statusText);
+        throw new Error(`Server error: ${response.status} - ${response.statusText}`);
       }
-      return res.json();
+
+      // Get the blob
+      return response.blob();
     })
-    .then((responseData) => {
-      const downloads = responseData.data || [];
-      // Check if the user has already downloaded the book
-      const alreadyDownloaded = downloads.some(
-        (download) => (download.bookId === (book._id || book.id)) && (download.userId === user.id || download.userId === user._id)
-      );
+    .then((blob) => {
+      console.log("📄 Book blob size:", blob.size, "bytes", "type:", blob.type);
 
-      // For free books (price === 0), allow multiple downloads
-      // For paid books, redirect to downloads page if already downloaded
-      if (alreadyDownloaded && price > 0) {
-        toast.error("You have already downloaded this book. Go to the downloads page to access it again."); // Show error if already downloaded paid book
-        return;
+      if (blob.size === 0) {
+        throw new Error("Downloaded file is empty");
       }
 
-      // For free books, show a different message but still allow download
-      if (alreadyDownloaded && price === 0) {
-        console.log("Free book already downloaded before, allowing re-download");
-      }
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const filename = `${title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+      a.download = filename;
+      a.style.display = 'none'; // Hide the link
+      document.body.appendChild(a);
 
-      // If not already downloaded, allow the download
+      console.log("🔗 Book download link created:", url, "filename:", filename);
+      console.log("🖱️ Clicking book download link...");
+
+      a.click();
+
+      // Small delay before cleanup to ensure download starts
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        console.log("🧹 Book download cleanup completed for:", filename);
+      }, 100);
+
+      console.log("✅ Book download initiated for:", filename);
+
+      // Save download record to database
       const downloadData = {
         userId: user._id || user.id,
-        userName: user.name,
-        email: user.email,
-        bookId: book._id || book.id, // Ensure we're using book's ID
-        title,
-        author,
-        cover,
-        price,
-        isFree: price === 0,
-        pdfUrl,
+        userName: user.name || "Unknown User",
+        email: user.email || "",
+        bookId: bookId,
+        title: title,
+        author: author || "",
+        cover: cover || "",
+        price: price || 0,
+        isFree: true, // BookDetails downloads are for free books
+        pdfUrl: pdfUrl,
         timestamp: new Date().toISOString(),
+        notDownloaded: false
       };
 
-      // Fetch PDF from protected endpoint and trigger download
-      fetch(protectedUrl)
-        .then((res) => {
-          if (!res.ok) {
-            if (res.status === 403) {
-              throw new Error("Access denied: You don't have permission to download this book");
-            }
-            throw new Error("Failed to download PDF");
-          }
-          return res.blob();
-        })
-        .then((blob) => {
-          // Create a download link and trigger the download
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `${title}.pdf`; // Ensure the correct title is used
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-        })
-        .catch((error) => {
-          console.error("Download error:", error);
-          toast.error(error.message || "Failed to download PDF. Please try again.");
-        });
-
-      // Add the downloaded book to backend API
+      // Log the download (don't block the download if logging fails)
       fetch("http://localhost:3000/api/downloads", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(downloadData),
       })
-        .then((res) => res.json())
-        .then((data) => {
-          toast.success("Download recorded successfully!"); // Show success message after download
+        .then((res) => {
+          if (res.ok) {
+            console.log("✅ Download record saved to database");
+          } else {
+            console.error("Failed to save download record");
+          }
         })
         .catch((err) => {
-          toast.error("Error recording download."); // Show error if something goes wrong
+          console.error("Error saving download record:", err);
         });
 
-      // Add the downloaded book to localStorage for persistent state on client-side
-      const existingDownloads = JSON.parse(localStorage.getItem("downloads")) || [];
-      const updatedDownloads = [...existingDownloads, downloadData];
-      localStorage.setItem("downloads", JSON.stringify(updatedDownloads));
-
-      // Update the state to reflect the new list of downloaded books
-      setDownloads(updatedDownloads);
+      toast.success("Download started!");
     })
     .catch((error) => {
-      toast.error("Error fetching downloads data: " + error.message); // Display more specific error message
+      console.error("Download error:", error);
+      toast.error(`Download failed: ${error.message || "Unknown error"}`);
     });
-};
+  };
+
 
 
 
@@ -360,6 +354,7 @@ export default function BookDetails() {
                   <button
                     onClick={() =>
                       handleDownload(
+                        book._id || book.id,
                         book.pdfUrl,
                         book.title,
                         book.cover,

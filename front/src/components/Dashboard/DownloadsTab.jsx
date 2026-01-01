@@ -131,6 +131,13 @@ export default function DownloadsTab() {
 
   // 🔽 DOWNLOAD FILE
   const handleDownload = async (book) => {
+    console.log("🚀 DOWNLOAD ATTEMPT:", {
+      title: book.title,
+      hasPurchaseId: !!book.purchaseId,
+      source: book.source,
+      bookId: book.bookId
+    });
+
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return toast.error("Please log in first.");
 
@@ -181,12 +188,25 @@ export default function DownloadsTab() {
         title: book.title
       });
 
-      // For purchased books (have purchaseId), use secure purchase download endpoint
+      // Check if this is a purchased book
       if (book.purchaseId) {
-        console.log("📥 Downloading purchased book via secure endpoint");
-        console.log("🔗 Download URL:", `http://localhost:3000/api/purchased/${book.purchaseId}/download`);
+        // Use purchased download endpoint
+        console.log("📥 Downloading purchased book via unified endpoint");
+        console.log("📋 Book details:", {
+          title: book.title,
+          bookId: book.bookId,
+          purchaseId: book.purchaseId,
+          source: book.source
+        });
+        console.log("🔗 Download URL:", `http://localhost:3000/api/purchased/download/${book.bookId}`);
 
-        const downloadResponse = await fetch(`http://localhost:3000/api/purchased/${book.purchaseId}/download`, {
+        if (!book.bookId) {
+          console.error("❌ ERROR: bookId is missing or empty!");
+          toast.error("Book ID is missing. Please contact support.");
+          return;
+        }
+
+        const downloadResponse = await fetch(`http://localhost:3000/api/purchased/download/${book.bookId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -209,7 +229,7 @@ export default function DownloadsTab() {
         let blob;
         try {
           blob = await downloadResponse.blob();
-          console.log("📄 Blob size:", blob.size, "bytes");
+          console.log("📄 Blob size:", blob.size, "bytes", "type:", blob.type);
         } catch (blobError) {
           console.error("❌ Failed to create blob:", blobError);
           throw new Error("Failed to process downloaded file");
@@ -226,14 +246,22 @@ export default function DownloadsTab() {
           a.href = url;
           const filename = `${book.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
           a.download = filename;
+          a.style.display = 'none'; // Hide the link
           document.body.appendChild(a);
+
+          console.log("🔗 Download link created:", url, "filename:", filename);
+          console.log("🖱️ Clicking download link...");
+
           a.click();
 
-          // Cleanup
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
+          // Small delay before cleanup to ensure download starts
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            console.log("🧹 Cleanup completed for:", filename);
+          }, 100);
 
-          console.log("✅ Download completed for:", filename);
+          console.log("✅ Download initiated for:", filename);
         } catch (downloadError) {
           console.error("❌ Failed to create download link:", downloadError);
           throw new Error("Failed to initiate download");
@@ -273,24 +301,41 @@ export default function DownloadsTab() {
 
       // Get the blob
       const blob = await response.blob();
+      console.log("📄 Free book blob size:", blob.size, "bytes", "type:", blob.type);
 
       if (blob.size === 0) {
         throw new Error("Downloaded file is empty");
       }
 
       // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${book.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
+      try {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const filename = `${book.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+        a.download = filename;
+        a.style.display = 'none'; // Hide the link
+        document.body.appendChild(a);
 
-      // Cleanup
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+        console.log("🔗 Free book download link created:", url, "filename:", filename);
+        console.log("🖱️ Clicking free book download link...");
 
-      // Save download record to database
+        a.click();
+
+        // Small delay before cleanup to ensure download starts
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          console.log("🧹 Free book cleanup completed for:", filename);
+        }, 100);
+
+        console.log("✅ Free book download initiated for:", filename);
+      } catch (downloadError) {
+        console.error("❌ Failed to create free book download link:", downloadError);
+        throw new Error("Failed to initiate download");
+      }
+
+      // Save download record to database (for all books - free and purchased)
       try {
         const userId = user._id || user.id;
         const downloadData = {

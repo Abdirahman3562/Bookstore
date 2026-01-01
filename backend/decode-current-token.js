@@ -23,3 +23,6 @@ if (token && token !== 'paste_token_here') {
   console.log('📝 Usage: node decode-current-token.js <jwt_token>');
   console.log('💡 Get the token from browser localStorage: localStorage.getItem("admin_token")');
 }
+
+
+
