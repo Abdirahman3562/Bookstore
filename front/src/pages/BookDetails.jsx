@@ -90,8 +90,22 @@ export default function BookDetails() {
   const userEmail = user.email;
   const protectedUrl = `http://localhost:3000/api/pdf/${filename}?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(userEmail)}`;
 
+  // Get authentication token
+  const adminToken = localStorage.getItem("admin_token");
+  const userToken = localStorage.getItem("token");
+  const token = adminToken || userToken;
+
+  if (!token) {
+    toast.error("Authentication required. Please log in again.");
+    return;
+  }
+
+  const headers = {
+    'Authorization': `Bearer ${token}`
+  };
+
   // Fetch current downloads from backend API
-  fetch("http://localhost:3000/api/downloads")
+  fetch("http://localhost:3000/api/downloads", { headers })
     .then((res) => {
       if (!res.ok) {
         throw new Error("Failed to fetch downloads data");
@@ -105,9 +119,16 @@ export default function BookDetails() {
         (download) => (download.bookId === (book._id || book.id)) && (download.userId === user.id || download.userId === user._id)
       );
 
-      if (alreadyDownloaded) {
-        toast.error("To download, go to the downloads page."); // Show error if already downloaded
+      // For free books (price === 0), allow multiple downloads
+      // For paid books, redirect to downloads page if already downloaded
+      if (alreadyDownloaded && price > 0) {
+        toast.error("You have already downloaded this book. Go to the downloads page to access it again."); // Show error if already downloaded paid book
         return;
+      }
+
+      // For free books, show a different message but still allow download
+      if (alreadyDownloaded && price === 0) {
+        console.log("Free book already downloaded before, allowing re-download");
       }
 
       // If not already downloaded, allow the download
@@ -157,6 +178,7 @@ export default function BookDetails() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(downloadData),
       })

@@ -134,22 +134,7 @@ export default function DownloadsTab() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user) return toast.error("Please log in first.");
 
-    // Double-check: Ensure this is a purchased book with approved status
-    if (!book.purchaseId) {
-      return toast.error("This book is not available for download.");
-    }
-
-    // Check if the order is approved/active
-    if (!book.status || (book.status !== "approved" && book.status !== "active")) {
-      return toast.error("Your order is not approved yet. Please wait for approval or contact support.");
-    }
-
-    // Check if download is allowed
-    if (book.isDownloadAllowed !== true) {
-      return toast.error("Download access is not enabled for this order. Please contact support.");
-    }
-
-    // Check if access is revoked
+    // Check if access is revoked (applies to both free and purchased books)
     if (book.notDownloaded) {
       return toast.error("Access to this book has been revoked. Please contact support.");
     }
@@ -157,6 +142,20 @@ export default function DownloadsTab() {
     if (!book.pdfUrl) {
       return toast.error("PDF file not available.");
     }
+
+    // Handle purchased books (have purchaseId)
+    if (book.purchaseId) {
+      // Check if the order is approved/active
+      if (!book.status || (book.status !== "approved" && book.status !== "active")) {
+        return toast.error("Your order is not approved yet. Please wait for approval or contact support.");
+      }
+
+      // Check if download is allowed
+      if (book.isDownloadAllowed !== true) {
+        return toast.error("Download access is not enabled for this order. Please contact support.");
+      }
+    }
+    // Free books don't need additional validation - they're already in the downloads list
 
     try {
       const userId = user._id || user.id;
@@ -249,7 +248,7 @@ export default function DownloadsTab() {
       // Extract filename from PDF URL
       const filename = book.pdfUrl.split('/').pop();
       const userEmail = user.email;
-      const protectedUrl = `http://localhost:3000/api/pdf/${filename}?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(userEmail)}`;
+      const protectedUrl = `http://localhost:3000/api/pdf/${filename}?userId=${encodeURIComponent(userId)}&email=${encodeURIComponent(userEmail)}&token=${encodeURIComponent(token)}`;
 
       console.log("🔗 Protected PDF URL:", protectedUrl);
 
@@ -368,21 +367,7 @@ export default function DownloadsTab() {
       return toast.error("Please log in first.");
     }
 
-    // Double-check: Ensure this is a purchased book with approved status
-    if (!book.purchaseId) {
-      return toast.error("This book is not available for reading.");
-    }
-
-    // Check if the order is approved/active
-    if (!book.status || (book.status !== "approved" && book.status !== "active")) {
-      return toast.error("Your order is not approved yet. Please wait for approval or contact support.");
-    }
-
-    // Check if download is allowed
-    if (book.isDownloadAllowed !== true) {
-      return toast.error("Read access is not enabled for this order. Please contact support.");
-    }
-
+    // Check if access is revoked (applies to both free and purchased books)
     if (book.notDownloaded) {
       return toast.error("Access to this book has been revoked.");
     }
@@ -390,6 +375,20 @@ export default function DownloadsTab() {
     if (!book.pdfUrl) {
       return toast.error("PDF file not available.");
     }
+
+    // Handle purchased books (have purchaseId)
+    if (book.purchaseId) {
+      // Check if the order is approved/active
+      if (!book.status || (book.status !== "approved" && book.status !== "active")) {
+        return toast.error("Your order is not approved yet. Please wait for approval or contact support.");
+      }
+
+      // Check if download is allowed
+      if (book.isDownloadAllowed !== true) {
+        return toast.error("Read access is not enabled for this order. Please contact support.");
+      }
+    }
+    // Free books don't need additional validation - they're already in the downloads list
 
     try {
       const userId = user._id || user.id;
